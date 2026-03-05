@@ -675,7 +675,15 @@
       line-height: 1.7;
     }
     #diary-text::placeholder { color: var(--color-text-muted); }
-    .form-actions { display: flex; justify-content: flex-end; align-items: center; }
+    .btn-expand {
+      background: none; border: 1px solid var(--color-border); cursor: pointer;
+      color: var(--color-text-light); font-size: 0.7rem; padding: 2px 8px;
+      border-radius: var(--radius-sm); font-family: var(--font-body); transition: all 200ms;
+    }
+    .btn-expand:hover { background: var(--color-surface-warm); }
+    .btn-expand.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    #diary-text.expanded { min-height: 200px; }
+    .form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; }
     .char-count { font-size: 0.75rem; color: var(--color-text-muted); margin-right: auto; }
     .char-count.warn { color: #c62828; }
     .btn-submit {
@@ -707,6 +715,62 @@
     .response-card[hidden] { display: none; }
     .emotion-emoji { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
     .emotion-emoji.pop { animation: emojiPop 500ms 200ms cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Similar entries section */
+    .similar-entries {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      animation: scaleIn 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .similar-entries[hidden] { display: none; }
+    .similar-entries-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .similar-entries-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .similar-entry-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      background: var(--color-surface-warm);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background 150ms, border-color 150ms;
+    }
+    .similar-entry-item:hover {
+      background: var(--color-divider);
+      border-color: var(--color-border);
+    }
+    .similar-entry-emoji { font-size: 1.4rem; flex-shrink: 0; }
+    .similar-entry-body { flex: 1; min-width: 0; }
+    .similar-entry-text {
+      font-size: 0.85rem;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .similar-entry-date {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 0.1rem;
+    }
     @keyframes emojiPop {
       0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
       60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
@@ -1422,6 +1486,52 @@
       margin-bottom: 0.75rem;
       font-weight: 500;
     }
+    /* AI 리포트 버튼 및 카드 */
+    .report-btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .btn-report {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 20px;
+      background: var(--color-primary);
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-report:hover { opacity: 0.85; }
+    .btn-report:active { transform: scale(0.97); }
+    .btn-report:disabled { opacity: 0.5; cursor: not-allowed; }
+    .report-card {
+      background: var(--gradient-response);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .report-card-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .report-card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .report-card-text {
+      font-size: 0.9rem;
+      color: var(--color-text);
+      line-height: 1.6;
+    }
     /* CSS Bar chart */
     .bar-chart {
       display: flex;
@@ -1499,6 +1609,46 @@
       color: var(--color-text-muted);
       padding: 2rem 0;
       font-size: 0.9rem;
+    }
+    /* Trend Chart */
+    .trend-chart {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .trend-chart-title {
+      font-size: 0.9rem;
+      color: var(--color-text-light);
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    .trend-chart svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+    .trend-chart-empty {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      padding: 1.5rem 0;
+    }
+    .trend-tooltip {
+      position: fixed;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      color: var(--color-text);
+      box-shadow: var(--shadow-md);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 9999;
+      display: none;
     }
 
     /* Footer */
@@ -1742,8 +1892,9 @@
       <section class="diary-input" aria-label="일기 작성">
         <form class="diary-form" id="diaryForm">
           <label for="diary-text" class="sr-only">오늘의 일기</label>
-          <textarea id="diary-text" placeholder="오늘 하루는 어땠나요?" rows="3" maxlength="500"></textarea>
+          <textarea id="diary-text" placeholder="오늘 하루는 어땠나요?" rows="3" maxlength="2000"></textarea>
           <div class="form-actions">
+            <button type="button" class="btn-expand" id="expandBtn">확장</button>
             <span class="char-count" id="charCount" aria-live="polite"></span>
             <p class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 전송</p>
             <button type="submit" class="btn-submit" id="submitBtn" disabled>
@@ -1784,6 +1935,10 @@
             <!-- Confidence (hidden, badge is at top of card) -->
             <div class="confidence-meter" id="confidenceMeter" hidden></div>
           </div>
+        </div>
+        <div class="similar-entries" id="similarEntries" hidden>
+          <p class="similar-entries-title">비슷한 감정의 일기</p>
+          <ul class="similar-entries-list" id="similarEntriesList"></ul>
         </div>
         <div class="response-loading" id="responseLoading" hidden>
           <div class="typing-indicator">
@@ -1826,6 +1981,10 @@
             <button class="period-chip" data-days="90">3개월</button>
           </div>
           <div class="dashboard-summary" id="dashboardSummary"></div>
+          <div class="trend-chart" id="trendChartSection">
+            <h3 class="trend-chart-title">감정 트렌드 (30일)</h3>
+            <div id="trendChartContent"></div>
+          </div>
           <div class="dashboard-section" id="topEmotionsSection">
             <h3 class="dashboard-section-title">자주 느낀 감정 (Top 5)</h3>
             <div class="bar-chart" id="topEmotionsChart"></div>
@@ -1837,6 +1996,22 @@
           <div class="dashboard-section" id="recentEntriesSection">
             <h3 class="dashboard-section-title">최근 일기</h3>
             <div id="recentEntriesList"></div>
+          </div>
+
+          <!-- AI 감정 리포트 섹션 -->
+          <div class="dashboard-section" id="reportSection">
+            <h3 class="dashboard-section-title">AI 감정 리포트</h3>
+            <div class="report-btn-group">
+              <button class="btn-report" id="btnWeeklyReport" data-period="weekly">주간 리포트</button>
+              <button class="btn-report" id="btnMonthlyReport" data-period="monthly">월간 리포트</button>
+            </div>
+            <div id="reportLoading" hidden>
+              <div class="typing-indicator" style="justify-content:center;margin:1rem 0;">
+                <span></span><span></span><span></span>
+              </div>
+              <p style="text-align:center;font-size:0.8rem;color:var(--color-text-muted);">리포트를 생성하고 있어요...</p>
+            </div>
+            <div id="reportResult" hidden></div>
           </div>
         </div>
       </div>
@@ -2552,10 +2727,21 @@
           submitBtn.disabled = diaryText.value.trim().length === 0;
           autoResize(diaryText);
           const len = diaryText.value.length;
-          charCount.textContent = len > 0 ? len + '/500' : '';
-          charCount.className = 'char-count' + (len >= 480 ? ' warn' : '');
+          const max = parseInt(diaryText.getAttribute('maxlength'), 10);
+          charCount.textContent = len > 0 ? len + '/' + max : '';
+          charCount.className = 'char-count' + (len >= max - 20 ? ' warn' : '');
         });
         diaryForm.addEventListener('submit', handleSubmit);
+
+        // Expand toggle for long diary mode
+        const expandBtn = document.getElementById('expandBtn');
+        expandBtn.addEventListener('click', () => {
+          const expanded = diaryText.classList.toggle('expanded');
+          expandBtn.classList.toggle('active', expanded);
+          expandBtn.textContent = expanded ? '축소' : '확장';
+          autoResize(diaryText);
+        });
+
         diaryText._listenerAttached = true;
       }
     }
@@ -2573,6 +2759,7 @@
 
       submitBtn.disabled = true;
       responseCard.hidden = true;
+      document.getElementById('similarEntries').hidden = true;
       responseLoading.hidden = false;
 
       try {
@@ -2723,6 +2910,41 @@
 
       // Auto-scroll to response card
       setTimeout(() => { responseCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+
+      // Similar entries: allEntries is still pre-save at this point, no exclusion needed
+      const similarSection = document.getElementById('similarEntries');
+      const similarList = document.getElementById('similarEntriesList');
+      const emotion = result.emotion;
+      const matches = (allEntries || [])
+        .filter(e => e.emotion === emotion)
+        .slice(0, 3);
+
+      if (matches.length >= 3) {
+        similarList.innerHTML = matches.map(e => {
+          const dateStr = e.date
+            ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(e.date))
+            : '';
+          return `<li class="similar-entry-item" tabindex="0" role="button" aria-label="${escapeHtml(e.text)}">
+            <span class="similar-entry-emoji" aria-hidden="true">${escapeHtml(e.emoji || '')}</span>
+            <div class="similar-entry-body">
+              <p class="similar-entry-text">${escapeHtml(e.text)}</p>
+              <p class="similar-entry-date">${escapeHtml(dateStr)}</p>
+            </div>
+          </li>`;
+        }).join('');
+
+        similarList.querySelectorAll('.similar-entry-item').forEach((item, idx) => {
+          const entry = matches[idx];
+          item.addEventListener('click', () => showHistoryDetail(entry));
+          item.addEventListener('keydown', ev => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); showHistoryDetail(entry); }
+          });
+        });
+
+        similarSection.hidden = false;
+      } else {
+        similarSection.hidden = true;
+      }
     }
 
     function renderConfidenceBadge(confidence) {
@@ -2933,8 +3155,8 @@
           const originalText = entry.text;
           diaryP.outerHTML = `
             <div id="editContainer">
-              <textarea class="edit-textarea" id="editTextarea" maxlength="500">${escapeHtml(originalText)}</textarea>
-              <div class="edit-char-count"><span id="editCharCount">${originalText.length}</span>/500</div>
+              <textarea class="edit-textarea" id="editTextarea" maxlength="2000">${escapeHtml(originalText)}</textarea>
+              <div class="edit-char-count"><span id="editCharCount">${originalText.length}</span>/2000</div>
               <div class="edit-actions">
                 <button class="btn-edit-save" id="editSaveBtn">저장</button>
                 <button class="btn-edit-cancel" id="editCancelBtn">취소</button>
@@ -3218,6 +3440,7 @@
           appInitialized = false;
           historyList.innerHTML = '';
           responseCard.hidden = true;
+          document.getElementById('similarEntries').hidden = true;
           historyDetail.hidden = true;
           showAuthScreen();
         } else {
@@ -3249,6 +3472,7 @@
       // Clear previous user's UI data
       historyList.innerHTML = '';
       responseCard.hidden = true;
+      document.getElementById('similarEntries').hidden = true;
       historyDetail.hidden = true;
       diaryText.value = '';
       charCount.textContent = '';
@@ -3292,6 +3516,181 @@
       activePeriodDays = parseInt(chip.dataset.days) || 0;
       if (cachedStats) renderDashboard(filterStatsByPeriod(cachedStats, activePeriodDays));
     });
+
+    // AI 감정 리포트 버튼 핸들러
+    async function fetchReport(period) {
+      const loadingEl = document.getElementById('reportLoading');
+      const resultEl  = document.getElementById('reportResult');
+      const btnWeekly  = document.getElementById('btnWeeklyReport');
+      const btnMonthly = document.getElementById('btnMonthlyReport');
+
+      loadingEl.hidden = false;
+      resultEl.hidden  = true;
+      resultEl.innerHTML = '';
+      btnWeekly.disabled  = true;
+      btnMonthly.disabled = true;
+
+      try {
+        const res = await fetchWithAuth('/api/report?period=' + period);
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = data.error || '리포트 생성에 실패했습니다.';
+          resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';
+          resultEl.hidden = false;
+          return;
+        }
+        const periodLabel = period === 'weekly' ? '주간' : '월간';
+        resultEl.innerHTML =
+          '<div class="report-card">' +
+            '<div class="report-card-section">' +
+              '<span class="report-card-label">' + periodLabel + ' 요약</span>' +
+              '<p class="report-card-text">' + escapeHtml(data.summary) + '</p>' +
+            '</div>' +
+            '<div class="report-card-section">' +
+              '<span class="report-card-label">감정 변화</span>' +
+              '<p class="report-card-text">' + escapeHtml(data.emotionTrend) + '</p>' +
+            '</div>' +
+            '<div class="report-card-section">' +
+              '<span class="report-card-label">패턴 인사이트</span>' +
+              '<p class="report-card-text">' + escapeHtml(data.insight) + '</p>' +
+            '</div>' +
+            '<div class="report-card-section">' +
+              '<span class="report-card-label">응원 메시지</span>' +
+              '<p class="report-card-text">' + escapeHtml(data.encouragement) + '</p>' +
+            '</div>' +
+          '</div>';
+        resultEl.hidden = false;
+      } catch (err) {
+        const msg = err.userMessage || '리포트 생성 중 오류가 발생했습니다.';
+        resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';
+        resultEl.hidden = false;
+      } finally {
+        loadingEl.hidden   = true;
+        btnWeekly.disabled  = false;
+        btnMonthly.disabled = false;
+      }
+    }
+
+    document.getElementById('btnWeeklyReport').addEventListener('click', () => fetchReport('weekly'));
+    document.getElementById('btnMonthlyReport').addEventListener('click', () => fetchReport('monthly'));
+
+    function emotionScore(emotion) {
+      const e = (emotion || '').trim();
+      const positive = ['기쁨','감사','사랑','설렘','행복','애정'];
+      const neutral  = ['평온','편안함','안도'];
+      if (positive.includes(e)) return 1;
+      if (neutral.includes(e))  return 0;
+      return -1;
+    }
+
+    function renderTrendChart(entries) {
+      const container = document.getElementById('trendChartContent');
+      if (!container) return;
+
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 29);
+      cutoff.setHours(0, 0, 0, 0);
+
+      const filtered = (entries || []).filter(e => {
+        const d = new Date((e.date || e.created_at || '').slice(0, 10));
+        return d >= cutoff && d <= now;
+      });
+
+      if (filtered.length < 7) {
+        container.innerHTML = '<p class="trend-chart-empty">데이터가 더 필요합니다 (최소 7일)</p>';
+        return;
+      }
+
+      const byDate = {};
+      filtered.forEach(e => {
+        const d = (e.date || e.created_at || '').slice(0, 10);
+        if (!byDate[d]) byDate[d] = { scores: [], emotions: [] };
+        byDate[d].scores.push(emotionScore(e.emotion));
+        byDate[d].emotions.push(e.emotion);
+      });
+
+      const points = Object.keys(byDate).sort().map(d => ({
+        date: d,
+        score: byDate[d].scores.reduce((a, b) => a + b, 0) / byDate[d].scores.length,
+        emotion: byDate[d].emotions[byDate[d].emotions.length - 1]
+      }));
+
+      const W = 600, H = 140;
+      const PAD = { top: 18, right: 18, bottom: 28, left: 36 };
+      const innerW = W - PAD.left - PAD.right;
+      const innerH = H - PAD.top - PAD.bottom;
+      const startMs = cutoff.getTime();
+      const endMs   = now.getTime();
+      const spanMs  = endMs - startMs || 1;
+
+      function xOf(dateStr) {
+        return PAD.left + ((new Date(dateStr).getTime() - startMs) / spanMs) * innerW;
+      }
+      function yOf(score) {
+        return PAD.top + innerH * (1 - (score + 1) / 2);
+      }
+
+      const coords = points.map(p => `${xOf(p.date).toFixed(1)},${yOf(p.score).toFixed(1)}`).join(' ');
+      const yLabels = [{ score:1, label:'+1' }, { score:0, label:'0' }, { score:-1, label:'-1' }];
+
+      function fmtDate(d) {
+        const [, m, day] = d.split('-');
+        return `${parseInt(m)}/${parseInt(day)}`;
+      }
+
+      let svgDots = '';
+      points.forEach(p => {
+        const cx = xOf(p.date).toFixed(1);
+        const cy = yOf(p.score).toFixed(1);
+        const col = emotionColor(p.emotion);
+        const emo = p.emotion.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        svgDots += `<circle class="trend-dot" cx="${cx}" cy="${cy}" r="5" fill="${col}" stroke="var(--color-surface)" stroke-width="2" data-date="${p.date}" data-emotion="${emo}" data-score="${p.score.toFixed(2)}" style="cursor:pointer"/>`;
+      });
+
+      let yGrid = '';
+      yLabels.forEach(({ score, label }) => {
+        const y = yOf(score).toFixed(1);
+        yGrid += `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--color-divider)" stroke-dasharray="4,3"/>`;
+        yGrid += `<text x="${PAD.left - 6}" y="${y}" dy="0.35em" text-anchor="end" font-size="10" fill="var(--color-text-muted)">${label}</text>`;
+      });
+
+      const xIdxs = [0, Math.floor(points.length / 2), points.length - 1];
+      let xTicks = '';
+      xIdxs.forEach(i => {
+        const x = xOf(points[i].date).toFixed(1);
+        xTicks += `<text x="${x}" y="${H - PAD.bottom + 14}" text-anchor="middle" font-size="10" fill="var(--color-text-muted)">${fmtDate(points[i].date)}</text>`;
+      });
+
+      container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-label="감정 트렌드 차트">
+        ${yGrid}${xTicks}
+        <polyline points="${coords}" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
+        ${svgDots}
+      </svg><div class="trend-tooltip" id="trendTooltip"></div>`;
+
+      const tooltip = document.getElementById('trendTooltip');
+      container.querySelectorAll('.trend-dot').forEach(dot => {
+        function showTip(x, y) {
+          const [, mo, dy] = dot.dataset.date.split('-');
+          tooltip.textContent = `${parseInt(mo)}월 ${parseInt(dy)}일 · ${dot.dataset.emotion}`;
+          tooltip.style.display = 'block';
+          tooltip.style.left = (x + 12) + 'px';
+          tooltip.style.top  = (y - 28) + 'px';
+        }
+        dot.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
+        dot.addEventListener('mousemove',  e => showTip(e.clientX, e.clientY));
+        dot.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+        dot.addEventListener('touchstart', e => {
+          e.preventDefault();
+          const t = e.touches[0];
+          showTip(t.clientX, t.clientY);
+        }, { passive: false });
+        dot.addEventListener('touchend', () => {
+          setTimeout(() => { tooltip.style.display = 'none'; }, 1800);
+        });
+      });
+    }
 
     function renderDashboard(stats) {
       // Summary cards
@@ -3337,6 +3736,9 @@
         'count',
         true
       );
+
+      // Trend chart
+      renderTrendChart(stats.latest_entries || []);
 
       // Recent entries
       renderRecentEntries(stats.latest_entries || []);
