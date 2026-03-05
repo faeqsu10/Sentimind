@@ -6,7 +6,7 @@
 
 **Sentimind**는 Google Gemini 2.5 Flash를 활용하여 사용자의 감정을 분석하고 공감/위로 메시지를 제공하는 AI 다이어리 애플리케이션입니다.
 
-- 👋 한 줄 일기 작성 (500자 이내)
+- 👋 한 줄 일기 작성 (2000자 이내)
 - 🧠 AI가 당신의 감정을 분석
 - 💬 따뜻한 위로 메시지 받기
 - 📊 감정 통계 및 트렌드 추적
@@ -15,7 +15,7 @@
 ## 🛠 기술 스택
 
 ### 백엔드
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 20+ (18 deprecated)
 - **Framework**: Express.js 5.x
 - **AI API**: Google Gemini 2.5 Flash
 - **데이터베이스**:
@@ -43,7 +43,8 @@
 
 ```
 Sentimind/
-├── server.js                    # Express 백엔드 + OntologyEngine
+├── server-v2.js                 # Express 백엔드 v2 (Supabase + Auth)
+├── server.js                    # 레거시 백엔드 (JSON fallback)
 ├── public/
 │   └── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 ├── data/
@@ -73,7 +74,7 @@ Sentimind/
 ## 🚀 시작하기
 
 ### 사전 요구사항
-- Node.js 16+
+- Node.js 20+
 - Google Gemini API 키 ([console.cloud.google.com](https://console.cloud.google.com))
 
 ### 설치
@@ -99,7 +100,7 @@ Sentimind/
    ```bash
    npm start
    # 또는 직접 실행
-   node server.js
+   node server-v2.js
    ```
 
 5. **브라우저에서 접속**
@@ -137,6 +138,23 @@ Sentimind/
 - 🔎 텍스트 검색 (일기 내용)
 - 💭 감정별 다중 필터
 - 📋 실시간 결과 업데이트
+
+### 6. PWA & 오프라인 지원
+- 📱 PWA 설치 가능 (홈 화면 추가)
+- 📴 오프라인 일기 작성 (IndexedDB 큐잉, 온라인 복귀 시 자동 동기화)
+- ⌨️ 키보드 단축키 (Ctrl+Enter 전송, Ctrl+1~4 탭 전환, Ctrl+D 다크모드)
+
+### 7. 보안
+- 🔐 Supabase Auth (JWT 인증, RLS 정책)
+- 🛡️ CSP 보안 헤더 (Helmet)
+- 🔒 에러 메시지에서 내부 정보 제거
+- ⏱️ Rate limiting (회원가입, 로그인, 분석 API 별도)
+
+### 8. 데이터 관리
+- 📤 CSV/JSON 내보내기
+- ⭐ 즐겨찾기 (북마크)
+- 📊 기간별 통계 필터 (1주/1개월/3개월/전체)
+- 🎯 신규 사용자 온보딩 플로우
 
 ## 🔌 API 엔드포인트
 
