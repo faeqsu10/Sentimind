@@ -393,6 +393,75 @@ function requestId() {
 }
 
 // ---------------------------------------------------------------------------
+// Gemini API Fetch with Retry
+// ---------------------------------------------------------------------------
+
+class GeminiAPIError extends Error {
+  constructor(status, error, code) {
+    super(error);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+async function callGeminiAPI(requestBody, { rid, label = 'Gemini' } = {}) {
+  const MAX_RETRIES = config.retry.maxRetries;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      logger.debug(`${label} API 시도 (${attempt + 1}/${MAX_RETRIES + 1})`, { requestId: rid });
+
+      const response = await fetch(GEMINI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(config.timeout),
+      });
+
+      if (!response.ok) {
+        const status = response.status;
+        let geminiError;
+        try { geminiError = await response.json(); } catch { geminiError = { message: response.statusText }; }
+        logger.error(`${label} API 오류`, { requestId: rid, attempt: attempt + 1, status, error: geminiError });
+
+        if (status === 429 && attempt < MAX_RETRIES) {
+          const delay = calculateBackoffDelay(attempt);
+          logger.warn('API 한도 초과, 백오프 재시도', { requestId: rid, delayMs: Math.round(delay) });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        if (status === 429) throw new GeminiAPIError(429, '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', 'RATE_LIMITED');
+        if (status === 400 || status === 403) throw new GeminiAPIError(502, 'API 인증에 실패했습니다.', 'AI_SERVICE_ERROR');
+        throw new GeminiAPIError(502, `AI 서비스 오류 (${status})`, 'AI_SERVICE_ERROR');
+      }
+
+      const data = await response.json();
+      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const tokenCost = calculateTokenCost(data.usageMetadata);
+
+      if (!content) {
+        lastError = new Error('Empty Gemini response');
+        continue;
+      }
+
+      return { content, tokenCost };
+    } catch (err) {
+      if (err instanceof GeminiAPIError) throw err;
+      lastError = err;
+      logger.error(`${label} API 처리 중 오류`, { requestId: rid, attempt: attempt + 1, errorName: err.name, errorMessage: err.message });
+      if (err instanceof SyntaxError) continue;
+      if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+        throw new GeminiAPIError(504, '요청 시간이 초과되었습니다.', 'TIMEOUT');
+      }
+      break;
+    }
+  }
+
+  throw new GeminiAPIError(502, '분석에 실패했습니다. 다시 시도해주세요.', 'AI_SERVICE_ERROR');
+}
+
+// ---------------------------------------------------------------------------
 // Streak Calculator
 // ---------------------------------------------------------------------------
 
@@ -1024,106 +1093,43 @@ app.post('/api/analyze', authMiddleware, analyzeLimiter, async (req, res) => {
     },
   };
 
-  const MAX_RETRIES = config.retry.maxRetries;
-  let lastError = null;
+  try {
+    const { content, tokenCost } = await callGeminiAPI(requestBody, { rid, label: '감정 분석' });
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      logger.debug(`Gemini API 시도 (${attempt + 1}/${MAX_RETRIES + 1})`, { requestId: rid });
+    const result = parseGeminiResponse(content);
+    const enrichedResult = ontologyEngine
+      ? ontologyEngine.enrichEmotion(result.emotion, textV.value, result)
+      : result;
 
-      const response = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(config.timeout),
-      });
+    const duration = Date.now() - startTime;
+    logger.info('감정 분석 완료', {
+      requestId: rid,
+      emotion: enrichedResult.emotion,
+      confidence: enrichedResult.ontology?.confidence,
+      duration: `${duration}ms`,
+      ...(tokenCost && {
+        tokens: {
+          input: tokenCost.input, output: tokenCost.output,
+          thinking: tokenCost.thinking, cached: tokenCost.cached, total: tokenCost.total,
+        },
+        costUsd: {
+          input: tokenCost.inputCost, output: tokenCost.outputCost,
+          thinking: tokenCost.thinkingCost, total: tokenCost.totalCost,
+        },
+        model: config.gemini.model,
+      }),
+    });
 
-      if (!response.ok) {
-        const status = response.status;
-        let geminiError;
-        try { geminiError = await response.json(); } catch { geminiError = { message: response.statusText }; }
-
-        logger.error('Gemini API 오류', { requestId: rid, attempt: attempt + 1, status, error: geminiError });
-
-        if (status === 429 && attempt < MAX_RETRIES) {
-          const delay = calculateBackoffDelay(attempt);
-          logger.warn('API 한도 초과, 백오프 재시도', { requestId: rid, delayMs: Math.round(delay) });
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        if (status === 429) {
-          return res.status(429).json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' });
-        }
-        if (status === 400 || status === 403) {
-          return res.status(502).json({ error: 'API 인증에 실패했습니다.', code: 'AI_SERVICE_ERROR' });
-        }
-        return res.status(502).json({ error: `AI 서비스 오류 (${status})`, code: 'AI_SERVICE_ERROR' });
-      }
-
-      const data = await response.json();
-      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      const tokenCost = calculateTokenCost(data.usageMetadata);
-
-      if (!content) {
-        lastError = new Error('Empty Gemini response');
-        continue;
-      }
-
-      const result = parseGeminiResponse(content);
-      const enrichedResult = ontologyEngine
-        ? ontologyEngine.enrichEmotion(result.emotion, textV.value, result)
-        : result;
-
-      const duration = Date.now() - startTime;
-      logger.info('감정 분석 완료', {
-        requestId: rid,
-        emotion: enrichedResult.emotion,
-        confidence: enrichedResult.ontology?.confidence,
-        duration: `${duration}ms`,
-        ...(tokenCost && {
-          tokens: {
-            input: tokenCost.input,
-            output: tokenCost.output,
-            thinking: tokenCost.thinking,
-            cached: tokenCost.cached,
-            total: tokenCost.total,
-          },
-          costUsd: {
-            input: tokenCost.inputCost,
-            output: tokenCost.outputCost,
-            thinking: tokenCost.thinkingCost,
-            total: tokenCost.totalCost,
-          },
-          model: config.gemini.model,
-        }),
-      });
-
-      return res.json(enrichedResult);
-    } catch (err) {
-      lastError = err;
-      logger.error('API 처리 중 오류', {
-        requestId: rid,
-        attempt: attempt + 1,
-        errorName: err.name,
-        errorMessage: err.message,
-        ...(IS_PRODUCTION ? {} : { stack: err.stack }),
-      });
-      if (err instanceof SyntaxError) continue;
-      if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-        return res.status(504).json({ error: '요청 시간이 초과되었습니다.', code: 'TIMEOUT' });
-      }
-      break;
+    return res.json(enrichedResult);
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    if (err instanceof GeminiAPIError) {
+      logger.error('Gemini API 최종 실패', { requestId: rid, duration: `${duration}ms`, error: err.message });
+      return res.status(err.status).json({ error: err.message, code: err.code });
     }
+    logger.error('감정 분석 오류', { requestId: rid, duration: `${duration}ms`, error: err.message });
+    return res.status(500).json({ error: '응답을 해석하지 못했습니다. 다시 시도해주세요.', code: 'INTERNAL_ERROR' });
   }
-
-  const duration = Date.now() - startTime;
-  logger.error('Gemini API 최종 실패', {
-    requestId: rid,
-    attempts: MAX_RETRIES + 1,
-    lastError: lastError?.message,
-    duration: `${duration}ms`,
-  });
-  return res.status(500).json({ error: '응답을 해석하지 못했습니다. 다시 시도해주세요.', code: 'INTERNAL_ERROR' });
 });
 
 // ===========================================================================
@@ -1662,91 +1668,43 @@ app.get('/api/report', authMiddleware, analyzeLimiter, async (req, res) => {
       },
     };
 
-    const MAX_RETRIES = config.retry.maxRetries;
-    let lastError = null;
+    const { content, tokenCost } = await callGeminiAPI(requestBody, { rid, label: '리포트' });
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        logger.debug(`리포트 Gemini API 시도 (${attempt + 1}/${MAX_RETRIES + 1})`, { requestId: rid });
+    // JSON 파싱 (parseGeminiResponse는 emotion/emoji 필드를 강제하므로 직접 파싱)
+    let jsonStr = content.trim();
+    const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlock) jsonStr = codeBlock[1].trim();
+    const parsed = JSON.parse(jsonStr);
 
-        const response = await fetch(GEMINI_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
-          body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(config.timeout),
-        });
+    const report = {
+      period,
+      entryCount: entries.length,
+      summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+      emotionTrend: typeof parsed.emotionTrend === 'string' ? parsed.emotionTrend : '',
+      insight: typeof parsed.insight === 'string' ? parsed.insight : '',
+      encouragement: typeof parsed.encouragement === 'string' ? parsed.encouragement : '',
+    };
 
-        if (!response.ok) {
-          const status = response.status;
-          let geminiError;
-          try { geminiError = await response.json(); } catch { geminiError = { message: response.statusText }; }
-          logger.error('리포트 Gemini API 오류', { requestId: rid, attempt: attempt + 1, status, error: geminiError });
+    const duration = Date.now() - startTime;
+    logger.info('리포트 생성 완료', {
+      requestId: rid,
+      period,
+      entryCount: entries.length,
+      duration: `${duration}ms`,
+      ...(tokenCost && {
+        tokens: { input: tokenCost.input, output: tokenCost.output, total: tokenCost.total },
+        costUsd: { total: tokenCost.totalCost },
+      }),
+    });
 
-          if (status === 429 && attempt < MAX_RETRIES) {
-            const delay = calculateBackoffDelay(attempt);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-          if (status === 429) {
-            return res.status(429).json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' });
-          }
-          return res.status(502).json({ error: `AI 서비스 오류 (${status})`, code: 'AI_SERVICE_ERROR' });
-        }
-
-        const data = await response.json();
-        const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        const tokenCost = calculateTokenCost(data.usageMetadata);
-
-        if (!content) {
-          lastError = new Error('Empty Gemini response');
-          continue;
-        }
-
-        // JSON 파싱 (parseGeminiResponse는 emotion/emoji 필드를 강제하므로 직접 파싱)
-        let jsonStr = content.trim();
-        const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (codeBlock) jsonStr = codeBlock[1].trim();
-        const parsed = JSON.parse(jsonStr);
-
-        const report = {
-          period,
-          entryCount: entries.length,
-          summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-          emotionTrend: typeof parsed.emotionTrend === 'string' ? parsed.emotionTrend : '',
-          insight: typeof parsed.insight === 'string' ? parsed.insight : '',
-          encouragement: typeof parsed.encouragement === 'string' ? parsed.encouragement : '',
-        };
-
-        const duration = Date.now() - startTime;
-        logger.info('리포트 생성 완료', {
-          requestId: rid,
-          period,
-          entryCount: entries.length,
-          duration: `${duration}ms`,
-          ...(tokenCost && {
-            tokens: { input: tokenCost.input, output: tokenCost.output, total: tokenCost.total },
-            costUsd: { total: tokenCost.totalCost },
-          }),
-        });
-
-        res.set('Cache-Control', 'private, max-age=3600');
-        return res.json(report);
-
-      } catch (err) {
-        lastError = err;
-        logger.error('리포트 API 처리 중 오류', { requestId: rid, attempt: attempt + 1, errorMessage: err.message });
-        if (err instanceof SyntaxError) continue;
-        if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-          return res.status(504).json({ error: '요청 시간이 초과되었습니다.', code: 'TIMEOUT' });
-        }
-        break;
-      }
-    }
-
-    logger.error('리포트 최대 재시도 초과', { requestId: rid, error: lastError?.message });
-    return res.status(502).json({ error: 'AI 서비스에 연결할 수 없습니다.', code: 'AI_SERVICE_ERROR' });
+    res.set('Cache-Control', 'private, max-age=3600');
+    return res.json(report);
 
   } catch (err) {
+    if (err instanceof GeminiAPIError) {
+      logger.error('리포트 Gemini API 실패', { requestId: rid, error: err.message });
+      return res.status(err.status).json({ error: err.message, code: err.code });
+    }
     logger.error('리포트 조회 오류', { requestId: rid, error: err.message });
     return res.status(500).json({ error: '리포트 생성에 실패했습니다.', code: 'INTERNAL_ERROR' });
   }
