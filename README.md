@@ -43,7 +43,14 @@
 
 ```
 Sentimind/
-├── server-v2.js                 # Express 백엔드 v2 (Supabase + Auth)
+├── server-v2.js                 # Express 서버 코어 (미들웨어, 설정, 유틸)
+├── routes/                      # API 라우트 모듈
+│   ├── auth.js                 # 인증 (회원가입/로그인/탈퇴)
+│   ├── entries.js              # 일기 CRUD + 내보내기
+│   ├── analyze.js              # AI 감정 분석
+│   ├── profile.js              # 프로필 관리
+│   ├── stats.js                # 통계 조회
+│   └── report.js               # AI 리포트 생성
 ├── server.js                    # 레거시 백엔드 (JSON fallback)
 ├── public/
 │   └── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
