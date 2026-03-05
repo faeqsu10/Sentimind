@@ -3650,6 +3650,19 @@
     // ===== PWA Service Worker =====
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+      // Sync offline entries when back online
+      window.addEventListener('online', () => {
+        navigator.serviceWorker.controller?.postMessage('SYNC_OFFLINE');
+      });
+
+      // Listen for sync completion
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data?.type === 'OFFLINE_SYNC_COMPLETE') {
+          showError(`오프라인 일기 ${e.data.count}건이 동기화되었습니다.`);
+          loadEntries();
+        }
+      });
     }
 
     // ===== Start =====
