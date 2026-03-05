@@ -11,10 +11,16 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-const DATA_DIR = path.join(__dirname, 'data');
+// 환경에 따라 데이터 디렉토리 결정 (로컬/Vercel 호환성)
+const IS_PRODUCTION = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const DATA_DIR = IS_PRODUCTION ? '/tmp/sentimind-data' : path.join(__dirname, 'data');
 const ENTRIES_FILE = path.join(DATA_DIR, 'entries.json');
-const EMOTION_ONTOLOGY_FILE = path.join(DATA_DIR, 'emotion-ontology.json');
-const SITUATION_ONTOLOGY_FILE = path.join(DATA_DIR, 'situation-ontology.json');
+const EMOTION_ONTOLOGY_FILE = IS_PRODUCTION
+  ? path.join(__dirname, 'data', 'emotion-ontology.json')
+  : path.join(DATA_DIR, 'emotion-ontology.json');
+const SITUATION_ONTOLOGY_FILE = IS_PRODUCTION
+  ? path.join(__dirname, 'data', 'situation-ontology.json')
+  : path.join(DATA_DIR, 'situation-ontology.json');
 
 // Data directory and file initialization
 if (!fs.existsSync(DATA_DIR)) {
@@ -23,6 +29,56 @@ if (!fs.existsSync(DATA_DIR)) {
 if (!fs.existsSync(ENTRIES_FILE)) {
   fs.writeFileSync(ENTRIES_FILE, '[]', 'utf-8');
 }
+
+// ---------------------------------------------------------------------------
+// Logger (로깅 시스템)
+// ---------------------------------------------------------------------------
+
+const LOGS_DIR = IS_PRODUCTION ? '/tmp/sentimind-logs' : path.join(__dirname, 'logs');
+
+class Logger {
+  constructor() {
+    if (!IS_PRODUCTION && !fs.existsSync(LOGS_DIR)) {
+      fs.mkdirSync(LOGS_DIR, { recursive: true });
+    }
+  }
+
+  _formatTime() {
+    return new Date().toISOString().replace('T', ' ').slice(0, 19);
+  }
+
+  _log(level, message, data = null) {
+    const timestamp = this._formatTime();
+    const logLine = `[${timestamp}] ${level}: ${message}${data ? ` | ${JSON.stringify(data)}` : ''}`;
+
+    console.log(logLine);
+
+    // 로컬 환경에만 파일 저장
+    if (!IS_PRODUCTION) {
+      const logFile = path.join(LOGS_DIR, `app-${new Date().toISOString().split('T')[0]}.log`);
+      try {
+        fs.appendFileSync(logFile, logLine + '\n', 'utf-8');
+      } catch (err) {
+        console.error(`로그 파일 저장 실패: ${err.message}`);
+      }
+    }
+  }
+
+  info(message, data) {
+    this._log('INFO', message, data);
+  }
+
+  warn(message, data) {
+    this._log('WARN', message, data);
+  }
+
+  error(message, data) {
+    this._log('ERROR', message, data);
+  }
+}
+
+const logger = new Logger();
+logger.info('🚀 Sentimind 서버 시작', { environment: IS_PRODUCTION ? 'production' : 'development' });
 
 // ---------------------------------------------------------------------------
 // Ontology Engine
@@ -234,11 +290,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // POST /api/analyze - Analyze diary text via Gemini API
 app.post('/api/analyze', async (req, res) => {
-  if (!req.body) return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+  logger.info('POST /api/analyze 요청 수신', { bodySize: JSON.stringify(req.body).length });
+
+  if (!req.body) {
+    logger.warn('요청 본문 없음');
+    return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+  }
   const { text } = req.body;
 
   // Input validation
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    logger.warn('유효하지 않은 입력', { textLength: text?.length });
     return res.status(400).json({ error: '일기 내용을 입력해주세요.' });
   }
   if (text.length > 500) {
@@ -329,16 +391,29 @@ app.post('/api/analyze', async (req, res) => {
 
 // GET /api/entries - List all diary entries
 app.get('/api/entries', async (req, res) => {
-  const entries = await readEntries();
-  res.json(entries);
+  logger.info('GET /api/entries 요청 수신');
+  try {
+    const entries = await readEntries();
+    logger.info('일기 목록 조회 성공', { count: entries.length });
+    res.json(entries);
+  } catch (err) {
+    logger.error('일기 목록 조회 실패', { error: err.message });
+    res.status(500).json({ error: '일기 목록 조회 실패' });
+  }
 });
 
 // POST /api/entries - Save a new diary entry
 app.post('/api/entries', async (req, res) => {
-  if (!req.body) return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+  logger.info('POST /api/entries 요청 수신');
+
+  if (!req.body) {
+    logger.warn('요청 본문 없음');
+    return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+  }
   const { text, emotion, emoji, message, advice } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    logger.warn('유효하지 않은 입력 (POST 저장)');
     return res.status(400).json({ error: '일기 내용을 입력해주세요.' });
   }
   if (text.length > 500) {
@@ -365,21 +440,32 @@ app.post('/api/entries', async (req, res) => {
 // DELETE /api/entries/:id - Delete a diary entry
 app.delete('/api/entries/:id', async (req, res) => {
   const { id } = req.params;
-  const entries = await readEntries();
-  const index = entries.findIndex((e) => e.id === id);
+  logger.info('DELETE /api/entries/:id 요청 수신', { id });
 
-  if (index === -1) {
-    return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.' });
+  try {
+    const entries = await readEntries();
+    const index = entries.findIndex((e) => e.id === id);
+
+    if (index === -1) {
+      logger.warn('삭제할 일기를 찾을 수 없음', { id });
+      return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.' });
+    }
+
+    entries.splice(index, 1);
+    await writeEntries(entries);
+
+    logger.info('일기 삭제 성공', { id, remainCount: entries.length });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('일기 삭제 실패', { id, error: err.message });
+    res.status(500).json({ error: '일기 삭제 실패' });
   }
-
-  entries.splice(index, 1);
-  await writeEntries(entries);
-
-  res.json({ success: true });
 });
 
 // GET /api/stats - Analytics and insights (Phase 3)
 app.get('/api/stats', async (req, res) => {
+  logger.info('GET /api/stats 요청 수신');
+
   try {
     const entries = await readEntries();
 
@@ -455,10 +541,23 @@ app.use((err, req, res, next) => {
 // ---------------------------------------------------------------------------
 
 async function start() {
-  await loadOntologies();
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
+  try {
+    await loadOntologies();
+    app.listen(PORT, () => {
+      logger.info('✅ 서버 시작 완료', {
+        port: PORT,
+        url: `http://localhost:${PORT}`,
+        environment: IS_PRODUCTION ? 'production' : 'development',
+        dataDir: DATA_DIR
+      });
+    });
+  } catch (err) {
+    logger.error('서버 시작 실패', { error: err.message });
+    process.exit(1);
+  }
 }
 
-start().catch(console.error);
+start().catch((err) => {
+  logger.error('예상치 못한 에러', { error: err.message });
+  process.exit(1);
+});
