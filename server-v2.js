@@ -855,6 +855,7 @@ app.get('/api/profile', authMiddleware, async (req, res) => {
     const { count } = await req.supabaseClient
       .from('entries')
       .select('*', { count: 'exact', head: true })
+      .eq('user_id', req.user.id)
       .is('deleted_at', null);
 
     res.json({
@@ -1086,6 +1087,7 @@ app.get('/api/entries', authMiddleware, async (req, res) => {
       let query = req.supabaseClient
         .from('entries')
         .select('*', { count: 'exact' })
+        .eq('user_id', req.user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -1224,6 +1226,7 @@ app.patch('/api/entries/:id', authMiddleware, async (req, res) => {
       .from('entries')
       .select('*')
       .eq('id', id)
+      .eq('user_id', req.user.id)
       .single();
 
     if (fetchErr || !existing) {
@@ -1296,11 +1299,12 @@ app.delete('/api/entries/:id', authMiddleware, async (req, res) => {
   try {
     // Supabase path: soft delete
     if (USE_SUPABASE && req.supabaseClient) {
-      // Check entry exists first
+      // Check entry exists and belongs to user
       const { data: existing, error: fetchErr } = await req.supabaseClient
         .from('entries')
         .select('id')
         .eq('id', id)
+        .eq('user_id', req.user.id)
         .single();
 
       if (fetchErr || !existing) {
@@ -1358,6 +1362,7 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
         req.supabaseClient
           .from('entries')
           .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
+          .eq('user_id', req.user.id)
           .is('deleted_at', null)
           .order('created_at', { ascending: false }),
         req.supabaseClient
@@ -1493,6 +1498,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
       const { data, error } = await req.supabaseClient
         .from('entries')
         .select('text, emotion, emoji, message, advice, confidence_score, created_at')
+        .eq('user_id', req.user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
       if (error) throw error;
