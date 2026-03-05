@@ -67,6 +67,102 @@
       padding: 2rem 0 3rem;
     }
 
+
+    /* ===== 2-Column Layout (Desktop) ===== */
+    .app-layout { display: block; }
+    .sidebar { display: none; }
+
+    @media (min-width: 768px) {
+      .app-container { max-width: 1200px; }
+      .app-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 2rem;
+        align-items: start;
+      }
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        position: sticky;
+        top: 1rem;
+      }
+    }
+    @media (min-width: 1024px) {
+      .app-layout { grid-template-columns: 1fr 380px; }
+    }
+
+    /* Sidebar Cards */
+    .sidebar-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 1.25rem;
+      animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .sidebar-card-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-divider);
+    }
+
+    /* Sidebar: Latest Analysis */
+    .sidebar-latest { text-align: center; }
+    .sidebar-latest-emoji { font-size: 2.5rem; line-height: 1; margin-bottom: 0.5rem; }
+    .sidebar-latest-emotion { font-size: 0.95rem; font-weight: 500; color: var(--color-text); margin-bottom: 0.25rem; }
+    .sidebar-latest-message { font-family: var(--font-diary); font-size: 0.85rem; color: var(--color-text-light); line-height: 1.6; }
+    .sidebar-latest-time { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.5rem; }
+    .sidebar-empty { text-align: center; color: var(--color-text-muted); font-size: 0.85rem; padding: 1rem 0; }
+
+    /* Sidebar: Today Summary */
+    .sidebar-today-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sidebar-today-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.85rem; color: var(--color-text);
+      padding: 0.4rem 0.6rem;
+      background: var(--color-surface-warm);
+      border-radius: var(--radius-sm);
+    }
+    .sidebar-today-item-emoji { font-size: 1.1rem; flex-shrink: 0; }
+    .sidebar-today-item-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Sidebar: Streak */
+    .sidebar-streak { display: flex; align-items: center; gap: 1rem; }
+    .streak-number { font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1; min-width: 3rem; text-align: center; }
+    .streak-info { flex: 1; }
+    .streak-label { font-size: 0.9rem; font-weight: 500; color: var(--color-text); }
+    .streak-sub { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+    .streak-dots { display: flex; gap: 4px; margin-top: 0.75rem; }
+    .streak-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--color-border); transition: background 300ms ease;
+    }
+    .streak-dot.active { background: var(--color-primary); }
+    .streak-dot.today { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-primary); }
+
+    /* Sidebar: Weekly Mini Chart (1024px+) */
+    .sidebar-weekly-chart { display: none; }
+    @media (min-width: 1024px) {
+      .sidebar-weekly-chart { display: block; }
+    }
+    .mini-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding-top: 0.5rem; }
+    .mini-chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+    .mini-chart-bar { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+    .mini-chart-bar-fill {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: var(--color-primary); min-height: 2px;
+      transition: height 600ms cubic-bezier(0.25,0.46,0.45,0.94);
+      opacity: 0.7;
+    }
+    .mini-chart-bar-fill.today-bar { opacity: 1; background: var(--color-primary-hover); }
+    .mini-chart-label { font-size: 0.65rem; color: var(--color-text-muted); text-align: center; }
+    .mini-chart-count { font-size: 0.6rem; color: var(--color-text-muted); text-align: center; min-height: 0.8rem; }
+
     /* ===== Auth Screen ===== */
     .auth-screen {
       max-width: 400px;
@@ -2168,12 +2264,13 @@
     </header>
 
     <nav class="tab-nav" role="tablist" aria-label="메뉴">
-      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary">일기</button>
-      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-calendar" id="tab-calendar">달력</button>
-      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-dashboard" id="tab-dashboard">통계</button>
-      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-profile" id="tab-profile">프로필</button>
+      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary" tabindex="0">일기</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-calendar" id="tab-calendar" tabindex="-1">달력</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-dashboard" id="tab-dashboard" tabindex="-1">통계</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-profile" id="tab-profile" tabindex="-1">프로필</button>
     </nav>
 
+    <div class="app-layout">
     <main>
       <div id="panel-diary" role="tabpanel" aria-labelledby="tab-diary">
       <section class="diary-input" aria-label="일기 작성">
@@ -2255,7 +2352,7 @@
           <div class="filter-chips" id="filterChips" role="group" aria-label="감정 필터"></div>
           <p class="filter-result-count" id="filterResultCount" hidden aria-live="polite"></p>
         </div>
-        <div id="historyDetail" hidden></div>
+        <div id="historyDetail" hidden aria-live="polite"></div>
         <ul class="history-list" id="historyList" role="list"></ul>
         <p class="empty-state" id="emptyState" hidden>아직 작성한 일기가 없어요.</p>
       </section>
@@ -2401,6 +2498,46 @@
       </div>
     </main>
 
+    <aside class="sidebar" id="appSidebar" aria-label="사이드바">
+      <!-- Latest Analysis Result -->
+      <div class="sidebar-card" id="sidebarLatest">
+        <h2 class="sidebar-card-title">최근 감정 분석</h2>
+        <div id="sidebarLatestContent">
+          <p class="sidebar-empty">아직 분석 결과가 없어요</p>
+        </div>
+      </div>
+
+      <!-- Today's Emotion Summary -->
+      <div class="sidebar-card" id="sidebarToday">
+        <h2 class="sidebar-card-title">오늘의 감정</h2>
+        <div id="sidebarTodayContent">
+          <p class="sidebar-empty">오늘 작성한 일기가 없어요</p>
+        </div>
+      </div>
+
+      <!-- Writing Streak -->
+      <div class="sidebar-card" id="sidebarStreak">
+        <h2 class="sidebar-card-title">작성 스트릭</h2>
+        <div id="sidebarStreakContent">
+          <div class="sidebar-streak">
+            <span class="streak-number" id="streakCount">0</span>
+            <div class="streak-info">
+              <p class="streak-label">연속 작성일</p>
+              <p class="streak-sub" id="streakSub">오늘 일기를 작성해보세요</p>
+            </div>
+          </div>
+          <div class="streak-dots" id="streakDots"></div>
+        </div>
+      </div>
+
+      <!-- Weekly Mini Chart (1024px+) -->
+      <div class="sidebar-card sidebar-weekly-chart" id="sidebarWeeklyChart">
+        <h2 class="sidebar-card-title">이번 주 감정</h2>
+        <div class="mini-chart" id="miniChartContent"></div>
+      </div>
+    </aside>
+    </div>
+
     <footer class="app-footer">
       <p>당신의 하루를 응원합니다</p>
       <p style="font-size:0.7rem; margin-top:0.3rem; opacity:0.6;">
@@ -2444,6 +2581,176 @@
   </div>
 
   <script>
+
+    // ===== Sidebar (Desktop 2-Column) =====
+    let latestAnalysisResult = null;
+
+    function updateSidebar() {
+      updateSidebarLatest();
+      updateSidebarToday();
+      updateSidebarStreak();
+      updateSidebarWeeklyChart();
+    }
+
+    function updateSidebarLatest() {
+      const container = document.getElementById('sidebarLatestContent');
+      if (!container) return;
+
+      if (latestAnalysisResult) {
+        const r = latestAnalysisResult;
+        const timeStr = r._time ? new Intl.DateTimeFormat('ko-KR', {
+          hour: '2-digit', minute: '2-digit'
+        }).format(new Date(r._time)) : '';
+
+        container.innerHTML =
+          '<div class="sidebar-latest">' +
+            '<div class="sidebar-latest-emoji" aria-hidden="true">' + escapeHtml(r.emoji || '') + '</div>' +
+            '<p class="sidebar-latest-emotion">' + escapeHtml(r.emotion || '') + '</p>' +
+            '<p class="sidebar-latest-message">' + escapeHtml(r.message || '') + '</p>' +
+            (timeStr ? '<p class="sidebar-latest-time">' + escapeHtml(timeStr) + '</p>' : '') +
+          '</div>';
+      } else if (allEntries && allEntries.length > 0) {
+        const latest = allEntries[0];
+        const dateStr = latest.date ? new Intl.DateTimeFormat('ko-KR', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }).format(new Date(latest.date)) : '';
+
+        container.innerHTML =
+          '<div class="sidebar-latest">' +
+            '<div class="sidebar-latest-emoji" aria-hidden="true">' + escapeHtml(latest.emoji || '') + '</div>' +
+            '<p class="sidebar-latest-emotion">' + escapeHtml(latest.emotion || '') + '</p>' +
+            '<p class="sidebar-latest-message">' + escapeHtml(latest.message || '') + '</p>' +
+            (dateStr ? '<p class="sidebar-latest-time">' + escapeHtml(dateStr) + '</p>' : '') +
+          '</div>';
+      } else {
+        container.innerHTML = '<p class="sidebar-empty">아직 분석 결과가 없어요</p>';
+      }
+    }
+
+    function updateSidebarToday() {
+      const container = document.getElementById('sidebarTodayContent');
+      if (!container) return;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayEntries = (allEntries || []).filter(e => {
+        if (!e.date) return false;
+        return e.date.startsWith(todayStr);
+      });
+
+      if (todayEntries.length === 0) {
+        container.innerHTML = '<p class="sidebar-empty">오늘 작성한 일기가 없어요</p>';
+        return;
+      }
+
+      const listItems = todayEntries.slice(0, 5).map(e =>
+        '<li class="sidebar-today-item">' +
+          '<span class="sidebar-today-item-emoji" aria-hidden="true">' + escapeHtml(e.emoji || '') + '</span>' +
+          '<span class="sidebar-today-item-text">' + escapeHtml(e.emotion || '') + ' — ' + escapeHtml((e.text || '').substring(0, 30)) + '</span>' +
+        '</li>'
+      ).join('');
+
+      container.innerHTML =
+        '<ul class="sidebar-today-list">' + listItems + '</ul>';
+    }
+
+    function updateSidebarStreak() {
+      const streakCountEl = document.getElementById('streakCount');
+      const streakSubEl = document.getElementById('streakSub');
+      const streakDotsEl = document.getElementById('streakDots');
+      if (!streakCountEl) return;
+
+      const entries = allEntries || [];
+      const dateSet = new Set();
+      entries.forEach(e => {
+        if (e.date) dateSet.add(e.date.split('T')[0]);
+      });
+
+      // Calculate streak
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let streak = 0;
+      let checkDate = new Date(today);
+
+      // If no entry today, check if yesterday starts the streak
+      const todayStr = checkDate.toISOString().split('T')[0];
+      if (!dateSet.has(todayStr)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+
+      while (true) {
+        const ds = checkDate.toISOString().split('T')[0];
+        if (dateSet.has(ds)) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+
+      streakCountEl.textContent = streak;
+
+      const hasTodayEntry = dateSet.has(todayStr);
+      if (streak === 0) {
+        streakSubEl.textContent = '오늘 일기를 작성해보세요';
+      } else if (hasTodayEntry) {
+        streakSubEl.textContent = '오늘도 작성 완료!';
+      } else {
+        streakSubEl.textContent = '오늘 작성하면 ' + (streak + 1) + '일 연속!';
+      }
+
+      // Render last 7 days dots
+      if (streakDotsEl) {
+        const dots = [];
+        const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const ds = d.toISOString().split('T')[0];
+          const active = dateSet.has(ds);
+          const isToday = i === 0;
+          const cls = 'streak-dot' + (active ? ' active' : '') + (isToday ? ' today' : '');
+          dots.push('<span class="' + cls + '" title="' + dayLabels[d.getDay()] + ' ' + ds + '" aria-label="' + ds + (active ? ' 작성됨' : ' 미작성') + '"></span>');
+        }
+        streakDotsEl.innerHTML = dots.join('');
+      }
+    }
+
+    function updateSidebarWeeklyChart() {
+      const container = document.getElementById('miniChartContent');
+      if (!container) return;
+
+      const entries = allEntries || [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+
+      // Count entries per day for last 7 days
+      const dayCounts = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const ds = d.toISOString().split('T')[0];
+        const count = entries.filter(e => e.date && e.date.startsWith(ds)).length;
+        dayCounts.push({ label: dayLabels[d.getDay()], count, isToday: i === 0 });
+      }
+
+      const maxCount = Math.max(...dayCounts.map(d => d.count), 1);
+
+      const bars = dayCounts.map(d => {
+        const heightPct = (d.count / maxCount) * 100;
+        const todayCls = d.isToday ? ' today-bar' : '';
+        return '<div class="mini-chart-bar-wrap">' +
+          '<div class="mini-chart-count">' + (d.count > 0 ? d.count : '') + '</div>' +
+          '<div class="mini-chart-bar">' +
+            '<div class="mini-chart-bar-fill' + todayCls + '" style="height:' + heightPct + '%"></div>' +
+          '</div>' +
+          '<div class="mini-chart-label">' + d.label + '</div>' +
+        '</div>';
+      }).join('');
+
+      container.innerHTML = bars;
+    }
+
     // ===== Auth State =====
     let currentUser = null;
     let accessToken = null;
@@ -2495,7 +2802,13 @@
         ...(accessToken && { 'Authorization': 'Bearer ' + accessToken }),
         ...options.headers,
       };
-      const response = await fetch(url, { ...options, headers });
+      let response;
+      try {
+        response = await fetch(url, { ...options, headers });
+      } catch (networkErr) {
+        showToast('네트워크 연결을 확인해주세요.', 'error');
+        throw { userMessage: '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.' };
+      }
       if (response.status === 401) {
         // Try to refresh the token
         const refreshed = await tryRefreshToken();
@@ -3041,6 +3354,7 @@
 
       loadEntries();
       renderProfileScreen();
+      updateSidebar();
 
       if (!diaryText._listenerAttached) {
         diaryText.addEventListener('input', () => {
@@ -3223,6 +3537,7 @@
 
     async function loadEntries() {
       // Show skeleton while loading
+      historyList.setAttribute('aria-busy', 'true');
       showSkeleton('entries');
       try {
         const response = await fetchWithAuth('/api/entries');
@@ -3232,6 +3547,8 @@
       } catch (err) {
         renderHistory([]);
         if (!err.userMessage) showError('일기 목록을 불러올 수 없습니다.');
+      } finally {
+        historyList.removeAttribute('aria-busy');
       }
     }
 
@@ -3303,6 +3620,10 @@
       // Emoji bounce animation
       responseEmoji.classList.remove('pop');
       requestAnimationFrame(() => { responseEmoji.classList.add('pop'); });
+
+      // Update sidebar with latest result
+      latestAnalysisResult = Object.assign({}, result, { _time: new Date().toISOString() });
+      updateSidebar();
 
       // Auto-scroll to response card
       setTimeout(() => { responseCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
@@ -3467,6 +3788,7 @@
 
     function renderHistory(entries) {
       allEntries = entries;
+      updateSidebar();
       buildFilterChips(entries);
       applyFilters();
     }
@@ -3999,6 +4321,8 @@
     async function loadDashboard(period) {
       if (period !== undefined) activePeriod = period;
       const queryParam = activePeriod !== 'all' ? '?period=' + activePeriod : '';
+      const dashEl = document.getElementById('dashboardContent');
+      if (dashEl) dashEl.setAttribute('aria-busy', 'true');
       showSkeleton('stats');
       try {
         const response = await fetchWithAuth('/api/stats' + queryParam);
@@ -4006,7 +4330,10 @@
         const stats = await response.json();
         renderDashboard(stats);
       } catch {
-        summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
+        const summaryEl = document.getElementById('dashboardSummary');
+        if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
+      } finally {
+        if (dashEl) dashEl.removeAttribute('aria-busy');
       }
     }
 
@@ -4251,8 +4578,13 @@
       container.innerHTML = '';
       if (items.length === 0) {
         container.innerHTML = '<p style="font-size:0.8rem;color:var(--color-text-muted);">데이터가 없습니다.</p>';
+        container.setAttribute('aria-label', '데이터가 없습니다');
         return;
       }
+
+      // Provide text alternative for screen readers
+      const textAlt = items.map(i => i[labelKey] + ' ' + i[countKey] + '건').join(', ');
+      container.setAttribute('aria-label', (isSituation ? '상황 분포: ' : '감정 분포: ') + textAlt);
 
       const maxCount = Math.max(...items.map(i => i[countKey]));
 
