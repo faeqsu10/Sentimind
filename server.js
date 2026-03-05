@@ -4,12 +4,19 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+// Supabase 클라이언트 초기화
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const USE_SUPABASE = SUPABASE_URL && SUPABASE_ANON_KEY; // Supabase 활성화 여부
+const supabase = USE_SUPABASE ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // 환경에 따라 데이터 디렉토리 결정 (로컬/Vercel 호환성)
 const IS_PRODUCTION = process.env.VERCEL || process.env.NODE_ENV === 'production';
@@ -231,14 +238,45 @@ async function loadOntologies() {
 
 async function readEntries() {
   try {
+    // Supabase 사용 (활성화된 경우)
+    if (USE_SUPABASE) {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    // Fallback: JSON 파일 (Supabase 미활성화)
     const raw = await fsPromises.readFile(ENTRIES_FILE, 'utf-8');
     return JSON.parse(raw);
-  } catch {
+  } catch (err) {
+    logger.warn('readEntries 실패', { error: err.message, useSupabase: USE_SUPABASE });
     return [];
   }
 }
 
 async function writeEntries(entries) {
+  // Supabase 사용 (활성화된 경우)
+  if (USE_SUPABASE) {
+    try {
+      for (const entry of entries) {
+        // id 기준 upsert (insert or update)
+        await supabase
+          .from('entries')
+          .upsert({ ...entry }, { onConflict: 'id' });
+      }
+      logger.info('Supabase에 저장 완료', { count: entries.length });
+      return;
+    } catch (err) {
+      logger.error('Supabase 저장 실패', { error: err.message });
+      throw err;
+    }
+  }
+
+  // Fallback: JSON 파일 저장
   writeLock = writeLock.then(() =>
     fsPromises.writeFile(ENTRIES_FILE, JSON.stringify(entries, null, 2), 'utf-8')
   );
