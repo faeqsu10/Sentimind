@@ -1282,6 +1282,105 @@
     .btn-edit-cancel:hover { background: var(--color-surface-warm); }
     .edit-char-count { font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.3rem; }
 
+    /* Keyboard shortcut help button & modal */
+    .shortcut-help-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 900;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--color-border);
+      border-radius: 50%;
+      background: var(--color-surface);
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--color-text-light);
+      transition: background 200ms, box-shadow 200ms, transform 200ms;
+    }
+    .shortcut-help-btn:hover {
+      background: var(--color-surface-warm);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+    .shortcut-help-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+    @media (hover: none), (pointer: coarse) {
+      .shortcut-help-btn { display: none; }
+    }
+
+    .shortcut-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      animation: fadeIn 200ms ease;
+    }
+    .shortcut-modal-overlay[hidden] { display: none; }
+    .shortcut-modal {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-width: 420px; width: 100%;
+      animation: scaleIn 300ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .shortcut-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--color-divider);
+    }
+    .shortcut-modal-title {
+      font-family: var(--font-body);
+      font-size: 1rem; font-weight: 600;
+      color: var(--color-text);
+    }
+    .shortcut-modal-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-muted); font-size: 1.3rem;
+      padding: 4px 8px; border-radius: var(--radius-sm);
+    }
+    .shortcut-modal-close:hover { color: var(--color-text); background: var(--color-surface-warm); }
+    .shortcut-modal-body {
+      padding: 1rem 1.25rem;
+    }
+    .shortcut-list {
+      list-style: none;
+      display: flex; flex-direction: column;
+      gap: 0.6rem;
+    }
+    .shortcut-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem;
+      color: var(--color-text);
+    }
+    .shortcut-list .shortcut-keys {
+      display: flex; gap: 4px; align-items: center;
+      flex-shrink: 0;
+      margin-left: 1rem;
+    }
+    .shortcut-list kbd {
+      font-size: 0.7rem;
+      padding: 2px 7px;
+    }
+    .shortcut-list .shortcut-sep {
+      font-size: 0.65rem;
+      color: var(--color-text-muted);
+    }
+    .shortcut-modal-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--color-divider);
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
     /* Dark mode */
     [data-theme="dark"] {
       --color-bg: #1e1a17;
@@ -1903,7 +2002,7 @@
           <div class="form-actions">
             <button type="button" class="btn-expand" id="expandBtn">확장</button>
             <span class="char-count" id="charCount" aria-live="polite"></span>
-            <p class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 전송</p>
+            <p class="shortcut-hint" id="submitShortcutHint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 전송</p>
             <button type="submit" class="btn-submit" id="submitBtn" disabled>
               <span>보내기</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2127,6 +2226,26 @@
         <button class="legal-modal-close" id="legalModalClose" aria-label="닫기">&times;</button>
       </div>
       <div class="legal-modal-body" id="legalModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcut Help -->
+  <button class="shortcut-help-btn" id="shortcutHelpBtn" type="button" aria-label="키보드 단축키 도움말" title="키보드 단축키">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/>
+    </svg>
+  </button>
+
+  <div class="shortcut-modal-overlay" id="shortcutModal" hidden>
+    <div class="shortcut-modal" role="dialog" aria-labelledby="shortcutModalTitle" aria-modal="true">
+      <div class="shortcut-modal-header">
+        <h2 class="shortcut-modal-title" id="shortcutModalTitle">키보드 단축키</h2>
+        <button class="shortcut-modal-close" id="shortcutModalClose" aria-label="닫기">&times;</button>
+      </div>
+      <div class="shortcut-modal-body">
+        <ul class="shortcut-list" id="shortcutList"></ul>
+      </div>
+      <div class="shortcut-modal-footer" id="shortcutModalFooter"></div>
     </div>
   </div>
 
@@ -3487,31 +3606,23 @@
     });
 
     // ===== Dashboard =====
-    let cachedStats = null;
-    let activePeriodDays = 0;
+    // Map data-days attribute to API period parameter
+    const PERIOD_MAP = { '0': 'all', '7': '7d', '30': '30d', '90': '90d' };
+    let activePeriod = 'all';
 
-    async function loadDashboard() {
+    async function loadDashboard(period) {
+      if (period !== undefined) activePeriod = period;
+      const queryParam = activePeriod !== 'all' ? '?period=' + activePeriod : '';
       const summaryEl = document.getElementById('dashboardSummary');
       summaryEl.innerHTML = '<div class="skeleton skeleton-summary"></div><div class="skeleton skeleton-summary" style="margin-top:0.5rem;"></div>';
       try {
-        const response = await fetchWithAuth('/api/stats');
+        const response = await fetchWithAuth('/api/stats' + queryParam);
         if (!response.ok) throw new Error();
-        cachedStats = await response.json();
-        renderDashboard(filterStatsByPeriod(cachedStats, activePeriodDays));
+        const stats = await response.json();
+        renderDashboard(stats);
       } catch {
         summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
       }
-    }
-
-    function filterStatsByPeriod(stats, days) {
-      if (!days || days === 0) return stats;
-      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      const filtered = (stats.latest_entries || []).filter(e => new Date(e.date || e.created_at) >= cutoff);
-      // Recompute basic stats from filtered entries
-      const emotionFreq = {};
-      filtered.forEach(e => { emotionFreq[e.emotion] = (emotionFreq[e.emotion] || 0) + 1; });
-      const topEmotions = Object.entries(emotionFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([emotion, count]) => ({ emotion, count }));
-      return { ...stats, total_entries: filtered.length, top_emotions: topEmotions, latest_entries: filtered.slice(0, 5) };
     }
 
     // Period filter click handler
@@ -3520,8 +3631,8 @@
       if (!chip) return;
       document.querySelectorAll('#periodFilter .period-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      activePeriodDays = parseInt(chip.dataset.days) || 0;
-      if (cachedStats) renderDashboard(filterStatsByPeriod(cachedStats, activePeriodDays));
+      const days = chip.dataset.days || '0';
+      loadDashboard(PERIOD_MAP[days] || 'all');
     });
 
     // AI 감정 리포트 버튼 핸들러
@@ -4061,29 +4172,121 @@
     });
 
     // ===== Keyboard Shortcuts =====
+    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const modLabel = isMac ? 'Cmd' : 'Ctrl';
+
+    const shortcutHelpBtn = document.getElementById('shortcutHelpBtn');
+    const shortcutModal = document.getElementById('shortcutModal');
+    const shortcutModalClose = document.getElementById('shortcutModalClose');
+
+    // Build shortcut list dynamically based on OS
+    const shortcuts = [
+      { keys: [modLabel, 'Enter'], desc: '일기 분석 제출' },
+      { keys: [modLabel, '1'], desc: '일기 탭으로 이동' },
+      { keys: [modLabel, '2'], desc: '달력 탭으로 이동' },
+      { keys: [modLabel, '3'], desc: '통계 탭으로 이동' },
+      { keys: [modLabel, '4'], desc: '프로필 탭으로 이동' },
+      { keys: [modLabel, 'D'], desc: '다크 모드 전환' },
+      { keys: [modLabel, 'N'], desc: '새 일기 작성' },
+      { keys: ['Esc'], desc: '모달 닫기' },
+    ];
+
+    function renderShortcutList() {
+      const list = document.getElementById('shortcutList');
+      list.innerHTML = shortcuts.map(s => {
+        const keysHtml = s.keys
+          .map(k => `<kbd>${k}</kbd>`)
+          .join('<span class="shortcut-sep">+</span>');
+        return `<li><span>${s.desc}</span><span class="shortcut-keys">${keysHtml}</span></li>`;
+      }).join('');
+      document.getElementById('shortcutModalFooter').textContent =
+        isMac ? 'Mac: Cmd 키 사용' : 'Windows/Linux: Ctrl 키 사용';
+    }
+
+    function openShortcutModal() {
+      renderShortcutList();
+      shortcutModal.hidden = false;
+      shortcutModalClose.focus();
+    }
+
+    function closeShortcutModal() {
+      shortcutModal.hidden = true;
+      shortcutHelpBtn.focus();
+    }
+
+    // Update submit hint for Mac users
+    if (isMac) {
+      const hint = document.getElementById('submitShortcutHint');
+      if (hint) hint.innerHTML = '<kbd>Cmd</kbd>+<kbd>Enter</kbd> 전송';
+    }
+
+    shortcutHelpBtn.addEventListener('click', openShortcutModal);
+    shortcutModalClose.addEventListener('click', closeShortcutModal);
+    shortcutModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeShortcutModal();
+    });
+
+    // Determine if an input/textarea is currently focused
+    function isTyping() {
+      const tag = document.activeElement?.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable;
+    }
+
     document.addEventListener('keydown', (e) => {
-      // Ctrl+Enter or Cmd+Enter: submit diary
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !appContainer.hidden) {
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      const otherMod = isMac ? e.ctrlKey : e.metaKey;
+
+      // Ctrl/Cmd + Enter: submit diary (works even when typing)
+      if (mod && !otherMod && e.key === 'Enter' && !appContainer.hidden) {
         const text = diaryText.value.trim();
         if (text && !submitBtn.disabled) {
           e.preventDefault();
           diaryForm.dispatchEvent(new Event('submit', { cancelable: true }));
         }
+        return;
       }
-      // Escape: close modals/details
+
+      // Escape: close modals/details (highest priority: shortcut modal -> legal -> history detail)
       if (e.key === 'Escape') {
-        if (!document.getElementById('legalModal').hidden) {
+        if (!shortcutModal.hidden) {
+          closeShortcutModal();
+        } else if (!document.getElementById('legalModal').hidden) {
           closeLegalModal();
         } else if (!historyDetail.hidden) {
           historyDetail.hidden = true;
         }
+        return;
       }
-      // Alt+1/2/3/4: switch tabs
-      if (e.altKey && !e.ctrlKey && !e.metaKey) {
-        if (e.key === '1') { e.preventDefault(); switchTab(tabDiary); }
-        if (e.key === '2') { e.preventDefault(); switchTab(tabCalendar); }
-        if (e.key === '3') { e.preventDefault(); switchTab(tabDashboard); }
-        if (e.key === '4') { e.preventDefault(); switchTab(tabProfile); }
+
+      // All remaining shortcuts require mod key and should NOT fire when typing in inputs
+      if (!mod || otherMod || e.altKey) return;
+      if (isTyping()) return;
+      if (appContainer.hidden) return;
+
+      const tabMap = { '1': tabDiary, '2': tabCalendar, '3': tabDashboard, '4': tabProfile };
+
+      // Ctrl/Cmd + 1~4: switch tabs
+      if (tabMap[e.key]) {
+        e.preventDefault();
+        switchTab(tabMap[e.key]);
+        return;
+      }
+
+      // Ctrl/Cmd + D: toggle dark mode
+      if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        darkToggle.checked = !darkToggle.checked;
+        darkToggle.dispatchEvent(new Event('change'));
+        return;
+      }
+
+      // Ctrl/Cmd + N: new diary entry (switch to diary tab + focus textarea)
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        switchTab(tabDiary);
+        diaryText.value = '';
+        diaryText.focus();
+        return;
       }
     });
 
