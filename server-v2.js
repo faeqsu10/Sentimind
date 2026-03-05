@@ -751,6 +751,77 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   });
 });
 
+// DELETE /api/auth/account - 회원탈퇴
+app.delete('/api/auth/account', authMiddleware, async (req, res) => {
+  const rid = requestId();
+  const userId = req.user?.id;
+
+  logger.info('DELETE /api/auth/account', { requestId: rid, userId });
+
+  if (!USE_SUPABASE || !supabaseAdmin) {
+    return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+  }
+
+  try {
+    // 1. Soft-delete all user entries
+    await req.supabaseClient
+      .from('entries')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .is('deleted_at', null);
+
+    // 2. Delete user profile
+    await supabaseAdmin
+      .from('user_profiles')
+      .delete()
+      .eq('id', userId);
+
+    // 3. Delete auth user (requires admin client)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) {
+      logger.error('회원탈퇴 실패', { requestId: rid, error: error.message });
+      return res.status(500).json({ error: '회원탈퇴 처리에 실패했습니다.', code: 'INTERNAL_ERROR' });
+    }
+
+    logSecurityEvent('ACCOUNT_DELETED', { requestId: rid, userId, ip: req.ip });
+    logger.info('회원탈퇴 완료', { requestId: rid, userId });
+    res.json({ data: { success: true }, message: '회원탈퇴가 완료되었습니다.' });
+  } catch (err) {
+    logger.error('회원탈퇴 오류', { requestId: rid, error: err.message });
+    res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// PUT /api/auth/password - 비밀번호 변경
+app.put('/api/auth/password', authMiddleware, async (req, res) => {
+  const rid = requestId();
+
+  if (!USE_SUPABASE) {
+    return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+  }
+
+  const passV = validatePassword(req.body?.newPassword);
+  if (!passV.valid) return res.status(400).json({ error: passV.error, code: 'VALIDATION_ERROR' });
+
+  try {
+    const { error } = await req.supabaseClient.auth.updateUser({
+      password: req.body.newPassword,
+    });
+
+    if (error) {
+      logger.warn('비밀번호 변경 실패', { requestId: rid, error: error.message });
+      return res.status(400).json({ error: error.message, code: 'PASSWORD_CHANGE_ERROR' });
+    }
+
+    logSecurityEvent('PASSWORD_CHANGED', { requestId: rid, userId: req.user?.id, ip: req.ip });
+    logger.info('비밀번호 변경 완료', { requestId: rid, userId: req.user?.id });
+    res.json({ data: { success: true }, message: '비밀번호가 변경되었습니다.' });
+  } catch (err) {
+    logger.error('비밀번호 변경 오류', { requestId: rid, error: err.message });
+    res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+  }
+});
+
 // ===========================================================================
 // PROFILE ROUTES (/api/profile)
 // ===========================================================================
@@ -1403,6 +1474,14 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
     logger.error('통계 조회 오류', { requestId: rid, error: err.message });
     res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
   }
+});
+
+// ---------------------------------------------------------------------------
+// 404 Handler (API routes only)
+// ---------------------------------------------------------------------------
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: '요청한 API를 찾을 수 없습니다.', code: 'NOT_FOUND' });
 });
 
 // ---------------------------------------------------------------------------

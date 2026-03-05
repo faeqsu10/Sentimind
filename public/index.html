@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 공감 다이어리</title>
+  <title>Sentimind — AI 공감 다이어리</title>
+  <meta name="description" content="한 줄 일기를 쓰면 AI가 감정을 분석하고 공감 메시지를 보내주는 감정 다이어리">
+  <meta name="theme-color" content="#FFF8F0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
@@ -507,6 +512,47 @@
     }
     .btn-profile-back:hover { background: var(--color-divider); }
     .btn-profile-back:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .profile-section {
+      margin-top: 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .profile-section-title {
+      padding: 0.7rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: var(--color-surface-warm);
+      user-select: none;
+    }
+    .profile-section-title:hover { background: var(--color-divider); }
+    .profile-section[open] > .profile-section-title { border-bottom: 1px solid var(--color-border); }
+    .profile-section .profile-form { padding: 1rem; }
+    .profile-section-danger { border-color: #e74c3c44; }
+    .profile-section-danger > .profile-section-title { color: #c0392b; }
+    .danger-warning {
+      padding: 0.8rem 1rem 0;
+      font-size: 0.8rem;
+      color: #c0392b;
+      line-height: 1.5;
+    }
+    .btn-danger {
+      display: block;
+      margin: 0.8rem 1rem 1rem;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      padding: 0.55rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .btn-danger:hover { background: #a93226; }
+    .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .btn-logout {
       display: block;
@@ -1556,6 +1602,31 @@
             </form>
             <div class="profile-message" id="profileMessage" hidden></div>
 
+            <!-- 비밀번호 변경 -->
+            <details class="profile-section">
+              <summary class="profile-section-title">비밀번호 변경</summary>
+              <form class="profile-form" id="passwordChangeForm">
+                <div class="profile-field">
+                  <label for="new-password">새 비밀번호</label>
+                  <input type="password" id="new-password" minlength="8" placeholder="8자 이상, 숫자 포함" required>
+                </div>
+                <div class="profile-field">
+                  <label for="confirm-password">비밀번호 확인</label>
+                  <input type="password" id="confirm-password" minlength="8" placeholder="비밀번호를 다시 입력" required>
+                </div>
+                <div class="profile-actions">
+                  <button type="submit" class="btn-profile-save" id="passwordChangeBtn">비밀번호 변경</button>
+                </div>
+              </form>
+            </details>
+
+            <!-- 계정 관리 -->
+            <details class="profile-section profile-section-danger">
+              <summary class="profile-section-title">계정 관리</summary>
+              <p class="danger-warning">회원탈퇴 시 모든 일기 데이터가 삭제되며 복구할 수 없습니다.</p>
+              <button type="button" class="btn-danger" id="deleteAccountBtn">회원탈퇴</button>
+            </details>
+
             <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
           </div>
         </div>
@@ -1564,6 +1635,9 @@
 
     <footer class="app-footer">
       <p>당신의 하루를 응원합니다</p>
+      <p style="font-size:0.7rem; margin-top:0.3rem; opacity:0.6;">
+        <a href="#" id="privacyLink" style="color:inherit;">개인정보처리방침</a> · <a href="#" id="termsLink" style="color:inherit;">이용약관</a>
+      </p>
     </footer>
   </div>
 
@@ -2646,6 +2720,79 @@
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = '저장';
+      }
+    });
+
+    // Password Change
+    document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newPass = document.getElementById('new-password').value;
+      const confirmPass = document.getElementById('confirm-password').value;
+      const btn = document.getElementById('passwordChangeBtn');
+
+      if (newPass !== confirmPass) {
+        showError('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '변경 중...';
+      try {
+        const res = await fetchWithAuth('/api/auth/password', {
+          method: 'PUT',
+          body: JSON.stringify({ newPassword: newPass }),
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showError('비밀번호가 변경되었습니다.');
+          document.getElementById('new-password').value = '';
+          document.getElementById('confirm-password').value = '';
+        } else {
+          showError(result.error || '비밀번호 변경에 실패했습니다.');
+        }
+      } catch {
+        showError('서버에 연결할 수 없습니다.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '비밀번호 변경';
+      }
+    });
+
+    // Account Deletion
+    document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+      const confirmed = confirm('정말로 회원탈퇴하시겠습니까?\n모든 일기 데이터가 삭제되며 복구할 수 없습니다.');
+      if (!confirmed) return;
+
+      const doubleConfirm = confirm('마지막 확인입니다.\n회원탈퇴를 진행하시겠습니까?');
+      if (!doubleConfirm) return;
+
+      const btn = document.getElementById('deleteAccountBtn');
+      btn.disabled = true;
+      btn.textContent = '처리 중...';
+      try {
+        const res = await fetchWithAuth('/api/auth/account', { method: 'DELETE' });
+        if (res.ok) {
+          alert('회원탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+          localStorage.removeItem('sb-access-token');
+          localStorage.removeItem('sb-refresh-token');
+          currentUser = null;
+          accessToken = null;
+          refreshToken = null;
+          userProfile = null;
+          appInitialized = false;
+          historyList.innerHTML = '';
+          responseCard.hidden = true;
+          historyDetail.hidden = true;
+          showAuthScreen();
+        } else {
+          const result = await res.json();
+          showError(result.error || '회원탈퇴에 실패했습니다.');
+        }
+      } catch {
+        showError('서버에 연결할 수 없습니다.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '회원탈퇴';
       }
     });
 
