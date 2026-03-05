@@ -29,8 +29,8 @@
       --color-primary-hover: #D4956A;
       --color-secondary: #D4A574;
       --color-text: #5D4E37;
-      --color-text-light: #8B7D6B;
-      --color-text-muted: #B8A99A;
+      --color-text-light: #7A6B59;
+      --color-text-muted: #8C7E6E;
       --color-border: #E8DDD0;
       --color-divider: #F0E6D9;
       --color-error: #c62828;
@@ -898,7 +898,7 @@
     }
     .situation-tag {
       background: rgba(85, 160, 180, 0.15);
-      color: #237a9b;
+      color: #1a6a87;
       padding: 0.35rem 0.65rem;
       border-radius: var(--radius-sm);
       font-size: 0.8rem;
@@ -1209,16 +1209,127 @@
 
     /* Skeleton loading */
     .skeleton {
-      background: linear-gradient(90deg, var(--color-surface-warm) 25%, var(--color-divider) 50%, var(--color-surface-warm) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
+      background: linear-gradient(90deg, #e0d5c8 25%, #ebe3d9 37%, #e0d5c8 63%);
+      background-size: 400% 100%;
+      animation: skeletonPulse 1.6s ease infinite;
       border-radius: var(--radius-sm);
     }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    [data-theme="dark"] .situation-tag {
+      color: #6ec0d8;
+    }
+    [data-theme="dark"] .skeleton {
+      background: linear-gradient(90deg, #3d3530 25%, #4a413a 37%, #3d3530 63%);
+      background-size: 400% 100%;
+    }
+    @keyframes skeletonPulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
     .skeleton-line { height: 1em; margin-bottom: 0.5rem; }
     .skeleton-line:last-child { width: 60%; }
     .skeleton-card { height: 60px; margin-bottom: 0.5rem; border-radius: var(--radius-md); }
     .skeleton-summary { height: 70px; border-radius: var(--radius-md); }
+
+    /* Analyze skeleton: mimics the response-card layout */
+    .skeleton-analyze {
+      background: var(--gradient-response);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+    .skeleton-analyze .skeleton-emoji {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      margin-bottom: 0.75rem;
+    }
+    .skeleton-analyze .skeleton-title {
+      height: 1.1em; width: 40%;
+      margin-bottom: 0.75rem;
+    }
+    .skeleton-analyze .skeleton-text {
+      height: 0.9em;
+      margin-bottom: 0.5rem;
+    }
+    .skeleton-analyze .skeleton-text:nth-child(4) { width: 90%; }
+    .skeleton-analyze .skeleton-text:nth-child(5) { width: 75%; }
+    .skeleton-analyze .skeleton-text:nth-child(6) { width: 60%; }
+    .skeleton-analyze .skeleton-ontology {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--color-divider);
+    }
+    .skeleton-analyze .skeleton-chip {
+      display: inline-block;
+      width: 60px; height: 24px;
+      border-radius: 999px;
+      margin-right: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Entry skeleton: mimics history-item layout */
+    .skeleton-entry {
+      background: var(--color-surface-warm);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .skeleton-entry .skeleton-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .skeleton-entry .skeleton-body {
+      flex: 1; min-width: 0;
+    }
+    .skeleton-entry .skeleton-body-line {
+      height: 0.85em;
+      margin-bottom: 0.4rem;
+    }
+    .skeleton-entry .skeleton-body-line:first-child { width: 80%; }
+    .skeleton-entry .skeleton-body-line:last-child { width: 45%; margin-bottom: 0; }
+
+    /* Stats skeleton: mimics summary cards + bar chart */
+    .skeleton-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .skeleton-stats-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.5rem;
+    }
+    .skeleton-stats-card .skeleton-value {
+      width: 50px; height: 1.5em;
+      border-radius: var(--radius-sm);
+    }
+    .skeleton-stats-card .skeleton-label {
+      width: 70px; height: 0.8em;
+      border-radius: var(--radius-sm);
+    }
+    .skeleton-bar-group {
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .skeleton-bar-row {
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .skeleton-bar-label {
+      width: 50px; height: 0.85em;
+      flex-shrink: 0;
+    }
+    .skeleton-bar-track {
+      flex: 1; height: 20px;
+      border-radius: var(--radius-sm);
+    }
+    .skeleton-bar-row:nth-child(2) .skeleton-bar-track { width: 75%; }
+    .skeleton-bar-row:nth-child(3) .skeleton-bar-track { width: 55%; }
+    .skeleton-bar-row:nth-child(4) .skeleton-bar-track { width: 35%; }
 
     /* Stats period filter */
     .period-filter {
@@ -1390,8 +1501,8 @@
       --color-primary-hover: #d4956a;
       --color-secondary: #d4a574;
       --color-text: #e0d6cc;
-      --color-text-light: #a89e94;
-      --color-text-muted: #7a7068;
+      --color-text-light: #b5ab9f;
+      --color-text-muted: #948a7e;
       --color-border: #3d3530;
       --color-divider: #332c26;
       --color-error: #ef5350;
@@ -1766,7 +1877,63 @@
       color: var(--color-text-muted);
     }
 
-    /* Error toast */
+    /* Toast notification system */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+      align-items: center;
+      pointer-events: none;
+      max-width: calc(100% - 32px);
+      width: 400px;
+    }
+    .toast {
+      pointer-events: auto;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-family: var(--font-body);
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      animation: toastSlideUp 300ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+      max-width: 100%;
+    }
+    .toast.toast-error {
+      background: #c62828;
+      color: #fff;
+    }
+    .toast.toast-success {
+      background: #2e7d32;
+      color: #fff;
+    }
+    .toast.toast-info {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    [data-theme="dark"] .toast.toast-info {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-color: var(--color-border);
+    }
+    .toast.toast-dismissing {
+      animation: toastSlideDown 300ms cubic-bezier(0.55,0.06,0.68,0.19) forwards;
+    }
+    @keyframes toastSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastSlideDown {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(16px); }
+    }
+
+    /* Legacy error-toast (kept for backward compat) */
     .error-toast {
       position: fixed;
       bottom: 24px;
@@ -1784,6 +1951,20 @@
       text-align: center;
     }
     .error-toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Focus trap overlay for modals */
+    .focus-trap-active { overflow: hidden; }
+
+    /* Improved focus indicators */
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* aria-busy loading state */
+    [aria-busy="true"] {
+      cursor: wait;
+    }
 
     /* Animations */
     @keyframes fadeInUp {
@@ -2046,6 +2227,18 @@
           <p class="similar-entries-title">비슷한 감정의 일기</p>
           <ul class="similar-entries-list" id="similarEntriesList"></ul>
         </div>
+        <div class="skeleton-analyze" id="analyzeSkeleton" hidden aria-label="분석 결과 로딩 중" role="status">
+          <div class="skeleton skeleton-emoji"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton-ontology">
+            <div class="skeleton skeleton-chip"></div>
+            <div class="skeleton skeleton-chip"></div>
+            <div class="skeleton skeleton-chip"></div>
+          </div>
+        </div>
         <div class="response-loading" id="responseLoading" hidden>
           <div class="typing-indicator">
             <span></span><span></span><span></span>
@@ -2086,18 +2279,18 @@
             <button class="period-chip" data-days="30">1개월</button>
             <button class="period-chip" data-days="90">3개월</button>
           </div>
-          <div class="dashboard-summary" id="dashboardSummary"></div>
+          <div class="dashboard-summary" id="dashboardSummary" role="region" aria-label="통계 요약"></div>
           <div class="trend-chart" id="trendChartSection">
             <h3 class="trend-chart-title">감정 트렌드 (30일)</h3>
             <div id="trendChartContent"></div>
           </div>
           <div class="dashboard-section" id="topEmotionsSection">
             <h3 class="dashboard-section-title">자주 느낀 감정 (Top 5)</h3>
-            <div class="bar-chart" id="topEmotionsChart"></div>
+            <div class="bar-chart" id="topEmotionsChart" role="img" aria-label="자주 느낀 감정 상위 5개 막대 차트"></div>
           </div>
           <div class="dashboard-section" id="topSituationsSection">
             <h3 class="dashboard-section-title">자주 나타난 상황 (Top 5)</h3>
-            <div class="bar-chart" id="topSituationsChart"></div>
+            <div class="bar-chart" id="topSituationsChart" role="img" aria-label="자주 나타난 상황 상위 5개 막대 차트"></div>
           </div>
           <div class="dashboard-section" id="recentEntriesSection">
             <h3 class="dashboard-section-title">최근 일기</h3>
@@ -2217,10 +2410,11 @@
   </div>
 
   <div class="error-toast" id="errorToast"></div>
+  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
 
   <!-- Legal Modals -->
   <div class="legal-modal-overlay" id="legalModal" hidden>
-    <div class="legal-modal" role="dialog" aria-labelledby="legalModalTitle">
+    <div class="legal-modal" role="dialog" aria-labelledby="legalModalTitle" aria-modal="true">
       <div class="legal-modal-header">
         <h2 class="legal-modal-title" id="legalModalTitle"></h2>
         <button class="legal-modal-close" id="legalModalClose" aria-label="닫기">&times;</button>
@@ -2877,6 +3071,79 @@
       el.style.height = el.scrollHeight + 'px';
     }
 
+    // ===== Skeleton UI =====
+    function showSkeleton(type) {
+      if (type === 'analyze') {
+        const el = document.getElementById('analyzeSkeleton');
+        if (el) {
+          el.hidden = false;
+          responseLoading.hidden = true;
+        }
+      } else if (type === 'entries') {
+        const entrySkeletonHTML = Array(3).fill(0).map((_, i) =>
+          '<li class="history-item" style="animation-delay:' + (i * 80) + 'ms">' +
+            '<div class="skeleton-entry">' +
+              '<div class="skeleton skeleton-avatar"></div>' +
+              '<div class="skeleton-body">' +
+                '<div class="skeleton skeleton-body-line"></div>' +
+                '<div class="skeleton skeleton-body-line"></div>' +
+              '</div>' +
+            '</div>' +
+          '</li>'
+        ).join('');
+        historyList.innerHTML = entrySkeletonHTML;
+      } else if (type === 'stats') {
+        const summaryEl = document.getElementById('dashboardSummary');
+        const emotionsChart = document.getElementById('topEmotionsChart');
+        const situationsChart = document.getElementById('topSituationsChart');
+        const recentList = document.getElementById('recentEntriesList');
+
+        // Summary cards skeleton
+        if (summaryEl) {
+          summaryEl.innerHTML =
+            '<div class="skeleton-stats-grid">' +
+              '<div class="skeleton-stats-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>' +
+              '<div class="skeleton-stats-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>' +
+              '<div class="skeleton-stats-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>' +
+            '</div>';
+        }
+        // Bar charts skeleton
+        var barSkeleton =
+          '<div class="skeleton-bar-group">' +
+            '<div class="skeleton-bar-row"><div class="skeleton skeleton-bar-label"></div><div class="skeleton skeleton-bar-track"></div></div>' +
+            '<div class="skeleton-bar-row"><div class="skeleton skeleton-bar-label"></div><div class="skeleton skeleton-bar-track"></div></div>' +
+            '<div class="skeleton-bar-row"><div class="skeleton skeleton-bar-label"></div><div class="skeleton skeleton-bar-track"></div></div>' +
+            '<div class="skeleton-bar-row"><div class="skeleton skeleton-bar-label"></div><div class="skeleton skeleton-bar-track"></div></div>' +
+          '</div>';
+        if (emotionsChart) emotionsChart.innerHTML = barSkeleton;
+        if (situationsChart) situationsChart.innerHTML = barSkeleton;
+        // Recent entries skeleton
+        if (recentList) {
+          recentList.innerHTML = Array(3).fill(
+            '<div class="skeleton-entry" style="margin-bottom:0.5rem;">' +
+              '<div class="skeleton skeleton-avatar"></div>' +
+              '<div class="skeleton-body">' +
+                '<div class="skeleton skeleton-body-line"></div>' +
+                '<div class="skeleton skeleton-body-line"></div>' +
+              '</div>' +
+            '</div>'
+          ).join('');
+        }
+      }
+    }
+
+    function hideSkeleton(type) {
+      if (type === 'analyze') {
+        const el = document.getElementById('analyzeSkeleton');
+        if (el) el.hidden = true;
+        responseLoading.hidden = true;
+      } else if (type === 'entries') {
+        // Content replaced by renderHistory, no explicit cleanup needed
+      } else if (type === 'stats') {
+        // Content replaced by renderDashboard, no explicit cleanup needed
+      }
+    }
+
     // ===== Diary Submit =====
     async function handleSubmit(e) {
       e.preventDefault();
@@ -2886,7 +3153,7 @@
       submitBtn.disabled = true;
       responseCard.hidden = true;
       document.getElementById('similarEntries').hidden = true;
-      responseLoading.hidden = false;
+      showSkeleton('analyze');
 
       try {
         // Step 1: Analyze emotion via server proxy
@@ -2903,7 +3170,7 @@
       } catch (err) {
         showError(err.userMessage || '알 수 없는 오류가 발생했습니다.');
       } finally {
-        responseLoading.hidden = true;
+        hideSkeleton('analyze');
         submitBtn.disabled = diaryText.value.trim().length === 0;
       }
     }
@@ -2953,7 +3220,7 @@
 
     async function loadEntries() {
       // Show skeleton while loading
-      historyList.innerHTML = Array(3).fill('<li class="history-item"><div class="skeleton skeleton-card"></div></li>').join('');
+      showSkeleton('entries');
       try {
         const response = await fetchWithAuth('/api/entries');
         if (!response.ok) throw new Error();
@@ -3335,10 +3602,115 @@
 
     let errorTimer = null;
     function showError(msg) {
-      errorToast.textContent = msg;
-      errorToast.classList.add('show');
-      if (errorTimer) clearTimeout(errorTimer);
-      errorTimer = setTimeout(() => { errorToast.classList.remove('show'); errorTimer = null; }, 4000);
+      showToast(msg, 'error');
+    }
+
+    // ===== Toast Notification System =====
+    const toastContainer = document.getElementById('toastContainer');
+
+    function showToast(message, type = 'error') {
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      toast.textContent = message;
+      toastContainer.appendChild(toast);
+
+      const dismissTimer = setTimeout(() => dismissToast(toast), 3000);
+
+      toast.addEventListener('click', () => {
+        clearTimeout(dismissTimer);
+        dismissToast(toast);
+      });
+    }
+
+    function dismissToast(toast) {
+      if (!toast || !toast.parentNode) return;
+      toast.classList.add('toast-dismissing');
+      toast.addEventListener('animationend', () => {
+        toast.remove();
+      }, { once: true });
+    }
+
+    // ===== Global Error Handlers =====
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error('Global error:', { message, source, lineno, colno, error });
+      showToast('예기치 않은 오류가 발생했습니다. 페이지를 새로고침해주세요.', 'error');
+      return true;
+    };
+
+    window.onunhandledrejection = function(event) {
+      console.error('Unhandled promise rejection:', event.reason);
+      const msg = (event.reason && event.reason.userMessage)
+        ? event.reason.userMessage
+        : '요청을 처리하는 중 오류가 발생했습니다.';
+      showToast(msg, 'error');
+      event.preventDefault();
+    };
+
+    // ===== Focus Trap Utility =====
+    let lastFocusedElement = null;
+
+    function getFocusableElements(container) {
+      return Array.from(container.querySelectorAll(
+        'a[href], button:not([disabled]):not([hidden]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(el => !el.closest('[hidden]') && el.offsetParent !== null);
+    }
+
+    function trapFocus(container) {
+      const focusables = getFocusableElements(container);
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      function handleTrapKeydown(e) {
+        if (e.key !== 'Tab') return;
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+
+      container._trapHandler = handleTrapKeydown;
+      container.addEventListener('keydown', handleTrapKeydown);
+    }
+
+    function releaseFocusTrap(container) {
+      if (container._trapHandler) {
+        container.removeEventListener('keydown', container._trapHandler);
+        delete container._trapHandler;
+      }
+    }
+
+    function openModalFocus(modalOverlay, modalContent) {
+      lastFocusedElement = document.activeElement;
+      document.body.classList.add('focus-trap-active');
+
+      trapFocus(modalContent || modalOverlay);
+
+      // Focus the first focusable element (usually close button)
+      requestAnimationFrame(() => {
+        const focusables = getFocusableElements(modalContent || modalOverlay);
+        if (focusables.length > 0) focusables[0].focus();
+      });
+    }
+
+    function closeModalFocus(modalOverlay, modalContent) {
+      releaseFocusTrap(modalContent || modalOverlay);
+      document.body.classList.remove('focus-trap-active');
+
+      if (lastFocusedElement && lastFocusedElement.focus) {
+        lastFocusedElement.focus();
+        lastFocusedElement = null;
+      }
     }
 
     // ===== Tab Navigation =====
@@ -3613,8 +3985,7 @@
     async function loadDashboard(period) {
       if (period !== undefined) activePeriod = period;
       const queryParam = activePeriod !== 'all' ? '?period=' + activePeriod : '';
-      const summaryEl = document.getElementById('dashboardSummary');
-      summaryEl.innerHTML = '<div class="skeleton skeleton-summary"></div><div class="skeleton skeleton-summary" style="margin-top:0.5rem;"></div>';
+      showSkeleton('stats');
       try {
         const response = await fetchWithAuth('/api/stats' + queryParam);
         if (!response.ok) throw new Error();
