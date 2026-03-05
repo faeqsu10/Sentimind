@@ -1092,6 +1092,10 @@
     .cal-emoji {
       font-size: 0.65rem; line-height: 1;
     }
+    .cal-dot {
+      width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin: 0 1px;
+    }
+    .cal-dots { display: flex; justify-content: center; gap: 2px; margin-top: 2px; }
     .cal-day-entries {
       margin-top: 1rem; animation: fadeInUp 300ms ease both;
     }
@@ -3369,6 +3373,20 @@
       calMonth = now.getMonth();
     })();
 
+    function emotionColor(emotion) {
+      const e = (emotion || '').trim();
+      const map = {
+        '기쁨':'#F4A261','감사':'#F4A261','설렘':'#F4A261','행복':'#F4A261',
+        '슬픔':'#7EB8DA','외로움':'#7EB8DA','그리움':'#7EB8DA','우울':'#7EB8DA',
+        '분노':'#E76F51','짜증':'#E76F51','억울함':'#E76F51','화남':'#E76F51',
+        '불안':'#9C89B8','걱정':'#9C89B8','두려움':'#9C89B8','긴장':'#9C89B8',
+        '평온':'#A8DAAB','편안함':'#A8DAAB','안도':'#A8DAAB','여유':'#A8DAAB',
+        '사랑':'#F2A0A0','애정':'#F2A0A0',
+        '피곤':'#B0A89A','지침':'#B0A89A','무기력':'#B0A89A',
+      };
+      return map[e] || 'var(--color-primary)';
+    }
+
     function renderCalendar() {
       const grid = document.getElementById('calendarGrid');
       const titleEl = document.getElementById('calMonthTitle');
@@ -3407,7 +3425,7 @@
 
         html += `<div class="${classes}" data-date="${dateStr}" ${hasEntry ? 'tabindex="0" role="button" aria-label="' + dateStr + ' 일기 ' + entries.length + '건"' : ''}>
           <span>${d}</span>
-          ${hasEntry ? '<span class="cal-emoji">' + escapeHtml(emoji) + '</span>' : ''}
+          ${hasEntry ? '<span class="cal-dots">' + entries.slice(0, 3).map(en => '<span class="cal-dot" style="background:' + emotionColor(en.emotion) + '"></span>').join('') + '</span>' : ''}
         </div>`;
       }
 
