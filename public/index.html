@@ -2343,8 +2343,9 @@
         if (!response.ok) throw new Error();
         const entries = await response.json();
         renderHistory(entries);
-      } catch {
+      } catch (err) {
         renderHistory([]);
+        if (!err.userMessage) showError('일기 목록을 불러올 수 없습니다.');
       }
     }
 
