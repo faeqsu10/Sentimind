@@ -870,6 +870,7 @@
     }
     .history-item:hover .btn-delete { opacity: 1; }
     .btn-delete:hover { color: #c0392b; }
+    .btn-delete:focus-visible { opacity: 1; outline: 2px solid var(--color-primary); outline-offset: 2px; }
     @media (hover: none) { .btn-delete { opacity: 0.6; } }
     .history-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
     .empty-state {
@@ -1668,6 +1669,7 @@
       authScreen.hidden = false;
       onboardingScreen.hidden = true;
       appContainer.hidden = true;
+      document.getElementById('welcomeScreen').hidden = true;
       // Show login card by default
       showAuthCard('login');
     }
@@ -1676,6 +1678,7 @@
       authScreen.hidden = true;
       onboardingScreen.hidden = false;
       appContainer.hidden = true;
+      document.getElementById('welcomeScreen').hidden = true;
       onboardingStep = 1;
       updateOnboardingUI();
     }
@@ -1715,15 +1718,32 @@
     // ===== Auth: Handle email confirmation redirect =====
     async function handleAuthRedirect() {
       const hash = window.location.hash;
-      if (\!hash || \!hash.includes('access_token')) return false;
+      if (!hash || hash.length < 2) return false;
+
+      // Handle error redirects (e.g. expired email link)
+      const params = new URLSearchParams(hash.substring(1));
+      const error = params.get('error');
+      if (error) {
+        history.replaceState(null, '', window.location.pathname);
+        const errorMessages = {
+          'otp_expired': '인증 링크가 만료되었습니다. 다시 회원가입하거나 로그인하여 새 인증 메일을 받아주세요.',
+          'access_denied': '인증 링크가 유효하지 않거나 만료되었습니다.',
+        };
+        const errorCode = params.get('error_code') || error;
+        const msg = errorMessages[errorCode] || params.get('error_description') || '인증 처리 중 오류가 발생했습니다.';
+        showAuthScreen();
+        setTimeout(() => showError(msg), 300);
+        return true;
+      }
+
+      if (!hash.includes('access_token')) return false;
 
       // Parse tokens from URL hash (#access_token=...&refresh_token=...&type=signup)
-      const params = new URLSearchParams(hash.substring(1));
       const token = params.get('access_token');
       const refresh = params.get('refresh_token');
       const type = params.get('type');
 
-      if (\!token) return false;
+      if (!token) return false;
 
       // Clear the hash from URL
       history.replaceState(null, '', window.location.pathname);
@@ -1748,7 +1768,7 @@
             }
             // Other redirects (password reset etc)
             await loadProfile();
-            if (userProfile && \!userProfile.onboarding_completed) {
+            if (userProfile && !userProfile.onboarding_completed) {
               showOnboarding();
             } else {
               showApp();
@@ -1766,7 +1786,7 @@
     function showWelcomeScreen() {
       document.getElementById('authScreen').hidden = true;
       document.getElementById('onboardingScreen').hidden = true;
-      document.querySelector('.app-container').hidden = true;
+      document.getElementById('appContainer').hidden = true;
       document.getElementById('welcomeScreen').hidden = false;
     }
 
@@ -2144,14 +2164,17 @@
       loadEntries();
       renderProfileScreen();
 
-      diaryText.addEventListener('input', () => {
-        submitBtn.disabled = diaryText.value.trim().length === 0;
-        autoResize(diaryText);
-        const len = diaryText.value.length;
-        charCount.textContent = len > 0 ? len + '/500' : '';
-        charCount.className = 'char-count' + (len >= 480 ? ' warn' : '');
-      });
-      diaryForm.addEventListener('submit', handleSubmit);
+      if (!diaryText._listenerAttached) {
+        diaryText.addEventListener('input', () => {
+          submitBtn.disabled = diaryText.value.trim().length === 0;
+          autoResize(diaryText);
+          const len = diaryText.value.length;
+          charCount.textContent = len > 0 ? len + '/500' : '';
+          charCount.className = 'char-count' + (len >= 480 ? ' warn' : '');
+        });
+        diaryForm.addEventListener('submit', handleSubmit);
+        diaryText._listenerAttached = true;
+      }
     }
 
     function autoResize(el) {
@@ -2244,14 +2267,15 @@
     }
 
     async function deleteEntry(id) {
+      if (!confirm('이 일기를 삭제하시겠습니까?')) return;
       try {
         const response = await fetchWithAuth('/api/entries/' + id, { method: 'DELETE' });
         if (!response.ok) throw new Error();
+        await loadEntries();
+        if (historyDetail.dataset.activeId === id) historyDetail.hidden = true;
       } catch {
         showError('삭제에 실패했습니다.');
       }
-      await loadEntries();
-      if (historyDetail.dataset.activeId === id) historyDetail.hidden = true;
     }
 
     // ===== Display Response =====
@@ -2421,17 +2445,18 @@
         li.setAttribute('role', 'button');
         li.setAttribute('tabindex', '0');
 
-        const dateStr = new Intl.DateTimeFormat('ko-KR', {
+        const d = new Date(entry.date);
+        const dateStr = isNaN(d) ? '날짜 없음' : new Intl.DateTimeFormat('ko-KR', {
           month: 'short', day: 'numeric', weekday: 'short'
-        }).format(new Date(entry.date));
+        }).format(d);
 
         li.innerHTML = `
           <span class="history-emoji">${escapeHtml(entry.emoji)}</span>
           <div class="history-content">
-            <time class="history-date" datetime="${entry.date}">${dateStr}</time>
+            <time class="history-date" datetime="${escapeHtml(entry.date || '')}">${dateStr}</time>
             <p class="history-text">${escapeHtml(entry.text)}</p>
           </div>
-          <button class="btn-delete" aria-label="삭제" data-id="${entry.id}">&times;</button>
+          <button class="btn-delete" aria-label="삭제" data-id="${escapeHtml(entry.id)}">&times;</button>
         `;
 
         li.querySelector('.btn-delete').addEventListener('click', (e) => {
@@ -2638,6 +2663,12 @@
       refreshToken = null;
       userProfile = null;
       appInitialized = false;
+      // Clear previous user's UI data
+      historyList.innerHTML = '';
+      responseCard.hidden = true;
+      historyDetail.hidden = true;
+      diaryText.value = '';
+      charCount.textContent = '';
       showAuthScreen();
     });
 
@@ -2660,8 +2691,10 @@
       summaryEl.innerHTML = '';
 
       if (stats.total_entries === 0) {
-        const content = document.getElementById('dashboardContent');
-        content.innerHTML = '<p class="dashboard-empty">아직 작성한 일기가 없어요. 일기를 쓰면 통계가 표시됩니다.</p>';
+        summaryEl.innerHTML = '<p class="dashboard-empty">아직 작성한 일기가 없어요. 일기를 쓰면 통계가 표시됩니다.</p>';
+        document.getElementById('topEmotionsChart').innerHTML = '';
+        document.getElementById('topSituationsChart').innerHTML = '';
+        document.getElementById('recentEntriesList').innerHTML = '';
         return;
       }
 
