@@ -88,6 +88,10 @@ public/index.html  ──fetch──▸  server.js (Express :3000)  ──fetch�
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+- **Configuration External**: 모든 설정값은 코드 외부에서 관리 (환경변수, 설정파일)
+  - ✅ 좋은 예: `const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'`
+  - ❌ 나쁜 예: `const MODEL = 'gemini-2.5-flash'` (하드코딩)
+  - **이유**: 배포 후 수정 시 재배포 불필요, 환경별 다른 설정 적용 가능, DevOps/QA 자유도 증대
 
 ---
 

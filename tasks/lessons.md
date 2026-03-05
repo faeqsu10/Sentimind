@@ -97,7 +97,62 @@
 
 ---
 
-## 5. Supabase 마이그레이션 체크리스트 (Phase 5 준비)
+## 5. 설정값 외부화: 하드코딩 제거 원칙 (2026-03-05)
+
+### 문제
+코드에 하드코딩된 설정값들:
+- `GEMINI_MODEL = 'gemini-2.5-flash'` (L12)
+- `MAX_RETRIES = 2` (L425)
+- `timeout = 30000` (L436)
+- `LOG_RETENTION_DAYS = 7` (L73)
+
+이들이 하드코딩되어 있으면:
+- 환경별로 다른 값을 사용할 수 없음
+- 배포 후 수정하려면 재배포 필요
+- QA/Production 환경 분리 불가
+
+### 해결책
+**모든 설정값은 환경변수 또는 설정 파일로 분리**
+
+```javascript
+// ❌ 나쁜 예
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const MAX_RETRIES = 2;
+const TIMEOUT = 30000;
+
+// ✅ 좋은 예
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MAX_RETRIES = parseInt(process.env.MAX_RETRIES || '2');
+const TIMEOUT = parseInt(process.env.TIMEOUT || '30000');
+```
+
+또는 **config.js 파일 생성**:
+```javascript
+module.exports = {
+  gemini: {
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    timeout: parseInt(process.env.GEMINI_TIMEOUT || '30000'),
+    maxRetries: parseInt(process.env.GEMINI_MAX_RETRIES || '2'),
+  },
+  logs: {
+    retentionDays: parseInt(process.env.LOG_RETENTION_DAYS || '7'),
+    level: process.env.LOG_LEVEL || 'INFO',
+  },
+};
+```
+
+### 교훈
+- **설정값과 코드는 항상 분리**: 환경별로 쉽게 변경 가능하도록
+- **기본값은 제공하되 환경변수로 오버라이드 가능**: 유연성과 안정성
+- **초기 구축부터 이 원칙 적용**: 나중에 분리하는 것보다 훨씬 쉬움
+
+### 담당 역할
+- **Backend Developer**: 하드코딩된 값 찾아서 환경변수로 분리
+- **DevOps/Tech Architect**: 설정 파일 구조 설계
+
+---
+
+## 6. Supabase 마이그레이션 체크리스트 (Phase 5 준비)
 
 ### 배포 호환성 확인 후 진행할 사항
 - [ ] Supabase RLS 정책 설계
