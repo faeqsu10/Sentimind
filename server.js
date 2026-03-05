@@ -45,30 +45,83 @@ const LOGS_DIR = IS_PRODUCTION ? '/tmp/sentimind-logs' : path.join(__dirname, 'l
 
 class Logger {
   constructor() {
-    if (!IS_PRODUCTION && !fs.existsSync(LOGS_DIR)) {
+    if (!fs.existsSync(LOGS_DIR)) {
       fs.mkdirSync(LOGS_DIR, { recursive: true });
     }
+    this.logLevel = process.env.LOG_LEVEL || 'INFO';
+    this.levels = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+    this.currentLogFile = null;
+    this._cleanOldLogs(); // 시작 시 오래된 로그 삭제
+  }
+
+  _getLogFile() {
+    return path.join(LOGS_DIR, `app-${new Date().toISOString().split('T')[0]}.log`);
   }
 
   _formatTime() {
-    return new Date().toISOString().replace('T', ' ').slice(0, 19);
+    return new Date().toISOString();
+  }
+
+  _shouldLog(level) {
+    return this.levels[level] >= this.levels[this.logLevel];
+  }
+
+  _cleanOldLogs() {
+    try {
+      const files = fs.readdirSync(LOGS_DIR);
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+      files.forEach(file => {
+        if (file.startsWith('app-') && file.endsWith('.log')) {
+          const filePath = path.join(LOGS_DIR, file);
+          const stats = fs.statSync(filePath);
+          if (now - stats.mtimeMs > sevenDaysMs) {
+            fs.unlinkSync(filePath);
+            console.log(`[LOG] 오래된 로그 삭제: ${file}`);
+          }
+        }
+      });
+    } catch (err) {
+      console.error(`로그 정리 오류: ${err.message}`);
+    }
   }
 
   _log(level, message, data = null) {
+    if (!this._shouldLog(level)) return;
+
     const timestamp = this._formatTime();
-    const logLine = `[${timestamp}] ${level}: ${message}${data ? ` | ${JSON.stringify(data)}` : ''}`;
+    const logEntry = {
+      timestamp,
+      level,
+      message,
+      ...(data && { data }),
+      environment: IS_PRODUCTION ? 'production' : 'development',
+    };
 
-    console.log(logLine);
+    // 콘솔 출력 (포맷: [LEVEL] message)
+    const consoleMsg = `[${level}] ${message}`;
+    const consoleColor = {
+      DEBUG: '\x1b[36m', // cyan
+      INFO: '\x1b[32m',  // green
+      WARN: '\x1b[33m',  // yellow
+      ERROR: '\x1b[31m', // red
+    };
+    const resetColor = '\x1b[0m';
+    console.log(`${consoleColor[level]}${consoleMsg}${resetColor}${data ? ` | ${JSON.stringify(data)}` : ''}`);
 
-    // 로컬 환경에만 파일 저장
-    if (!IS_PRODUCTION) {
-      const logFile = path.join(LOGS_DIR, `app-${new Date().toISOString().split('T')[0]}.log`);
-      try {
-        fs.appendFileSync(logFile, logLine + '\n', 'utf-8');
-      } catch (err) {
-        console.error(`로그 파일 저장 실패: ${err.message}`);
-      }
+    // 파일 저장 (JSON 포맷)
+    try {
+      const logFile = this._getLogFile();
+      const logLine = JSON.stringify(logEntry);
+      fs.appendFileSync(logFile, logLine + '\n', 'utf-8');
+    } catch (err) {
+      console.error(`로그 파일 저장 실패: ${err.message}`);
     }
+  }
+
+  debug(message, data) {
+    this._log('DEBUG', message, data);
   }
 
   info(message, data) {
@@ -328,24 +381,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // POST /api/analyze - Analyze diary text via Gemini API
 app.post('/api/analyze', async (req, res) => {
-  logger.info('POST /api/analyze 요청 수신', { bodySize: JSON.stringify(req.body).length });
+  const startTime = Date.now();
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  logger.info('POST /api/analyze 요청 수신', {
+    requestId,
+    bodySize: JSON.stringify(req.body).length,
+    ip: req.ip
+  });
 
   if (!req.body) {
-    logger.warn('요청 본문 없음');
+    logger.warn('요청 본문 없음', { requestId });
     return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
   }
   const { text } = req.body;
 
   // Input validation
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
-    logger.warn('유효하지 않은 입력', { textLength: text?.length });
+    logger.warn('유효하지 않은 입력', { requestId, textLength: text?.length });
     return res.status(400).json({ error: '일기 내용을 입력해주세요.' });
   }
   if (text.length > 500) {
+    logger.warn('텍스트 길이 초과', { requestId, textLength: text.length });
     return res.status(400).json({ error: '일기는 500자 이내로 작성해주세요.' });
   }
 
   if (!GEMINI_API_KEY) {
+    logger.error('Gemini API 키가 설정되지 않음', { requestId });
     return res.status(500).json({ error: '서버에 API 키가 설정되지 않았습니다.' });
   }
 
@@ -365,6 +427,8 @@ app.post('/api/analyze', async (req, res) => {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      logger.debug(`Gemini API 요청 시도 (${attempt + 1}/${MAX_RETRIES + 1})`, { requestId });
+
       const response = await fetch(GEMINI_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -374,16 +438,34 @@ app.post('/api/analyze', async (req, res) => {
 
       if (!response.ok) {
         const status = response.status;
+        let geminiError = null;
+        try {
+          geminiError = await response.json();
+        } catch (e) {
+          geminiError = { message: response.statusText };
+        }
+
+        logger.error('Gemini API 오류', {
+          requestId,
+          attempt: attempt + 1,
+          status,
+          error: geminiError,
+          textLength: text.length
+        });
+
         if (status === 429) {
+          logger.warn('API 요청 한도 초과', { requestId });
           return res.status(429).json({
             error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
           });
         }
         if (status === 400 || status === 403) {
+          logger.error('API 인증 실패', { requestId, message: geminiError?.error?.message });
           return res.status(502).json({
             error: 'API 인증에 실패했습니다. 서버 관리자에게 문의하세요.',
           });
         }
+        logger.error(`AI 서비스 오류 (${status})`, { requestId });
         return res.status(502).json({
           error: `AI 서비스 오류가 발생했습니다. (${status})`,
         });
@@ -394,9 +476,11 @@ app.post('/api/analyze', async (req, res) => {
 
       if (!content) {
         lastError = new Error('Empty response from Gemini');
+        logger.warn('Gemini 응답 비어있음, 재시도', { requestId, attempt: attempt + 1 });
         continue; // retry
       }
 
+      logger.debug('Gemini 응답 수신', { requestId, contentLength: content.length });
       const result = parseGeminiResponse(content);
 
       // Enrich with ontology metadata if available
@@ -404,15 +488,34 @@ app.post('/api/analyze', async (req, res) => {
         ? ontologyEngine.enrichEmotion(result.emotion, text.trim(), result)
         : result;
 
+      const duration = Date.now() - startTime;
+      logger.info('감정 분석 완료', {
+        requestId,
+        emotion: enrichedResult.emotion,
+        confidence: enrichedResult.ontology?.confidence,
+        duration: `${duration}ms`
+      });
+
       return res.json(enrichedResult);
     } catch (err) {
       lastError = err;
+
+      logger.error('API 처리 중 오류', {
+        requestId,
+        attempt: attempt + 1,
+        errorName: err.name,
+        errorMessage: err.message,
+        stack: err.stack
+      });
+
       // If it's a JSON parse error, retry
       if (err instanceof SyntaxError) {
+        logger.warn('JSON 파싱 오류, 재시도', { requestId, attempt: attempt + 1 });
         continue;
       }
       // For network/timeout errors, don't retry
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+        logger.error('요청 타임아웃', { requestId });
         return res.status(504).json({
           error: '요청 시간이 초과되었습니다. 다시 시도해주세요.',
         });
@@ -421,7 +524,14 @@ app.post('/api/analyze', async (req, res) => {
     }
   }
 
-  console.error('Gemini API error after retries:', lastError?.message);
+  const duration = Date.now() - startTime;
+  logger.error('Gemini API 최종 실패', {
+    requestId,
+    attempts: MAX_RETRIES + 1,
+    lastError: lastError?.message,
+    duration: `${duration}ms`
+  });
+
   return res.status(500).json({
     error: '응답을 해석하지 못했습니다. 다시 시도해주세요.',
   });
@@ -429,80 +539,149 @@ app.post('/api/analyze', async (req, res) => {
 
 // GET /api/entries - List all diary entries
 app.get('/api/entries', async (req, res) => {
-  logger.info('GET /api/entries 요청 수신');
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const startTime = Date.now();
+
+  logger.info('GET /api/entries 요청 수신', { requestId });
+
   try {
     const entries = await readEntries();
-    logger.info('일기 목록 조회 성공', { count: entries.length });
+    const duration = Date.now() - startTime;
+
+    logger.info('일기 목록 조회 성공', {
+      requestId,
+      count: entries.length,
+      duration: `${duration}ms`
+    });
+
     res.json(entries);
   } catch (err) {
-    logger.error('일기 목록 조회 실패', { error: err.message });
+    const duration = Date.now() - startTime;
+
+    logger.error('일기 목록 조회 실패', {
+      requestId,
+      error: err.message,
+      stack: err.stack,
+      duration: `${duration}ms`
+    });
+
     res.status(500).json({ error: '일기 목록 조회 실패' });
   }
 });
 
 // POST /api/entries - Save a new diary entry
 app.post('/api/entries', async (req, res) => {
-  logger.info('POST /api/entries 요청 수신');
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const startTime = Date.now();
 
-  if (!req.body) {
-    logger.warn('요청 본문 없음');
-    return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+  logger.info('POST /api/entries 요청 수신', { requestId });
+
+  try {
+    if (!req.body) {
+      logger.warn('요청 본문 없음', { requestId });
+      return res.status(400).json({ error: 'JSON 형식의 요청 본문이 필요합니다.' });
+    }
+    const { text, emotion, emoji, message, advice } = req.body;
+
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      logger.warn('유효하지 않은 입력 (POST 저장)', { requestId, textLength: text?.length });
+      return res.status(400).json({ error: '일기 내용을 입력해주세요.' });
+    }
+    if (text.length > 500) {
+      logger.warn('텍스트 길이 초과', { requestId, textLength: text.length });
+      return res.status(400).json({ error: '일기는 500자 이내로 작성해주세요.' });
+    }
+
+    const entry = {
+      id: generateId(),
+      date: new Date().toISOString(),
+      text: text.trim(),
+      emotion: emotion || '알 수 없음',
+      emoji: emoji || '💭',
+      message: message || '',
+      advice: advice || '',
+    };
+
+    const entries = await readEntries();
+    entries.unshift(entry);
+    await writeEntries(entries);
+
+    const duration = Date.now() - startTime;
+    logger.info('일기 저장 완료', {
+      requestId,
+      entryId: entry.id,
+      emotion: entry.emotion,
+      duration: `${duration}ms`
+    });
+
+    res.status(201).json(entry);
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    logger.error('일기 저장 실패', {
+      requestId,
+      error: err.message,
+      stack: err.stack,
+      duration: `${duration}ms`
+    });
+    res.status(500).json({ error: '일기 저장에 실패했습니다.' });
   }
-  const { text, emotion, emoji, message, advice } = req.body;
-
-  if (!text || typeof text !== 'string' || text.trim().length === 0) {
-    logger.warn('유효하지 않은 입력 (POST 저장)');
-    return res.status(400).json({ error: '일기 내용을 입력해주세요.' });
-  }
-  if (text.length > 500) {
-    return res.status(400).json({ error: '일기는 500자 이내로 작성해주세요.' });
-  }
-
-  const entry = {
-    id: generateId(),
-    date: new Date().toISOString(),
-    text: text.trim(),
-    emotion: emotion || '알 수 없음',
-    emoji: emoji || '💭',
-    message: message || '',
-    advice: advice || '',
-  };
-
-  const entries = await readEntries();
-  entries.unshift(entry);
-  await writeEntries(entries);
-
-  res.status(201).json(entry);
 });
 
 // DELETE /api/entries/:id - Delete a diary entry
 app.delete('/api/entries/:id', async (req, res) => {
   const { id } = req.params;
-  logger.info('DELETE /api/entries/:id 요청 수신', { id });
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const startTime = Date.now();
+
+  logger.info('DELETE /api/entries/:id 요청 수신', { requestId, id });
 
   try {
     const entries = await readEntries();
     const index = entries.findIndex((e) => e.id === id);
 
     if (index === -1) {
-      logger.warn('삭제할 일기를 찾을 수 없음', { id });
+      const duration = Date.now() - startTime;
+      logger.warn('삭제할 일기를 찾을 수 없음', {
+        requestId,
+        id,
+        duration: `${duration}ms`
+      });
       return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.' });
     }
 
     entries.splice(index, 1);
     await writeEntries(entries);
 
-    logger.info('일기 삭제 성공', { id, remainCount: entries.length });
+    const duration = Date.now() - startTime;
+    logger.info('일기 삭제 성공', {
+      requestId,
+      id,
+      remainCount: entries.length,
+      duration: `${duration}ms`
+    });
+
     res.json({ success: true });
   } catch (err) {
-    logger.error('일기 삭제 실패', { id, error: err.message });
+    const duration = Date.now() - startTime;
+
+    logger.error('일기 삭제 실패', {
+      requestId,
+      id,
+      error: err.message,
+      stack: err.stack,
+      duration: `${duration}ms`
+    });
+
     res.status(500).json({ error: '일기 삭제 실패' });
   }
 });
 
 // GET /api/stats - Analytics and insights (Phase 3)
 app.get('/api/stats', async (req, res) => {
-  logger.info('GET /api/stats 요청 수신');
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const startTime = Date.now();
+
+  logger.info('GET /api/stats 요청 수신', { requestId });
 
   try {
     const entries = await readEntries();
@@ -550,7 +729,7 @@ app.get('/api/stats', async (req, res) => {
       .slice(0, 5)
       .map(([situation, count]) => ({ situation, count }));
 
-    res.json({
+    const stats = {
       total_entries: entries.length,
       avg_confidence: Math.round(avgConfidence),
       emotion_distribution: emotionFreq,
@@ -558,9 +737,27 @@ app.get('/api/stats', async (req, res) => {
       top_situations: topSituations,
       hourly_distribution: hourlyEmotions,
       latest_entries: entries.slice(0, 5),
+    };
+
+    const duration = Date.now() - startTime;
+    logger.info('통계 조회 성공', {
+      requestId,
+      totalEntries: entries.length,
+      topEmotionCount: topEmotions.length,
+      duration: `${duration}ms`
     });
+
+    res.json(stats);
   } catch (err) {
-    console.error('Stats error:', err.message);
+    const duration = Date.now() - startTime;
+
+    logger.error('통계 조회 실패', {
+      requestId,
+      error: err.message,
+      stack: err.stack,
+      duration: `${duration}ms`
+    });
+
     res.status(500).json({ error: '통계 조회에 실패했습니다.' });
   }
 });
