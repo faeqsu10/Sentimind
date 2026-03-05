@@ -1,0 +1,322 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "language": "ko-KR",
+    "description": "3-level emotion ontology for Korean diary analysis"
+  },
+  "emotions": {
+    "positive": {
+      "korean": "긍정",
+      "level": 1,
+      "subcategories": {
+        "joy": {
+          "korean": "기쁨",
+          "emoji": "😊",
+          "level": 2,
+          "intensity": "high",
+          "keywords": ["좋다", "행복", "즐겁다", "신난다", "신나", "기뻐"],
+          "contexts": ["achievement", "celebration", "success"],
+          "specific_emotions": {
+            "contentment": {
+              "korean": "만족감",
+              "emoji": "😌",
+              "level": 3,
+              "keywords": ["만족", "괜찮다", "충분하다", "충족"]
+            },
+            "excitement": {
+              "korean": "설렘",
+              "emoji": "🤭",
+              "level": 3,
+              "keywords": ["설레인다", "기대", "흥분", "설렘"]
+            },
+            "hope": {
+              "korean": "희망",
+              "emoji": "✨",
+              "level": 3,
+              "keywords": ["희망", "가능성", "미래", "꿈"]
+            }
+          }
+        },
+        "relief": {
+          "korean": "안도감",
+          "emoji": "😌",
+          "level": 2,
+          "intensity": "medium",
+          "keywords": ["안도", "홀가분", "드디어", "다행", "쉬다"],
+          "contexts": ["problem_solved", "stress_relief", "end_of_waiting"],
+          "specific_emotions": {
+            "relaxation": {
+              "korean": "이완",
+              "emoji": "🧘",
+              "level": 3,
+              "keywords": ["편안", "휴식", "쉽다", "느슨하다"]
+            },
+            "gratitude": {
+              "korean": "감사",
+              "emoji": "🙏",
+              "level": 3,
+              "keywords": ["고맙다", "감사", "은혜", "도움"]
+            }
+          }
+        },
+        "pride": {
+          "korean": "자긍심",
+          "emoji": "🌟",
+          "level": 2,
+          "intensity": "medium",
+          "keywords": ["자랑", "자부심", "멋있다", "멋있다", "위대하다"],
+          "contexts": ["achievement", "personal_growth", "recognition"],
+          "specific_emotions": {
+            "confidence": {
+              "korean": "자신감",
+              "emoji": "💪",
+              "level": 3,
+              "keywords": ["자신감", "확신", "자신있다", "잘할수있다"]
+            },
+            "accomplishment": {
+              "korean": "성취감",
+              "emoji": "🏆",
+              "level": 3,
+              "keywords": ["성취", "달성", "완성", "해냈다"]
+            }
+          }
+        },
+        "love": {
+          "korean": "사랑",
+          "emoji": "❤️",
+          "level": 2,
+          "intensity": "high",
+          "keywords": ["사랑", "좋아하다", "소중", "따뜻하다", "따뜻"],
+          "contexts": ["relationship", "family", "connection"],
+          "specific_emotions": {
+            "affection": {
+              "korean": "애정",
+              "emoji": "🥰",
+              "level": 3,
+              "keywords": ["애정", "깊은 감정", "소중하다", "사랑하다"]
+            },
+            "warmth": {
+              "korean": "따뜻함",
+              "emoji": "☀️",
+              "level": 3,
+              "keywords": ["따뜻하다", "온정", "포근하다", "온기"]
+            }
+          }
+        }
+      }
+    },
+    "negative": {
+      "korean": "부정",
+      "level": 1,
+      "subcategories": {
+        "sadness": {
+          "korean": "슬픔",
+          "emoji": "😢",
+          "level": 2,
+          "intensity": "high",
+          "keywords": ["슬프다", "우울", "힘들다", "외롭다", "쓸쓸하다"],
+          "contexts": ["loss", "separation", "disappointment"],
+          "specific_emotions": {
+            "loneliness": {
+              "korean": "외로움",
+              "emoji": "😔",
+              "level": 3,
+              "keywords": ["외롭다", "혼자", "고독", "따로"]
+            },
+            "melancholy": {
+              "korean": "우울",
+              "emoji": "😞",
+              "level": 3,
+              "keywords": ["우울하다", "침울하다", "어두운", "저기압"]
+            },
+            "grief": {
+              "korean": "비통",
+              "emoji": "💔",
+              "level": 3,
+              "keywords": ["가슴아프다", "비통", "통한", "그리움"]
+            }
+          }
+        },
+        "anxiety": {
+          "korean": "불안",
+          "emoji": "😰",
+          "level": 2,
+          "intensity": "high",
+          "keywords": ["불안", "긴장", "걱정", "두렵다", "떨린다"],
+          "contexts": ["uncertainty", "danger", "anticipation"],
+          "specific_emotions": {
+            "worry": {
+              "korean": "걱정",
+              "emoji": "😟",
+              "level": 3,
+              "keywords": ["걱정", "근심", "우려", "혹시"]
+            },
+            "tension": {
+              "korean": "긴장",
+              "emoji": "😐",
+              "level": 3,
+              "keywords": ["긴장되다", "긴장", "신경쓰다", "팽팽하다"]
+            },
+            "fear": {
+              "korean": "두려움",
+              "emoji": "😱",
+              "level": 3,
+              "keywords": ["두렵다", "무섭다", "두려움", "공포"]
+            }
+          }
+        },
+        "anger": {
+          "korean": "분노",
+          "emoji": "😠",
+          "level": 2,
+          "intensity": "high",
+          "keywords": ["화나다", "분노", "짜증", "열받다", "화"],
+          "contexts": ["injustice", "frustration", "betrayal"],
+          "specific_emotions": {
+            "irritation": {
+              "korean": "짜증",
+              "emoji": "😤",
+              "level": 3,
+              "keywords": ["짜증", "烦躁", "시끄럽다", "거슬린다"]
+            },
+            "frustration": {
+              "korean": "답답함",
+              "emoji": "😒",
+              "level": 3,
+              "keywords": ["답답하다", "막혔다", "정체", "막막하다"]
+            },
+            "resentment": {
+              "korean": "원망",
+              "emoji": "😤",
+              "level": 3,
+              "keywords": ["원망하다", "원한", "억울하다", "억울함"]
+            }
+          }
+        },
+        "shame": {
+          "korean": "수치심",
+          "emoji": "😳",
+          "level": 2,
+          "intensity": "medium",
+          "keywords": ["부끄럽다", "창피", "민망하다", "쑥스럽다"],
+          "contexts": ["mistake", "failure", "social_mistake"],
+          "specific_emotions": {
+            "embarrassment": {
+              "korean": "창피",
+              "emoji": "🥵",
+              "level": 3,
+              "keywords": ["창피", "민망하다", "매스꺼움", "얼굴화끈거린다"]
+            },
+            "regret": {
+              "korean": "후회",
+              "emoji": "😔",
+              "level": 3,
+              "keywords": ["후회", "아쉽다", "실수했다", "잘못했다"]
+            }
+          }
+        }
+      }
+    },
+    "neutral": {
+      "korean": "중립",
+      "level": 1,
+      "subcategories": {
+        "fatigue": {
+          "korean": "피로",
+          "emoji": "😩",
+          "level": 2,
+          "intensity": "medium",
+          "keywords": ["피곤하다", "지치다", "피로", "힘들다", "지친"],
+          "contexts": ["overwork", "stress", "exhaustion"],
+          "specific_emotions": {
+            "exhaustion": {
+              "korean": "탈진",
+              "emoji": "😴",
+              "level": 3,
+              "keywords": ["탈진", "지쳐있다", "진이빠졌다", "남은게없다"]
+            },
+            "lethargy": {
+              "korean": "무기력",
+              "emoji": "😑",
+              "level": 3,
+              "keywords": ["무기력", "적극적이지않다", "의욕", "패기"]
+            }
+          }
+        },
+        "confusion": {
+          "korean": "혼란",
+          "emoji": "😕",
+          "level": 2,
+          "intensity": "medium",
+          "keywords": ["헷갈리다", "모르겠다", "혼란", "복잡하다"],
+          "contexts": ["decision_making", "unclear_situation", "information_overload"],
+          "specific_emotions": {
+            "bewilderment": {
+              "korean": "어리둥절",
+              "emoji": "😕",
+              "level": 3,
+              "keywords": ["어리둥절", "뭔소린지", "이해가안된다", "무슨말"]
+            },
+            "uncertainty": {
+              "korean": "불확실함",
+              "emoji": "🤷",
+              "level": 3,
+              "keywords": ["불확실", "확실하지않다", "알수없다", "모르겠다"]
+            }
+          }
+        },
+        "interest": {
+          "korean": "흥미",
+          "emoji": "😃",
+          "level": 2,
+          "intensity": "low",
+          "keywords": ["흥미", "재미있다", "궁금하다", "관심"],
+          "contexts": ["learning", "discovery", "new_experience"],
+          "specific_emotions": {
+            "curiosity": {
+              "korean": "호기심",
+              "emoji": "👀",
+              "level": 3,
+              "keywords": ["호기심", "궁금하다", "알고싶다", "탐구"]
+            },
+            "fascination": {
+              "korean": "매력",
+              "emoji": "✨",
+              "level": 3,
+              "keywords": ["매력", "끌린다", "잠깐못떨어진다", "매혹"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "context_mappings": {
+    "work": {
+      "likely_emotions": ["pride", "anxiety", "satisfaction", "frustration"],
+      "intensity_scale": "high"
+    },
+    "relationship": {
+      "likely_emotions": ["love", "joy", "sadness", "anger"],
+      "intensity_scale": "high"
+    },
+    "health": {
+      "likely_emotions": ["anxiety", "hope", "relief", "fatigue"],
+      "intensity_scale": "medium"
+    },
+    "study": {
+      "likely_emotions": ["anxiety", "pride", "frustration", "confidence"],
+      "intensity_scale": "high"
+    },
+    "leisure": {
+      "likely_emotions": ["joy", "interest", "relaxation", "excitement"],
+      "intensity_scale": "medium"
+    }
+  },
+  "emotion_correlations": {
+    "anxiety": ["hope", "confidence"],
+    "sadness": ["reflection", "growth"],
+    "anger": ["justice", "boundary"],
+    "joy": ["gratitude", "connection"],
+    "fatigue": ["relief", "rest"]
+  }
+}

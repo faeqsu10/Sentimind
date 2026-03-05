@@ -1,0 +1,179 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "language": "ko-KR",
+    "description": "Situation context ontology for emotion analysis"
+  },
+  "domains": {
+    "interpersonal": {
+      "korean": "대인관계",
+      "emoji": "👥",
+      "description": "Family, friends, romantic relationships, social interactions",
+      "contexts": {
+        "family": {
+          "korean": "가족",
+          "keywords": ["엄마", "아빠", "형", "누나", "동생", "부모", "가족"]
+        },
+        "romantic": {
+          "korean": "연애",
+          "keywords": ["애인", "남친", "여친", "데이트", "연애", "고백"]
+        },
+        "friendship": {
+          "korean": "친구관계",
+          "keywords": ["친구", "술", "모임", "친구들", "우정"]
+        },
+        "social": {
+          "korean": "사회활동",
+          "keywords": ["모임", "행사", "파티", "사람", "만남", "인맥"]
+        }
+      }
+    },
+    "workplace": {
+      "korean": "직장",
+      "emoji": "💼",
+      "description": "Work projects, boss interactions, colleagues, career",
+      "contexts": {
+        "project": {
+          "korean": "프로젝트",
+          "keywords": ["프로젝트", "일", "마감", "완료", "계획", "시작"]
+        },
+        "meeting": {
+          "korean": "회의",
+          "keywords": ["회의", "발표", "보고", "상사", "회장"]
+        },
+        "colleague": {
+          "korean": "동료관계",
+          "keywords": ["동료", "팀", "조직", "상사", "부하"]
+        },
+        "career": {
+          "korean": "경력",
+          "keywords": ["취업", "면접", "승진", "퇴직", "이직", "커리어"]
+        }
+      }
+    },
+    "academic": {
+      "korean": "학업",
+      "emoji": "📚",
+      "description": "School, exam, homework, studying",
+      "contexts": {
+        "exam": {
+          "korean": "시험",
+          "keywords": ["시험", "수능", "시험보다", "모의고사", "시험준비"]
+        },
+        "homework": {
+          "korean": "숙제",
+          "keywords": ["숙제", "과제", "리포트", "프로젝트", "과제"]
+        },
+        "class": {
+          "korean": "수업",
+          "keywords": ["수업", "강의", "교수님", "학교", "대학"]
+        },
+        "grade": {
+          "korean": "성적",
+          "keywords": ["성적", "점수", "등급", "학점", "GPA"]
+        }
+      }
+    },
+    "health": {
+      "korean": "건강",
+      "emoji": "🏥",
+      "description": "Physical health, mental health, illness, exercise",
+      "contexts": {
+        "illness": {
+          "korean": "질병",
+          "keywords": ["감기", "병", "아프다", "아픔", "병원", "약"]
+        },
+        "exercise": {
+          "korean": "운동",
+          "keywords": ["운동", "헬스", "조깅", "요가", "운동하다"]
+        },
+        "mental": {
+          "korean": "정신건강",
+          "keywords": ["스트레스", "우울", "상담", "치료", "명상"]
+        },
+        "sleep": {
+          "korean": "수면",
+          "keywords": ["잠", "수면", "불면증", "자다", "깼다"]
+        }
+      }
+    },
+    "self_reflection": {
+      "korean": "자기반성",
+      "emoji": "🪞",
+      "description": "Personal growth, goals, values, self-improvement",
+      "contexts": {
+        "goal": {
+          "korean": "목표",
+          "keywords": ["목표", "꿈", "계획", "목표달성", "실행"]
+        },
+        "growth": {
+          "korean": "성장",
+          "keywords": ["성장", "배우다", "발전", "진보", "배움"]
+        },
+        "value": {
+          "korean": "가치관",
+          "keywords": ["가치", "의미", "본질", "원칙", "신념"]
+        },
+        "regret": {
+          "korean": "후회",
+          "keywords": ["후회", "실수", "아쉽다", "잘못했다", "반성"]
+        }
+      }
+    }
+  },
+  "emotion_context_affinities": {
+    "anxiety": ["workplace", "academic", "health"],
+    "joy": ["interpersonal", "achievement"],
+    "sadness": ["interpersonal", "self_reflection"],
+    "pride": ["workplace", "academic", "self_reflection"],
+    "frustration": ["workplace", "academic"],
+    "relief": ["health", "workplace", "academic"],
+    "love": ["interpersonal"],
+    "gratitude": ["interpersonal", "self_reflection"]
+  },
+  "temporal_patterns": {
+    "morning": {
+      "likely_emotions": ["fatigue", "hope", "anxiety"],
+      "contexts": ["study", "work_start"]
+    },
+    "afternoon": {
+      "likely_emotions": ["fatigue", "productivity", "frustration"],
+      "contexts": ["work", "study"]
+    },
+    "evening": {
+      "likely_emotions": ["relief", "relaxation", "reflection"],
+      "contexts": ["leisure", "self_reflection"]
+    },
+    "night": {
+      "likely_emotions": ["loneliness", "reflection", "peace"],
+      "contexts": ["self_reflection", "intimate_conversation"]
+    },
+    "weekend": {
+      "likely_emotions": ["joy", "relaxation", "connection"],
+      "contexts": ["interpersonal", "leisure"]
+    }
+  },
+  "intensity_factors": {
+    "high_intensity_triggers": [
+      "job_loss",
+      "health_crisis",
+      "relationship_change",
+      "important_exam",
+      "family_conflict"
+    ],
+    "medium_intensity_triggers": [
+      "project_deadline",
+      "difficult_conversation",
+      "minor_illness",
+      "minor_conflict",
+      "goal_pursuit"
+    ],
+    "low_intensity_triggers": [
+      "daily_routine",
+      "casual_meeting",
+      "weather",
+      "food",
+      "entertainment"
+    ]
+  }
+}

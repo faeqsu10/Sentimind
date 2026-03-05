@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 공감 다이어리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-bg: #FFF8F0;
+      --color-surface: #FFFFFF;
+      --color-surface-warm: #FEF3E2;
+      --color-primary: #E8A87C;
+      --color-primary-hover: #D4956A;
+      --color-secondary: #D4A574;
+      --color-text: #5D4E37;
+      --color-text-light: #8B7D6B;
+      --color-text-muted: #B8A99A;
+      --color-border: #E8DDD0;
+      --color-divider: #F0E6D9;
+      --gradient-response: linear-gradient(135deg, #FEF3E2 0%, #FCE4D6 50%, #F5DEB3 100%);
+      --shadow-sm: 0 1px 3px rgba(93,78,55,0.06);
+      --shadow-md: 0 4px 12px rgba(93,78,55,0.08);
+      --shadow-lg: 0 8px 24px rgba(93,78,55,0.12);
+      --shadow-glow: 0 0 20px rgba(232,168,124,0.15);
+      --font-body: 'Gowun Dodum', sans-serif;
+      --font-diary: 'Gowun Batang', serif;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.7;
+      min-height: 100dvh;
+      padding: 0 16px;
+    }
+
+    .app-container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    /* Header */
+    .app-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      animation: fadeInUp 500ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .app-title {
+      font-family: var(--font-diary);
+      font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 0.25rem;
+    }
+    .app-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 2px;
+      background: var(--color-primary);
+      margin: 0.5rem auto 0;
+      border-radius: 1px;
+    }
+    .today-date {
+      font-size: clamp(0.8rem, 0.75rem + 0.3vw, 0.875rem);
+      color: var(--color-text-light);
+    }
+
+    /* Diary Input */
+    .diary-input {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      transition: box-shadow 300ms ease;
+      animation: fadeInUp 500ms 100ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .diary-input:focus-within {
+      box-shadow: var(--shadow-md), var(--shadow-glow);
+    }
+    .diary-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    #diary-text {
+      font-family: var(--font-diary);
+      font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1rem);
+      color: var(--color-text);
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      min-height: 80px;
+      line-height: 1.7;
+    }
+    #diary-text::placeholder { color: var(--color-text-muted); }
+    .form-actions { display: flex; justify-content: flex-end; align-items: center; }
+    .char-count { font-size: 0.75rem; color: var(--color-text-muted); margin-right: auto; }
+    .char-count.warn { color: #c62828; }
+    .btn-submit {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .btn-submit:hover { background: var(--color-primary-hover); transform: scale(1.05); }
+    .btn-submit:active { transform: scale(0.95); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-submit svg { width: 16px; height: 16px; }
+
+    /* AI Response */
+    .ai-response { margin-bottom: 1.5rem; }
+    .response-card {
+      background: var(--gradient-response);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      animation: scaleIn 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .response-card[hidden] { display: none; }
+    .emotion-emoji { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+    .emotion-label {
+      font-size: clamp(0.8rem, 0.75rem + 0.3vw, 0.875rem);
+      color: var(--color-text-light);
+      margin-bottom: 0.75rem;
+    }
+    .empathy-message {
+      font-family: var(--font-diary);
+      font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+      line-height: 1.8;
+      color: var(--color-text);
+      margin-bottom: 0.75rem;
+    }
+    .advice-message {
+      font-size: clamp(0.85rem, 0.8rem + 0.25vw, 0.95rem);
+      color: var(--color-text-light);
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--color-divider);
+    }
+    .advice-message::before { content: '💡 '; }
+
+    /* Ontology Insights */
+    .ontology-section {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--color-divider);
+    }
+    .ontology-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    /* Confidence Badge (top of response card) */
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(232, 168, 124, 0.15);
+      border: 1px solid rgba(232, 168, 124, 0.3);
+      border-radius: var(--radius-xl);
+      padding: 0.4rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--color-text);
+      margin-bottom: 1rem;
+    }
+    .confidence-badge-label {
+      font-weight: 500;
+    }
+    .confidence-badge-bar {
+      width: 80px;
+      height: 6px;
+      background: var(--color-divider);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .confidence-badge-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 600ms cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    .confidence-badge-fill[data-level="high"] { background: #66bb6a; }
+    .confidence-badge-fill[data-level="mid"] { background: var(--color-primary); }
+    .confidence-badge-fill[data-level="low"] { background: #ef9a9a; }
+    .confidence-badge-percent {
+      font-weight: 700;
+      font-size: 0.85rem;
+      min-width: 2.5em;
+      text-align: right;
+    }
+
+    /* Vertical Emotion Hierarchy */
+    .emotion-hierarchy {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      margin-bottom: 0.75rem;
+    }
+    .hierarchy-level {
+      background: rgba(232, 168, 124, 0.1);
+      color: var(--color-text);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 500;
+      position: relative;
+    }
+    .hierarchy-level:first-child {
+      background: rgba(232, 168, 124, 0.22);
+      font-weight: 700;
+    }
+    .hierarchy-level:last-child {
+      background: rgba(232, 168, 124, 0.35);
+    }
+    .hierarchy-arrow {
+      display: flex;
+      align-items: center;
+      padding-left: 1.2rem;
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+
+    /* Situation Tags with Emoji */
+    .situation-tags {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .situation-tag {
+      background: rgba(85, 160, 180, 0.15);
+      color: #237a9b;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      border: 1px solid rgba(85, 160, 180, 0.2);
+    }
+    .situation-tag-emoji {
+      margin-right: 0.25rem;
+    }
+
+    /* Legacy confidence meter (bottom, kept for fallback) */
+    .confidence-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--color-text-light);
+    }
+    .confidence-bar {
+      width: 60px;
+      height: 4px;
+      background: var(--color-divider);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: 2px;
+      transition: width 400ms ease;
+    }
+
+    /* Loading */
+    .response-loading { text-align: center; padding: 1.5rem; }
+    .response-loading[hidden] { display: none; }
+    .typing-indicator { display: inline-flex; gap: 4px; align-items: center; }
+    .typing-indicator span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      animation: bounce 0.8s infinite;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+    /* History */
+    .diary-history {
+      animation: fadeInUp 500ms 200ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .section-title {
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+      color: var(--color-text-light);
+      margin-bottom: 1rem;
+    }
+    .history-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .history-item {
+      background: var(--color-surface-warm);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      position: relative;
+      animation: fadeInUp 300ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+      cursor: pointer;
+      transition: box-shadow 200ms ease;
+    }
+    .history-item:hover { box-shadow: var(--shadow-sm); }
+    .history-emoji { font-size: 1.5rem; flex-shrink: 0; }
+    .history-content { flex: 1; min-width: 0; }
+    .history-date {
+      font-size: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+      color: var(--color-text-muted);
+    }
+    .history-text {
+      font-family: var(--font-diary);
+      font-size: clamp(0.85rem, 0.8rem + 0.25vw, 0.9rem);
+      color: var(--color-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .btn-delete {
+      background: none; border: none;
+      color: var(--color-text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 200ms;
+      padding: 4px 8px;
+      flex-shrink: 0;
+    }
+    .history-item:hover .btn-delete { opacity: 1; }
+    .btn-delete:hover { color: #c0392b; }
+    @media (hover: none) { .btn-delete { opacity: 0.6; } }
+    .history-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .empty-state {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: clamp(0.85rem, 0.8rem + 0.25vw, 0.9rem);
+      padding: 2rem 0;
+    }
+
+    /* History Search & Filter */
+    .history-filter {
+      margin-bottom: 1rem;
+    }
+    .search-input {
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.6rem 0.85rem 0.6rem 2.2rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      outline: none;
+      background: var(--color-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8A99A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 0.7rem center;
+      color: var(--color-text);
+      transition: border-color 200ms ease;
+    }
+    .search-input:focus {
+      border-color: var(--color-primary);
+    }
+    .search-input::placeholder {
+      color: var(--color-text-muted);
+    }
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+    }
+    .filter-chips:empty { margin-top: 0; }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 0.3rem 0.7rem;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--color-text-light);
+      cursor: pointer;
+      transition: all 150ms ease;
+      user-select: none;
+    }
+    .filter-chip:hover {
+      border-color: var(--color-primary);
+    }
+    .filter-chip[aria-pressed="true"] {
+      background: rgba(232, 168, 124, 0.15);
+      border-color: var(--color-primary);
+      color: var(--color-text);
+      font-weight: 500;
+    }
+    .filter-chip:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 1px;
+    }
+    .filter-result-count {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 0.5rem;
+    }
+    .filter-result-count[hidden] { display: none; }
+
+    /* History detail modal */
+    .history-detail {
+      background: var(--gradient-response);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 1rem;
+      animation: scaleIn 300ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .history-detail[hidden] { display: none; }
+    .detail-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .detail-date { font-size: 0.8rem; color: var(--color-text-light); }
+    .btn-close-detail {
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-muted); font-size: 1.2rem; padding: 4px 8px;
+    }
+    .detail-diary {
+      font-family: var(--font-diary);
+      font-size: 1rem;
+      color: var(--color-text);
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--color-divider);
+    }
+
+    /* Settings */
+    .settings-panel {
+      margin-top: 2rem;
+      border-top: 1px solid var(--color-divider);
+      padding-top: 1rem;
+    }
+    .settings-panel summary {
+      display: flex; align-items: center; gap: 0.5rem;
+      color: var(--color-text-light);
+      font-size: 0.85rem;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+    .settings-panel summary::-webkit-details-marker { display: none; }
+    .settings-panel summary svg { width: 16px; height: 16px; }
+    .settings-content {
+      padding-top: 1rem;
+      overflow: hidden;
+    }
+    .form-group {
+      display: flex; gap: 0.5rem; align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .form-group label {
+      font-size: 0.85rem; color: var(--color-text-light); white-space: nowrap;
+    }
+    .form-group input {
+      flex: 1;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    .form-group input:focus { border-color: var(--color-primary); }
+    .btn-save-key {
+      background: var(--color-secondary);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 200ms;
+    }
+    .btn-save-key:hover { background: var(--color-primary-hover); }
+    .settings-hint {
+      font-size: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+      color: var(--color-text-muted);
+    }
+    .settings-status {
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+    .settings-status.success { background: #e8f5e9; color: #2e7d32; }
+    .settings-status.error { background: #fce4ec; color: #c62828; }
+    .settings-status[hidden] { display: none; }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.5rem;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      animation: fadeInUp 500ms 50ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.7rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 200ms ease;
+      position: relative;
+    }
+    .tab-btn:hover {
+      color: var(--color-text-light);
+      background: var(--color-surface-warm);
+    }
+    .tab-btn[aria-selected="true"] {
+      color: var(--color-text);
+      font-weight: 500;
+      background: var(--color-surface-warm);
+    }
+    .tab-btn[aria-selected="true"]::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20%;
+      right: 20%;
+      height: 2px;
+      background: var(--color-primary);
+      border-radius: 1px;
+    }
+    .tab-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+    .tab-panel[hidden] { display: none; }
+
+    /* Dashboard */
+    .dashboard {
+      animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .dashboard-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .summary-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+      display: block;
+    }
+    .summary-label {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 0.25rem;
+    }
+    .dashboard-section {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .dashboard-section-title {
+      font-size: 0.9rem;
+      color: var(--color-text-light);
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    /* CSS Bar chart */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .bar-label {
+      min-width: 5em;
+      font-size: 0.8rem;
+      color: var(--color-text);
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .bar-track {
+      flex: 1;
+      height: 18px;
+      background: var(--color-divider);
+      border-radius: 9px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: 9px;
+      transition: width 600ms cubic-bezier(0.25,0.46,0.45,0.94);
+      min-width: 2px;
+    }
+    .bar-count {
+      min-width: 2em;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-align: left;
+    }
+    /* Situation bar alternate color */
+    .bar-fill.situation {
+      background: rgba(85, 160, 180, 0.6);
+    }
+    /* Recent entries in dashboard */
+    .recent-entry {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-divider);
+    }
+    .recent-entry:last-child { border-bottom: none; }
+    .recent-emoji { font-size: 1.2rem; flex-shrink: 0; }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-text {
+      font-family: var(--font-diary);
+      font-size: 0.85rem;
+      color: var(--color-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .recent-meta {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+    }
+    .dashboard-empty {
+      text-align: center;
+      color: var(--color-text-muted);
+      padding: 2rem 0;
+      font-size: 0.9rem;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-bottom: 2rem;
+      font-size: clamp(0.75rem, 0.7rem + 0.25vw, 0.8rem);
+      color: var(--color-text-muted);
+    }
+
+    /* Error toast */
+    .error-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #c62828;
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      transition: transform 300ms ease;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    .error-toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1 class="app-title">AI 공감 다이어리</h1>
+      <time class="today-date" id="todayDate"></time>
+    </header>
+
+    <nav class="tab-nav" role="tablist" aria-label="메뉴">
+      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary">일기</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-dashboard" id="tab-dashboard">통계</button>
+    </nav>
+
+    <main>
+      <div id="panel-diary" role="tabpanel" aria-labelledby="tab-diary">
+      <section class="diary-input" aria-label="일기 작성">
+        <form class="diary-form" id="diaryForm">
+          <label for="diary-text" class="sr-only">오늘의 일기</label>
+          <textarea id="diary-text" placeholder="오늘 하루는 어땠나요?" rows="3" maxlength="500"></textarea>
+          <div class="form-actions">
+            <span class="char-count" id="charCount" aria-live="polite"></span>
+            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+              <span>보내기</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="ai-response" aria-label="AI 공감 응답" aria-live="polite">
+        <div class="response-card" id="responseCard" hidden>
+          <div class="confidence-badge" id="confidenceBadge" hidden>
+            <span class="confidence-badge-label">분석 신뢰도</span>
+            <div class="confidence-badge-bar">
+              <div class="confidence-badge-fill" id="confidenceBadgeFill"></div>
+            </div>
+            <span class="confidence-badge-percent" id="confidenceBadgePercent"></span>
+          </div>
+          <span class="emotion-emoji" id="responseEmoji" aria-hidden="true"></span>
+          <p class="emotion-label" id="responseEmotion"></p>
+          <p class="empathy-message" id="responseMessage"></p>
+          <p class="advice-message" id="responseAdvice"></p>
+
+          <!-- Ontology Insights (Phase 2) -->
+          <div class="ontology-section" id="ontologySection" hidden>
+            <!-- Emotion Hierarchy -->
+            <span class="ontology-label">감정 분석</span>
+            <div class="emotion-hierarchy" id="emotionHierarchy"></div>
+
+            <!-- Situation Context -->
+            <span class="ontology-label" style="margin-top: 0.75rem;">상황 맥락</span>
+            <div class="situation-tags" id="situationTags"></div>
+
+            <!-- Confidence (hidden, badge is at top of card) -->
+            <div class="confidence-meter" id="confidenceMeter" hidden></div>
+          </div>
+        </div>
+        <div class="response-loading" id="responseLoading" hidden>
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--color-text-muted); margin-top:0.5rem;">마음을 읽고 있어요...</p>
+        </div>
+      </section>
+
+      <section class="diary-history" aria-label="이전 일기 목록">
+        <h2 class="section-title">지난 이야기들</h2>
+        <div class="history-filter" id="historyFilter">
+          <label for="historySearch" class="sr-only">일기 검색</label>
+          <input type="search" id="historySearch" class="search-input" placeholder="일기 내용 검색..." autocomplete="off">
+          <div class="filter-chips" id="filterChips" role="group" aria-label="감정 필터"></div>
+          <p class="filter-result-count" id="filterResultCount" hidden aria-live="polite"></p>
+        </div>
+        <div id="historyDetail" hidden></div>
+        <ul class="history-list" id="historyList" role="list"></ul>
+        <p class="empty-state" id="emptyState" hidden>📝 아직 작성한 일기가 없어요.</p>
+      </section>
+      </div>
+
+      <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" hidden>
+        <div class="dashboard" id="dashboardContent">
+          <div class="dashboard-summary" id="dashboardSummary"></div>
+          <div class="dashboard-section" id="topEmotionsSection">
+            <h3 class="dashboard-section-title">자주 느낀 감정 (Top 5)</h3>
+            <div class="bar-chart" id="topEmotionsChart"></div>
+          </div>
+          <div class="dashboard-section" id="topSituationsSection">
+            <h3 class="dashboard-section-title">자주 나타난 상황 (Top 5)</h3>
+            <div class="bar-chart" id="topSituationsChart"></div>
+          </div>
+          <div class="dashboard-section" id="recentEntriesSection">
+            <h3 class="dashboard-section-title">최근 일기</h3>
+            <div id="recentEntriesList"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+
+    <footer class="app-footer">
+      <p>당신의 하루를 응원합니다 ☀️</p>
+    </footer>
+  </div>
+
+  <div class="error-toast" id="errorToast"></div>
+
+  <script>
+    // ===== DOM Elements =====
+    const diaryForm = document.getElementById('diaryForm');
+    const diaryText = document.getElementById('diary-text');
+    const submitBtn = document.getElementById('submitBtn');
+    const responseCard = document.getElementById('responseCard');
+    const responseLoading = document.getElementById('responseLoading');
+    const responseEmoji = document.getElementById('responseEmoji');
+    const responseEmotion = document.getElementById('responseEmotion');
+    const responseMessage = document.getElementById('responseMessage');
+    const responseAdvice = document.getElementById('responseAdvice');
+    const ontologySection = document.getElementById('ontologySection');
+    const emotionHierarchy = document.getElementById('emotionHierarchy');
+    const situationTags = document.getElementById('situationTags');
+    const confidenceMeter = document.getElementById('confidenceMeter');
+    const confidenceBadge = document.getElementById('confidenceBadge');
+    const confidenceBadgeFill = document.getElementById('confidenceBadgeFill');
+    const confidenceBadgePercent = document.getElementById('confidenceBadgePercent');
+
+    // Domain emoji mapping for situation tags
+    const DOMAIN_EMOJI = {
+      '대인관계': '\u{1F465}',
+      '직장': '\u{1F4BC}',
+      '학업': '\u{1F4DA}',
+      '건강': '\u{1F3E5}',
+      '자기반성': '\u{1FA9E}',
+      '기타': '\u{1F4AD}',
+    };
+    const historyList = document.getElementById('historyList');
+    const historyDetail = document.getElementById('historyDetail');
+    const emptyState = document.getElementById('emptyState');
+    const errorToast = document.getElementById('errorToast');
+    const todayDate = document.getElementById('todayDate');
+    const charCount = document.getElementById('charCount');
+
+    // ===== Init =====
+    function init() {
+      const now = new Date();
+      todayDate.textContent = new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+      }).format(now);
+      todayDate.setAttribute('datetime', now.toISOString().split('T')[0]);
+
+      loadEntries();
+      diaryText.addEventListener('input', () => {
+        submitBtn.disabled = diaryText.value.trim().length === 0;
+        autoResize(diaryText);
+        const len = diaryText.value.length;
+        charCount.textContent = len > 0 ? len + '/500' : '';
+        charCount.className = 'char-count' + (len >= 480 ? ' warn' : '');
+      });
+      diaryForm.addEventListener('submit', handleSubmit);
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    // ===== Diary Submit =====
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const text = diaryText.value.trim();
+      if (!text) return;
+
+      submitBtn.disabled = true;
+      responseCard.hidden = true;
+      responseLoading.hidden = false;
+
+      try {
+        // Step 1: Analyze emotion via server proxy
+        const result = await analyzeEmotion(text);
+        showResponse(result);
+
+        // Step 2: Save entry via server
+        await saveEntry(text, result);
+
+        diaryText.value = '';
+        diaryText.style.height = 'auto';
+        charCount.textContent = '';
+        await loadEntries();
+      } catch (err) {
+        showError(err.userMessage || '알 수 없는 오류가 발생했습니다.');
+      } finally {
+        responseLoading.hidden = true;
+        submitBtn.disabled = diaryText.value.trim().length === 0;
+      }
+    }
+
+    // ===== Server API Calls =====
+    async function analyzeEmotion(text) {
+      let response;
+      try {
+        response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+      } catch (e) {
+        throw { userMessage: '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.' };
+      }
+
+      let data;
+      try { data = await response.json(); }
+      catch { throw { userMessage: '서버 응답을 처리할 수 없습니다. 다시 시도해주세요.' }; }
+      if (!response.ok) {
+        throw { userMessage: data.error || '서버 오류가 발생했습니다.' };
+      }
+      return data;
+    }
+
+    async function saveEntry(text, result) {
+      const response = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          emotion: result.emotion,
+          emoji: result.emoji,
+          message: result.message,
+          advice: result.advice,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw { userMessage: data.error || '일기 저장에 실패했습니다.' };
+      }
+    }
+
+    async function loadEntries() {
+      try {
+        const response = await fetch('/api/entries');
+        if (!response.ok) throw new Error();
+        const entries = await response.json();
+        renderHistory(entries);
+      } catch {
+        renderHistory([]);
+      }
+    }
+
+    async function deleteEntry(id) {
+      try {
+        const response = await fetch('/api/entries/' + id, { method: 'DELETE' });
+        if (!response.ok) throw new Error();
+      } catch {
+        showError('삭제에 실패했습니다.');
+      }
+      await loadEntries();
+      if (historyDetail.dataset.activeId === id) historyDetail.hidden = true;
+    }
+
+    // ===== Display Response =====
+    function showResponse(result) {
+      responseEmoji.textContent = result.emoji;
+      responseEmotion.textContent = '감정: ' + result.emotion;
+      responseMessage.textContent = result.message;
+      responseAdvice.textContent = result.advice;
+
+      // Render ontology insights (Phase 2)
+      if (result.ontology) {
+        renderOntologyInsights(result.ontology);
+        ontologySection.hidden = false;
+
+        // Confidence badge at top of card
+        if (result.ontology.confidence !== undefined) {
+          renderConfidenceBadge(result.ontology.confidence);
+          confidenceBadge.hidden = false;
+        } else {
+          confidenceBadge.hidden = true;
+        }
+      } else {
+        ontologySection.hidden = true;
+        confidenceBadge.hidden = true;
+      }
+
+      responseCard.hidden = false;
+      responseCard.style.animation = 'none';
+      requestAnimationFrame(() => { responseCard.style.animation = ''; });
+    }
+
+    function renderConfidenceBadge(confidence) {
+      const pct = confidence || 0;
+      confidenceBadgePercent.textContent = pct + '%';
+      confidenceBadgeFill.style.width = pct + '%';
+
+      // Color level
+      let level = 'mid';
+      if (pct >= 70) level = 'high';
+      else if (pct < 40) level = 'low';
+      confidenceBadgeFill.setAttribute('data-level', level);
+    }
+
+    function renderOntologyInsights(ontology) {
+      // Emotion Hierarchy (vertical)
+      emotionHierarchy.innerHTML = '';
+      if (ontology.emotion_hierarchy) {
+        const h = ontology.emotion_hierarchy;
+        const levels = [h.level1, h.level2, h.level3].filter(Boolean);
+        levels.forEach((level, idx) => {
+          if (idx > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'hierarchy-arrow';
+            arrow.textContent = '\u2193';
+            arrow.setAttribute('aria-hidden', 'true');
+            emotionHierarchy.appendChild(arrow);
+          }
+          const span = document.createElement('span');
+          span.className = 'hierarchy-level';
+          span.textContent = level;
+          emotionHierarchy.appendChild(span);
+        });
+      }
+
+      // Situation Tags with emoji
+      situationTags.innerHTML = '';
+      if (ontology.situation_context && Array.isArray(ontology.situation_context)) {
+        ontology.situation_context.forEach(ctx => {
+          const tag = document.createElement('span');
+          tag.className = 'situation-tag';
+
+          const emoji = DOMAIN_EMOJI[ctx.domain] || DOMAIN_EMOJI['\uAE30\uD0C0'];
+          const emojiSpan = document.createElement('span');
+          emojiSpan.className = 'situation-tag-emoji';
+          emojiSpan.setAttribute('aria-hidden', 'true');
+          emojiSpan.textContent = emoji;
+          tag.appendChild(emojiSpan);
+
+          const textNode = document.createTextNode(ctx.domain + ' / ' + ctx.context);
+          tag.appendChild(textNode);
+
+          situationTags.appendChild(tag);
+        });
+      }
+
+      // Bottom confidence meter is now hidden since we have the badge at top
+      confidenceMeter.innerHTML = '';
+    }
+
+    // ===== History Filter & Search =====
+    let allEntries = [];
+    let activeFilters = new Set();
+
+    const historySearch = document.getElementById('historySearch');
+    const filterChips = document.getElementById('filterChips');
+    const filterResultCount = document.getElementById('filterResultCount');
+
+    historySearch.addEventListener('input', applyFilters);
+
+    function buildFilterChips(entries) {
+      const emotions = new Set();
+      entries.forEach(e => { if (e.emotion) emotions.add(e.emotion); });
+
+      filterChips.innerHTML = '';
+      const sorted = [...emotions].sort();
+      sorted.forEach(emotion => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip';
+        btn.setAttribute('role', 'switch');
+        btn.setAttribute('aria-pressed', activeFilters.has(emotion) ? 'true' : 'false');
+        btn.textContent = emotion;
+        btn.addEventListener('click', () => {
+          if (activeFilters.has(emotion)) {
+            activeFilters.delete(emotion);
+            btn.setAttribute('aria-pressed', 'false');
+          } else {
+            activeFilters.add(emotion);
+            btn.setAttribute('aria-pressed', 'true');
+          }
+          applyFilters();
+        });
+        filterChips.appendChild(btn);
+      });
+    }
+
+    function applyFilters() {
+      const query = historySearch.value.trim().toLowerCase();
+      let filtered = allEntries;
+
+      if (query) {
+        filtered = filtered.filter(e => e.text.toLowerCase().includes(query));
+      }
+
+      if (activeFilters.size > 0) {
+        filtered = filtered.filter(e => activeFilters.has(e.emotion));
+      }
+
+      renderHistoryList(filtered);
+
+      // Show result count when filtering is active
+      const isFiltering = query || activeFilters.size > 0;
+      if (isFiltering) {
+        filterResultCount.textContent = filtered.length + '건의 일기가 검색되었습니다.';
+        filterResultCount.hidden = false;
+      } else {
+        filterResultCount.hidden = true;
+      }
+    }
+
+    // ===== Render History =====
+    const MAX_DISPLAY = 50;
+
+    function renderHistory(entries) {
+      allEntries = entries;
+      buildFilterChips(entries);
+      applyFilters();
+    }
+
+    function renderHistoryList(entries) {
+      const displayEntries = entries.slice(0, MAX_DISPLAY);
+      historyList.innerHTML = '';
+      emptyState.hidden = entries.length > 0;
+
+      displayEntries.forEach(entry => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.setAttribute('role', 'button');
+        li.setAttribute('tabindex', '0');
+
+        const dateStr = new Intl.DateTimeFormat('ko-KR', {
+          month: 'short', day: 'numeric', weekday: 'short'
+        }).format(new Date(entry.date));
+
+        li.innerHTML = `
+          <span class="history-emoji">${escapeHtml(entry.emoji)}</span>
+          <div class="history-content">
+            <time class="history-date" datetime="${entry.date}">${dateStr}</time>
+            <p class="history-text">${escapeHtml(entry.text)}</p>
+          </div>
+          <button class="btn-delete" aria-label="삭제" data-id="${entry.id}">&times;</button>
+        `;
+
+        li.querySelector('.btn-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteEntry(entry.id);
+        });
+
+        li.addEventListener('click', () => showHistoryDetail(entry));
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showHistoryDetail(entry); }
+        });
+        historyList.appendChild(li);
+      });
+    }
+
+    function showHistoryDetail(entry) {
+      const dateStr = new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+      }).format(new Date(entry.date));
+
+      historyDetail.innerHTML = `
+        <div class="history-detail">
+          <div class="detail-header">
+            <span class="detail-date">${dateStr}</span>
+            <button class="btn-close-detail" aria-label="닫기">&times;</button>
+          </div>
+          <p class="detail-diary">"${escapeHtml(entry.text)}"</p>
+          <span class="emotion-emoji">${escapeHtml(entry.emoji)}</span>
+          <p class="emotion-label">감정: ${escapeHtml(entry.emotion)}</p>
+          <p class="empathy-message">${escapeHtml(entry.message)}</p>
+          ${entry.advice ? '<p class="advice-message">' + escapeHtml(entry.advice) + '</p>' : ''}
+        </div>
+      `;
+      historyDetail.hidden = false;
+      historyDetail.dataset.activeId = entry.id;
+      historyDetail.querySelector('.btn-close-detail').addEventListener('click', () => {
+        historyDetail.hidden = true;
+      });
+    }
+
+    // ===== Utils =====
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    let errorTimer = null;
+    function showError(msg) {
+      errorToast.textContent = msg;
+      errorToast.classList.add('show');
+      if (errorTimer) clearTimeout(errorTimer);
+      errorTimer = setTimeout(() => { errorToast.classList.remove('show'); errorTimer = null; }, 4000);
+    }
+
+    // ===== Tab Navigation =====
+    const tabDiary = document.getElementById('tab-diary');
+    const tabDashboard = document.getElementById('tab-dashboard');
+    const panelDiary = document.getElementById('panel-diary');
+    const panelDashboard = document.getElementById('panel-dashboard');
+
+    function switchTab(activeTab) {
+      const tabs = [tabDiary, tabDashboard];
+      const panels = [panelDiary, panelDashboard];
+
+      tabs.forEach((tab, i) => {
+        const isActive = tab === activeTab;
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        panels[i].hidden = !isActive;
+      });
+
+      if (activeTab === tabDashboard) {
+        loadDashboard();
+      }
+    }
+
+    tabDiary.addEventListener('click', () => switchTab(tabDiary));
+    tabDashboard.addEventListener('click', () => switchTab(tabDashboard));
+
+    // Keyboard navigation for tabs
+    [tabDiary, tabDashboard].forEach((tab, idx, arr) => {
+      tab.addEventListener('keydown', (e) => {
+        let target = null;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          target = arr[(idx + 1) % arr.length];
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          target = arr[(idx - 1 + arr.length) % arr.length];
+        }
+        if (target) {
+          e.preventDefault();
+          target.focus();
+          switchTab(target);
+        }
+      });
+    });
+
+    // ===== Dashboard =====
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error();
+        const stats = await response.json();
+        renderDashboard(stats);
+      } catch {
+        const content = document.getElementById('dashboardContent');
+        content.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
+      }
+    }
+
+    function renderDashboard(stats) {
+      // Summary cards
+      const summaryEl = document.getElementById('dashboardSummary');
+      summaryEl.innerHTML = '';
+
+      if (stats.total_entries === 0) {
+        const content = document.getElementById('dashboardContent');
+        content.innerHTML = '<p class="dashboard-empty">아직 작성한 일기가 없어요. 일기를 쓰면 통계가 표시됩니다.</p>';
+        return;
+      }
+
+      const summaryItems = [
+        { value: stats.total_entries, label: '전체 일기' },
+        { value: stats.top_emotions?.[0]?.emotion || '-', label: '가장 많은 감정' },
+        { value: stats.avg_confidence ? stats.avg_confidence + '%' : '-', label: '평균 신뢰도' },
+      ];
+
+      summaryItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'summary-card';
+        card.innerHTML = '<span class="summary-value">' + escapeHtml(String(item.value)) + '</span>'
+          + '<span class="summary-label">' + escapeHtml(item.label) + '</span>';
+        summaryEl.appendChild(card);
+      });
+
+      // Top Emotions bar chart
+      renderBarChart(
+        document.getElementById('topEmotionsChart'),
+        stats.top_emotions || [],
+        'emotion',
+        'count',
+        false
+      );
+
+      // Top Situations bar chart
+      renderBarChart(
+        document.getElementById('topSituationsChart'),
+        stats.top_situations || [],
+        'situation',
+        'count',
+        true
+      );
+
+      // Recent entries
+      renderRecentEntries(stats.latest_entries || []);
+    }
+
+    function renderBarChart(container, items, labelKey, countKey, isSituation) {
+      container.innerHTML = '';
+      if (items.length === 0) {
+        container.innerHTML = '<p style="font-size:0.8rem;color:var(--color-text-muted);">데이터가 없습니다.</p>';
+        return;
+      }
+
+      const maxCount = Math.max(...items.map(i => i[countKey]));
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+
+        const label = document.createElement('span');
+        label.className = 'bar-label';
+        label.textContent = item[labelKey];
+
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill' + (isSituation ? ' situation' : '');
+        // Animate from 0
+        fill.style.width = '0%';
+        requestAnimationFrame(() => {
+          fill.style.width = Math.round((item[countKey] / maxCount) * 100) + '%';
+        });
+
+        const count = document.createElement('span');
+        count.className = 'bar-count';
+        count.textContent = item[countKey];
+
+        track.appendChild(fill);
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(count);
+        container.appendChild(row);
+      });
+    }
+
+    function renderRecentEntries(entries) {
+      const container = document.getElementById('recentEntriesList');
+      container.innerHTML = '';
+
+      if (entries.length === 0) {
+        container.innerHTML = '<p style="font-size:0.8rem;color:var(--color-text-muted);">최근 일기가 없습니다.</p>';
+        return;
+      }
+
+      entries.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'recent-entry';
+
+        const dateStr = new Intl.DateTimeFormat('ko-KR', {
+          month: 'short', day: 'numeric'
+        }).format(new Date(entry.date));
+
+        div.innerHTML = '<span class="recent-emoji">' + escapeHtml(entry.emoji) + '</span>'
+          + '<div class="recent-info">'
+          + '<p class="recent-text">' + escapeHtml(entry.text) + '</p>'
+          + '<span class="recent-meta">' + dateStr + ' &middot; ' + escapeHtml(entry.emotion) + '</span>'
+          + '</div>';
+        container.appendChild(div);
+      });
+    }
+
+    // ===== Start =====
+    init();
+  </script>
+</body>
+</html>
