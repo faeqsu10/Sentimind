@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --color-bg: #FFF8F0;
@@ -20,6 +21,10 @@
       --color-text-muted: #B8A99A;
       --color-border: #E8DDD0;
       --color-divider: #F0E6D9;
+      --color-error: #c62828;
+      --color-error-bg: #fce4ec;
+      --color-success: #2e7d32;
+      --color-success-bg: #e8f5e9;
       --gradient-response: linear-gradient(135deg, #FEF3E2 0%, #FCE4D6 50%, #F5DEB3 100%);
       --shadow-sm: 0 1px 3px rgba(93,78,55,0.06);
       --shadow-md: 0 4px 12px rgba(93,78,55,0.08);
@@ -50,11 +55,493 @@
       padding: 2rem 0 3rem;
     }
 
-    /* Header */
+    /* ===== Auth Screen ===== */
+    .auth-screen {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 3rem 0;
+      animation: fadeInUp 500ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .auth-screen[hidden] { display: none; }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-logo-title {
+      font-family: var(--font-diary);
+      font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+    .auth-logo-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 2px;
+      background: var(--color-primary);
+      margin: 0.5rem auto 0;
+      border-radius: 1px;
+    }
+    .auth-logo-sub {
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+      margin-top: 0.5rem;
+    }
+
+    .auth-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 1.5rem;
+    }
+    .auth-card-title {
+      font-family: var(--font-body);
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .auth-field label {
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+      font-weight: 500;
+    }
+    .auth-field input {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--color-surface);
+      color: var(--color-text);
+      transition: border-color 200ms ease;
+    }
+    .auth-field input:focus {
+      border-color: var(--color-primary);
+    }
+    .auth-field input[aria-invalid="true"] {
+      border-color: var(--color-error);
+    }
+    .auth-field-error {
+      font-size: 0.75rem;
+      color: var(--color-error);
+      min-height: 1.1em;
+    }
+
+    .btn-auth {
+      display: block;
+      width: 100%;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.2rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 200ms ease;
+      margin-top: 0.5rem;
+    }
+    .btn-auth:hover { background: var(--color-primary-hover); }
+    .btn-auth:active { transform: scale(0.98); }
+    .btn-auth:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-auth:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+    }
+    .auth-switch-link {
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .auth-switch-link:hover { color: var(--color-primary-hover); }
+    .auth-switch-link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .auth-message {
+      font-size: 0.85rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+    .auth-message[hidden] { display: none; }
+    .auth-message.success { background: var(--color-success-bg); color: var(--color-success); }
+    .auth-message.error { background: var(--color-error-bg); color: var(--color-error); }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+      color: var(--color-text-muted);
+      font-size: 0.8rem;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-divider);
+    }
+
+    /* Password strength indicator */
+    .password-strength {
+      display: flex;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .password-strength-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--color-divider);
+      border-radius: 2px;
+      transition: background 200ms ease;
+    }
+    .password-strength[data-level="weak"] .password-strength-bar:nth-child(1) { background: var(--color-error); }
+    .password-strength[data-level="fair"] .password-strength-bar:nth-child(1),
+    .password-strength[data-level="fair"] .password-strength-bar:nth-child(2) { background: #f9a825; }
+    .password-strength[data-level="good"] .password-strength-bar:nth-child(1),
+    .password-strength[data-level="good"] .password-strength-bar:nth-child(2),
+    .password-strength[data-level="good"] .password-strength-bar:nth-child(3) { background: #66bb6a; }
+    .password-strength[data-level="strong"] .password-strength-bar { background: var(--color-success); }
+
+    /* ===== Onboarding ===== */
+    .onboarding-screen {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 0;
+      animation: fadeInUp 500ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .onboarding-screen[hidden] { display: none; }
+
+    .onboarding-progress {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+    .onboarding-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-border);
+      transition: all 300ms ease;
+    }
+    .onboarding-dot.active {
+      background: var(--color-primary);
+      width: 24px;
+      border-radius: 4px;
+    }
+    .onboarding-dot.completed {
+      background: var(--color-primary);
+    }
+
+    .onboarding-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .onboarding-card[hidden] { display: none; }
+
+    .onboarding-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .onboarding-title {
+      font-family: var(--font-diary);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 0.75rem;
+    }
+    .onboarding-desc {
+      font-size: 0.9rem;
+      color: var(--color-text-light);
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+
+    .onboarding-sample {
+      background: var(--gradient-response);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .onboarding-sample-text {
+      font-family: var(--font-diary);
+      font-size: 0.95rem;
+      color: var(--color-text);
+      font-style: italic;
+    }
+
+    .onboarding-time-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .onboarding-time-btn {
+      background: var(--color-surface-warm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 0.5rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--color-text);
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .onboarding-time-btn:hover {
+      border-color: var(--color-primary);
+    }
+    .onboarding-time-btn[aria-pressed="true"] {
+      background: rgba(232, 168, 124, 0.2);
+      border-color: var(--color-primary);
+      font-weight: 500;
+    }
+    .onboarding-time-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .onboarding-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .btn-onboarding-next {
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      padding: 0.7rem 2rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .btn-onboarding-next:hover { background: var(--color-primary-hover); }
+    .btn-onboarding-next:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .btn-onboarding-skip {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      transition: color 200ms ease;
+    }
+    .btn-onboarding-skip:hover { color: var(--color-text-light); }
+    .btn-onboarding-skip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    /* ===== Profile Section ===== */
+    .profile-screen {
+      animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+    }
+    .profile-screen[hidden] { display: none; }
+
+    .profile-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .profile-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--gradient-response);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .profile-nickname {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .profile-email {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-stats-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .profile-stat {
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem 0.5rem;
+    }
+    .profile-stat + .profile-stat {
+      border-left: 1px solid var(--color-divider);
+    }
+    .profile-stat-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      display: block;
+    }
+    .profile-stat-label {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+    }
+
+    .profile-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .profile-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .profile-field label {
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+      font-weight: 500;
+    }
+    .profile-field input,
+    .profile-field textarea {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--color-surface);
+      color: var(--color-text);
+      transition: border-color 200ms ease;
+      resize: none;
+    }
+    .profile-field input:focus,
+    .profile-field textarea:focus {
+      border-color: var(--color-primary);
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+    .btn-profile-save {
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      padding: 0.55rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .btn-profile-save:hover { background: var(--color-primary-hover); }
+    .btn-profile-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-profile-save:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .btn-profile-back {
+      background: var(--color-surface-warm);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      padding: 0.55rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .btn-profile-back:hover { background: var(--color-divider); }
+    .btn-profile-back:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .btn-logout {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 1px solid var(--color-error);
+      color: var(--color-error);
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+      margin-top: 1rem;
+    }
+    .btn-logout:hover { background: var(--color-error-bg); }
+    .btn-logout:focus-visible { outline: 2px solid var(--color-error); outline-offset: 2px; }
+
+    .profile-message {
+      font-size: 0.8rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+    .profile-message[hidden] { display: none; }
+    .profile-message.success { background: var(--color-success-bg); color: var(--color-success); }
+    .profile-message.error { background: var(--color-error-bg); color: var(--color-error); }
+
+    /* ===== Header with user menu ===== */
     .app-header {
       text-align: center;
       margin-bottom: 2rem;
       animation: fadeInUp 500ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+      position: relative;
     }
     .app-title {
       font-family: var(--font-diary);
@@ -76,6 +563,40 @@
       font-size: clamp(0.8rem, 0.75rem + 0.3vw, 0.875rem);
       color: var(--color-text-light);
     }
+
+    .user-menu {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .user-menu[hidden] { display: none; }
+    .user-menu-name {
+      font-size: 0.8rem;
+      color: var(--color-text-light);
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .btn-user-menu {
+      background: var(--color-surface-warm);
+      border: 1px solid var(--color-border);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--color-text);
+      transition: all 200ms ease;
+    }
+    .btn-user-menu:hover { border-color: var(--color-primary); }
+    .btn-user-menu:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
     /* Diary Input */
     .diary-input {
@@ -157,7 +678,7 @@
       padding-top: 0.75rem;
       border-top: 1px solid var(--color-divider);
     }
-    .advice-message::before { content: '💡 '; }
+    .advice-message::before { content: '\1F4A1 '; }
 
     /* Ontology Insights */
     .ontology-section {
@@ -727,15 +1248,175 @@
   </style>
 </head>
 <body>
-  <div class="app-container">
+
+  <!-- ===== Auth Screen ===== -->
+  <div class="auth-screen" id="authScreen" hidden>
+    <div class="auth-logo">
+      <h1 class="auth-logo-title">AI 공감 다이어리</h1>
+      <p class="auth-logo-sub">당신의 감정을 이해하는 일기장</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="auth-card" id="authLoginCard">
+      <h2 class="auth-card-title">로그인</h2>
+      <form class="auth-form" id="loginForm" novalidate>
+        <div class="auth-field">
+          <label for="login-email">이메일</label>
+          <input type="email" id="login-email" autocomplete="email" placeholder="name@example.com" required>
+          <span class="auth-field-error" id="login-email-error" aria-live="polite"></span>
+        </div>
+        <div class="auth-field">
+          <label for="login-password">비밀번호</label>
+          <input type="password" id="login-password" autocomplete="current-password" placeholder="비밀번호 입력" required>
+          <span class="auth-field-error" id="login-password-error" aria-live="polite"></span>
+        </div>
+        <button type="submit" class="btn-auth" id="loginBtn">로그인</button>
+      </form>
+      <div class="auth-message" id="loginMessage" hidden></div>
+      <div class="auth-divider">또는</div>
+      <p class="auth-switch">
+        계정이 없으신가요?
+        <button type="button" class="auth-switch-link" id="showSignupBtn">회원가입</button>
+      </p>
+      <p class="auth-switch" style="margin-top: 0.5rem;">
+        <button type="button" class="auth-switch-link" id="showResetBtn">비밀번호를 잊으셨나요?</button>
+      </p>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="auth-card" id="authSignupCard" hidden>
+      <h2 class="auth-card-title">회원가입</h2>
+      <form class="auth-form" id="signupForm" novalidate>
+        <div class="auth-field">
+          <label for="signup-email">이메일</label>
+          <input type="email" id="signup-email" autocomplete="email" placeholder="name@example.com" required>
+          <span class="auth-field-error" id="signup-email-error" aria-live="polite"></span>
+        </div>
+        <div class="auth-field">
+          <label for="signup-nickname">닉네임 (선택)</label>
+          <input type="text" id="signup-nickname" autocomplete="nickname" placeholder="다이어리에서 사용할 이름" maxlength="30">
+        </div>
+        <div class="auth-field">
+          <label for="signup-password">비밀번호</label>
+          <input type="password" id="signup-password" autocomplete="new-password" placeholder="8자 이상" required minlength="8">
+          <div class="password-strength" id="passwordStrength" data-level="">
+            <div class="password-strength-bar"></div>
+            <div class="password-strength-bar"></div>
+            <div class="password-strength-bar"></div>
+            <div class="password-strength-bar"></div>
+          </div>
+          <span class="auth-field-error" id="signup-password-error" aria-live="polite"></span>
+        </div>
+        <div class="auth-field">
+          <label for="signup-password-confirm">비밀번호 확인</label>
+          <input type="password" id="signup-password-confirm" autocomplete="new-password" placeholder="비밀번호 다시 입력" required>
+          <span class="auth-field-error" id="signup-confirm-error" aria-live="polite"></span>
+        </div>
+        <button type="submit" class="btn-auth" id="signupBtn">가입하기</button>
+      </form>
+      <div class="auth-message" id="signupMessage" hidden></div>
+      <p class="auth-switch" style="margin-top: 1rem;">
+        이미 계정이 있으신가요?
+        <button type="button" class="auth-switch-link" id="showLoginFromSignupBtn">로그인</button>
+      </p>
+    </div>
+
+    <!-- Password Reset Form -->
+    <div class="auth-card" id="authResetCard" hidden>
+      <h2 class="auth-card-title">비밀번호 재설정</h2>
+      <form class="auth-form" id="resetForm" novalidate>
+        <div class="auth-field">
+          <label for="reset-email">이메일</label>
+          <input type="email" id="reset-email" autocomplete="email" placeholder="가입한 이메일 주소" required>
+          <span class="auth-field-error" id="reset-email-error" aria-live="polite"></span>
+        </div>
+        <button type="submit" class="btn-auth" id="resetBtn">재설정 링크 보내기</button>
+      </form>
+      <div class="auth-message" id="resetMessage" hidden></div>
+      <p class="auth-switch" style="margin-top: 1rem;">
+        <button type="button" class="auth-switch-link" id="showLoginFromResetBtn">로그인으로 돌아가기</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== Onboarding Screen ===== -->
+  <div class="onboarding-screen" id="onboardingScreen" hidden>
+    <div class="onboarding-progress" id="onboardingProgress" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" aria-label="온보딩 진행 단계">
+      <div class="onboarding-dot active" data-step="1"></div>
+      <div class="onboarding-dot" data-step="2"></div>
+      <div class="onboarding-dot" data-step="3"></div>
+    </div>
+
+    <!-- Step 1: Introduction -->
+    <div class="onboarding-card" id="onboardingStep1">
+      <span class="onboarding-icon" aria-hidden="true">&#x1F4D6;</span>
+      <h2 class="onboarding-title">감정 일기란?</h2>
+      <p class="onboarding-desc">
+        하루 한 줄, 오늘의 감정을 적어보세요.<br>
+        AI가 당신의 마음을 읽고 공감 메시지를 보내드립니다.<br>
+        꾸준히 기록하면 나만의 감정 패턴을 발견할 수 있어요.
+      </p>
+      <div class="onboarding-actions">
+        <button type="button" class="btn-onboarding-next" id="onboardingNext1">다음으로</button>
+      </div>
+    </div>
+
+    <!-- Step 2: How to write -->
+    <div class="onboarding-card" id="onboardingStep2" hidden>
+      <span class="onboarding-icon" aria-hidden="true">&#x270D;&#xFE0F;</span>
+      <h2 class="onboarding-title">이렇게 쓰면 돼요</h2>
+      <p class="onboarding-desc">
+        특별한 형식은 없어요. 떠오르는 대로 적어보세요.
+      </p>
+      <div class="onboarding-sample">
+        <p class="onboarding-sample-text">"오늘 회의에서 발표했는데 생각보다 잘했다. 뿌듯하다."</p>
+      </div>
+      <div class="onboarding-sample">
+        <p class="onboarding-sample-text">"비가 와서 그런지 기분이 축 가라앉는다."</p>
+      </div>
+      <div class="onboarding-actions">
+        <button type="button" class="btn-onboarding-next" id="onboardingNext2">다음으로</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Notification time -->
+    <div class="onboarding-card" id="onboardingStep3" hidden>
+      <span class="onboarding-icon" aria-hidden="true">&#x23F0;</span>
+      <h2 class="onboarding-title">알림 설정</h2>
+      <p class="onboarding-desc">
+        매일 일기를 쓸 시간을 선택해주세요. (나중에 변경할 수 있어요)
+      </p>
+      <div class="onboarding-time-select" id="onboardingTimeSelect" role="radiogroup" aria-label="알림 시간 선택">
+        <button type="button" class="onboarding-time-btn" role="radio" aria-pressed="false" data-time="09:00">오전 9시</button>
+        <button type="button" class="onboarding-time-btn" role="radio" aria-pressed="false" data-time="12:00">낮 12시</button>
+        <button type="button" class="onboarding-time-btn" role="radio" aria-pressed="false" data-time="18:00">저녁 6시</button>
+        <button type="button" class="onboarding-time-btn" role="radio" aria-pressed="false" data-time="21:00">밤 9시</button>
+        <button type="button" class="onboarding-time-btn" role="radio" aria-pressed="false" data-time="23:00">밤 11시</button>
+      </div>
+      <div class="onboarding-actions">
+        <button type="button" class="btn-onboarding-skip" id="onboardingSkip3">건너뛰기</button>
+        <button type="button" class="btn-onboarding-next" id="onboardingFinish">시작하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Main App ===== -->
+  <div class="app-container" id="appContainer" hidden>
     <header class="app-header">
       <h1 class="app-title">AI 공감 다이어리</h1>
       <time class="today-date" id="todayDate"></time>
+      <div class="user-menu" id="userMenu" hidden>
+        <span class="user-menu-name" id="userMenuName"></span>
+        <button class="btn-user-menu" id="btnUserMenu" aria-label="프로필 메뉴" title="프로필">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+      </div>
     </header>
 
     <nav class="tab-nav" role="tablist" aria-label="메뉴">
       <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary">일기</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-dashboard" id="tab-dashboard">통계</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-profile" id="tab-profile">프로필</button>
     </nav>
 
     <main>
@@ -803,7 +1484,7 @@
         </div>
         <div id="historyDetail" hidden></div>
         <ul class="history-list" id="historyList" role="list"></ul>
-        <p class="empty-state" id="emptyState" hidden>📝 아직 작성한 일기가 없어요.</p>
+        <p class="empty-state" id="emptyState" hidden>아직 작성한 일기가 없어요.</p>
       </section>
       </div>
 
@@ -824,18 +1505,68 @@
           </div>
         </div>
       </div>
+
+      <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
+        <div class="profile-screen" id="profileScreen">
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar" id="profileAvatar" aria-hidden="true"></div>
+              <div class="profile-info">
+                <p class="profile-nickname" id="profileDisplayNickname">--</p>
+                <p class="profile-email" id="profileDisplayEmail">--</p>
+              </div>
+            </div>
+            <div class="profile-stats-row">
+              <div class="profile-stat">
+                <span class="profile-stat-value" id="profileTotalEntries">0</span>
+                <span class="profile-stat-label">일기 수</span>
+              </div>
+              <div class="profile-stat">
+                <span class="profile-stat-value" id="profileJoinDate">--</span>
+                <span class="profile-stat-label">가입일</span>
+              </div>
+            </div>
+
+            <form class="profile-form" id="profileForm">
+              <div class="profile-field">
+                <label for="profile-nickname">닉네임</label>
+                <input type="text" id="profile-nickname" maxlength="30" placeholder="닉네임 입력">
+              </div>
+              <div class="profile-field">
+                <label for="profile-bio">자기소개</label>
+                <textarea id="profile-bio" rows="2" maxlength="200" placeholder="한 줄 소개를 적어보세요"></textarea>
+              </div>
+              <div class="profile-actions">
+                <button type="submit" class="btn-profile-save" id="profileSaveBtn">저장</button>
+              </div>
+            </form>
+            <div class="profile-message" id="profileMessage" hidden></div>
+
+            <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
+          </div>
+        </div>
+      </div>
     </main>
 
-
     <footer class="app-footer">
-      <p>당신의 하루를 응원합니다 ☀️</p>
+      <p>당신의 하루를 응원합니다</p>
     </footer>
   </div>
 
   <div class="error-toast" id="errorToast"></div>
 
   <script>
+    // ===== Auth State =====
+    let currentUser = null;
+    let accessToken = null;
+    let refreshToken = null;
+    let userProfile = null;
+
     // ===== DOM Elements =====
+    const authScreen = document.getElementById('authScreen');
+    const onboardingScreen = document.getElementById('onboardingScreen');
+    const appContainer = document.getElementById('appContainer');
+
     const diaryForm = document.getElementById('diaryForm');
     const diaryText = document.getElementById('diary-text');
     const submitBtn = document.getElementById('submitBtn');
@@ -855,12 +1586,12 @@
 
     // Domain emoji mapping for situation tags
     const DOMAIN_EMOJI = {
-      '대인관계': '\u{1F465}',
-      '직장': '\u{1F4BC}',
-      '학업': '\u{1F4DA}',
-      '건강': '\u{1F3E5}',
-      '자기반성': '\u{1FA9E}',
-      '기타': '\u{1F4AD}',
+      '\uB300\uC778\uAD00\uACC4': '\u{1F465}',
+      '\uC9C1\uC7A5': '\u{1F4BC}',
+      '\uD559\uC5C5': '\u{1F4DA}',
+      '\uAC74\uAC15': '\u{1F3E5}',
+      '\uC790\uAE30\uBC18\uC131': '\u{1FA9E}',
+      '\uAE30\uD0C0': '\u{1F4AD}',
     };
     const historyList = document.getElementById('historyList');
     const historyDetail = document.getElementById('historyDetail');
@@ -869,8 +1600,461 @@
     const todayDate = document.getElementById('todayDate');
     const charCount = document.getElementById('charCount');
 
-    // ===== Init =====
-    function init() {
+    // ===== fetchWithAuth wrapper =====
+    async function fetchWithAuth(url, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': 'Bearer ' + accessToken }),
+        ...options.headers,
+      };
+      const response = await fetch(url, { ...options, headers });
+      if (response.status === 401) {
+        // Try to refresh the token
+        const refreshed = await tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          headers['Authorization'] = 'Bearer ' + accessToken;
+          return fetch(url, { ...options, headers });
+        }
+        localStorage.removeItem('sb-access-token');
+        localStorage.removeItem('sb-refresh-token');
+        currentUser = null;
+        accessToken = null;
+        refreshToken = null;
+        showAuthScreen();
+        throw { userMessage: '세션이 만료되었습니다. 다시 로그인해주세요.' };
+      }
+      return response;
+    }
+
+    async function tryRefreshToken() {
+      if (!refreshToken) return false;
+      try {
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!res.ok) return false;
+        const result = await res.json();
+        if (result.data && result.data.session) {
+          accessToken = result.data.session.access_token;
+          refreshToken = result.data.session.refresh_token;
+          localStorage.setItem('sb-access-token', accessToken);
+          localStorage.setItem('sb-refresh-token', refreshToken);
+          return true;
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    }
+
+    // ===== Screen transitions =====
+    function showAuthScreen() {
+      authScreen.hidden = false;
+      onboardingScreen.hidden = true;
+      appContainer.hidden = true;
+      // Show login card by default
+      showAuthCard('login');
+    }
+
+    function showOnboarding() {
+      authScreen.hidden = true;
+      onboardingScreen.hidden = false;
+      appContainer.hidden = true;
+      onboardingStep = 1;
+      updateOnboardingUI();
+    }
+
+    function showApp() {
+      authScreen.hidden = true;
+      onboardingScreen.hidden = true;
+      appContainer.hidden = false;
+      updateUserMenu();
+      initApp();
+    }
+
+    function showAuthCard(which) {
+      document.getElementById('authLoginCard').hidden = which !== 'login';
+      document.getElementById('authSignupCard').hidden = which !== 'signup';
+      document.getElementById('authResetCard').hidden = which !== 'reset';
+      // Clear messages
+      ['loginMessage', 'signupMessage', 'resetMessage'].forEach(id => {
+        const el = document.getElementById(id);
+        el.hidden = true;
+        el.textContent = '';
+      });
+    }
+
+    function updateUserMenu() {
+      const userMenu = document.getElementById('userMenu');
+      const userMenuName = document.getElementById('userMenuName');
+      if (currentUser) {
+        userMenu.hidden = false;
+        const displayName = (userProfile && userProfile.nickname) || currentUser.email || '';
+        userMenuName.textContent = displayName;
+      } else {
+        userMenu.hidden = true;
+      }
+    }
+
+    // ===== Auth: checkAuth on page load =====
+    async function checkAuth() {
+      const token = localStorage.getItem('sb-access-token');
+      const refresh = localStorage.getItem('sb-refresh-token');
+      if (token) {
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            const result = await res.json();
+            if (result.data && result.data.id) {
+              currentUser = result.data;
+              accessToken = token;
+              refreshToken = refresh;
+              // Load profile to check onboarding
+              await loadProfile();
+              if (userProfile && !userProfile.onboarding_completed) {
+                showOnboarding();
+              } else {
+                showApp();
+              }
+              return;
+            }
+          }
+        } catch {
+          // Fall through to showAuthScreen
+        }
+        localStorage.removeItem('sb-access-token');
+        localStorage.removeItem('sb-refresh-token');
+      }
+      showAuthScreen();
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetchWithAuth('/api/profile');
+        if (res.ok) {
+          const result = await res.json();
+          userProfile = result.data || null;
+        }
+      } catch {
+        userProfile = null;
+      }
+    }
+
+    // ===== Auth: Email validation =====
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function getPasswordStrength(password) {
+      if (!password) return '';
+      let score = 0;
+      if (password.length >= 8) score++;
+      if (password.length >= 12) score++;
+      if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+      if (/[0-9]/.test(password)) score++;
+      if (/[^A-Za-z0-9]/.test(password)) score++;
+
+      if (score <= 1) return 'weak';
+      if (score <= 2) return 'fair';
+      if (score <= 3) return 'good';
+      return 'strong';
+    }
+
+    // ===== Auth: Login =====
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('login-email');
+      const passwordInput = document.getElementById('login-password');
+      const emailError = document.getElementById('login-email-error');
+      const passwordError = document.getElementById('login-password-error');
+      const loginMessage = document.getElementById('loginMessage');
+      const loginBtn = document.getElementById('loginBtn');
+
+      // Reset
+      emailError.textContent = '';
+      passwordError.textContent = '';
+      emailInput.removeAttribute('aria-invalid');
+      passwordInput.removeAttribute('aria-invalid');
+      loginMessage.hidden = true;
+
+      // Validate
+      let valid = true;
+      if (!emailInput.value.trim()) {
+        emailError.textContent = '이메일을 입력해주세요.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      } else if (!isValidEmail(emailInput.value.trim())) {
+        emailError.textContent = '올바른 이메일 형식이 아닙니다.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      }
+      if (!passwordInput.value) {
+        passwordError.textContent = '비밀번호를 입력해주세요.';
+        passwordInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      }
+      if (!valid) return;
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = '로그인 중...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.value.trim(),
+            password: passwordInput.value,
+          }),
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          loginMessage.textContent = result.error || '로그인에 실패했습니다.';
+          loginMessage.className = 'auth-message error';
+          loginMessage.hidden = false;
+          return;
+        }
+
+        // Store tokens
+        currentUser = result.data.user;
+        accessToken = result.data.session.access_token;
+        refreshToken = result.data.session.refresh_token;
+        localStorage.setItem('sb-access-token', accessToken);
+        localStorage.setItem('sb-refresh-token', refreshToken);
+
+        // Load profile and check onboarding
+        await loadProfile();
+        if (userProfile && !userProfile.onboarding_completed) {
+          showOnboarding();
+        } else {
+          showApp();
+        }
+      } catch (err) {
+        loginMessage.textContent = '서버에 연결할 수 없습니다.';
+        loginMessage.className = 'auth-message error';
+        loginMessage.hidden = false;
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = '로그인';
+      }
+    });
+
+    // ===== Auth: Signup =====
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('signup-email');
+      const nicknameInput = document.getElementById('signup-nickname');
+      const passwordInput = document.getElementById('signup-password');
+      const confirmInput = document.getElementById('signup-password-confirm');
+      const emailError = document.getElementById('signup-email-error');
+      const passwordError = document.getElementById('signup-password-error');
+      const confirmError = document.getElementById('signup-confirm-error');
+      const signupMessage = document.getElementById('signupMessage');
+      const signupBtn = document.getElementById('signupBtn');
+
+      // Reset
+      emailError.textContent = '';
+      passwordError.textContent = '';
+      confirmError.textContent = '';
+      emailInput.removeAttribute('aria-invalid');
+      passwordInput.removeAttribute('aria-invalid');
+      confirmInput.removeAttribute('aria-invalid');
+      signupMessage.hidden = true;
+
+      // Validate
+      let valid = true;
+      if (!emailInput.value.trim()) {
+        emailError.textContent = '이메일을 입력해주세요.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      } else if (!isValidEmail(emailInput.value.trim())) {
+        emailError.textContent = '올바른 이메일 형식이 아닙니다.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      }
+      if (!passwordInput.value || passwordInput.value.length < 8) {
+        passwordError.textContent = '비밀번호는 8자 이상이어야 합니다.';
+        passwordInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      }
+      if (passwordInput.value !== confirmInput.value) {
+        confirmError.textContent = '비밀번호가 일치하지 않습니다.';
+        confirmInput.setAttribute('aria-invalid', 'true');
+        valid = false;
+      }
+      if (!valid) return;
+
+      signupBtn.disabled = true;
+      signupBtn.textContent = '가입 중...';
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.value.trim(),
+            password: passwordInput.value,
+            nickname: nicknameInput.value.trim() || undefined,
+          }),
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          signupMessage.textContent = result.error || '회원가입에 실패했습니다.';
+          signupMessage.className = 'auth-message error';
+          signupMessage.hidden = false;
+          return;
+        }
+
+        // Check if email verification is needed
+        if (result.data.session) {
+          currentUser = result.data.user;
+          accessToken = result.data.session.access_token;
+          refreshToken = result.data.session.refresh_token;
+          localStorage.setItem('sb-access-token', accessToken);
+          localStorage.setItem('sb-refresh-token', refreshToken);
+          showOnboarding();
+        } else {
+          signupMessage.textContent = result.message || '인증 이메일이 발송되었습니다. 이메일을 확인해주세요.';
+          signupMessage.className = 'auth-message success';
+          signupMessage.hidden = false;
+        }
+      } catch (err) {
+        signupMessage.textContent = '서버에 연결할 수 없습니다.';
+        signupMessage.className = 'auth-message error';
+        signupMessage.hidden = false;
+      } finally {
+        signupBtn.disabled = false;
+        signupBtn.textContent = '가입하기';
+      }
+    });
+
+    // ===== Auth: Password Reset =====
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('reset-email');
+      const emailError = document.getElementById('reset-email-error');
+      const resetMessage = document.getElementById('resetMessage');
+      const resetBtn = document.getElementById('resetBtn');
+
+      emailError.textContent = '';
+      emailInput.removeAttribute('aria-invalid');
+      resetMessage.hidden = true;
+
+      if (!emailInput.value.trim() || !isValidEmail(emailInput.value.trim())) {
+        emailError.textContent = '올바른 이메일 주소를 입력해주세요.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        return;
+      }
+
+      resetBtn.disabled = true;
+      resetBtn.textContent = '전송 중...';
+
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput.value.trim() }),
+        });
+        const result = await res.json();
+        resetMessage.textContent = (result.data && result.data.message) || '해당 이메일이 존재하면 재설정 링크가 발송됩니다.';
+        resetMessage.className = 'auth-message success';
+        resetMessage.hidden = false;
+      } catch {
+        resetMessage.textContent = '서버에 연결할 수 없습니다.';
+        resetMessage.className = 'auth-message error';
+        resetMessage.hidden = false;
+      } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = '재설정 링크 보내기';
+      }
+    });
+
+    // ===== Auth: Password strength indicator =====
+    document.getElementById('signup-password').addEventListener('input', (e) => {
+      const strength = getPasswordStrength(e.target.value);
+      document.getElementById('passwordStrength').setAttribute('data-level', strength);
+    });
+
+    // ===== Auth: Navigation between forms =====
+    document.getElementById('showSignupBtn').addEventListener('click', () => showAuthCard('signup'));
+    document.getElementById('showLoginFromSignupBtn').addEventListener('click', () => showAuthCard('login'));
+    document.getElementById('showResetBtn').addEventListener('click', () => showAuthCard('reset'));
+    document.getElementById('showLoginFromResetBtn').addEventListener('click', () => showAuthCard('login'));
+
+    // ===== Onboarding =====
+    let onboardingStep = 1;
+    let selectedNotificationTime = null;
+
+    function updateOnboardingUI() {
+      // Update dots
+      document.querySelectorAll('.onboarding-dot').forEach(dot => {
+        const step = parseInt(dot.dataset.step);
+        dot.classList.toggle('active', step === onboardingStep);
+        dot.classList.toggle('completed', step < onboardingStep);
+      });
+      document.getElementById('onboardingProgress').setAttribute('aria-valuenow', onboardingStep);
+
+      // Show/hide steps
+      document.getElementById('onboardingStep1').hidden = onboardingStep !== 1;
+      document.getElementById('onboardingStep2').hidden = onboardingStep !== 2;
+      document.getElementById('onboardingStep3').hidden = onboardingStep !== 3;
+    }
+
+    document.getElementById('onboardingNext1').addEventListener('click', () => {
+      onboardingStep = 2;
+      updateOnboardingUI();
+    });
+
+    document.getElementById('onboardingNext2').addEventListener('click', () => {
+      onboardingStep = 3;
+      updateOnboardingUI();
+    });
+
+    // Time selection buttons
+    document.getElementById('onboardingTimeSelect').addEventListener('click', (e) => {
+      const btn = e.target.closest('.onboarding-time-btn');
+      if (!btn) return;
+      // Deselect all
+      document.querySelectorAll('.onboarding-time-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      selectedNotificationTime = btn.dataset.time;
+    });
+
+    async function completeOnboarding() {
+      try {
+        const updateData = { onboarding_completed: true };
+        if (selectedNotificationTime) {
+          updateData.notification_time = selectedNotificationTime;
+          updateData.notification_enabled = true;
+        }
+        await fetchWithAuth('/api/profile', {
+          method: 'PATCH',
+          body: JSON.stringify(updateData),
+        });
+      } catch {
+        // Silently continue even if profile update fails
+      }
+      await loadProfile();
+      showApp();
+    }
+
+    document.getElementById('onboardingFinish').addEventListener('click', completeOnboarding);
+    document.getElementById('onboardingSkip3').addEventListener('click', completeOnboarding);
+
+    // ===== Init App (called after auth) =====
+    let appInitialized = false;
+
+    function initApp() {
+      if (appInitialized) return;
+      appInitialized = true;
+
       const now = new Date();
       todayDate.textContent = new Intl.DateTimeFormat('ko-KR', {
         year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
@@ -878,6 +2062,8 @@
       todayDate.setAttribute('datetime', now.toISOString().split('T')[0]);
 
       loadEntries();
+      renderProfileScreen();
+
       diaryText.addEventListener('input', () => {
         submitBtn.disabled = diaryText.value.trim().length === 0;
         autoResize(diaryText);
@@ -923,16 +2109,16 @@
       }
     }
 
-    // ===== Server API Calls =====
+    // ===== Server API Calls (with auth) =====
     async function analyzeEmotion(text) {
       let response;
       try {
-        response = await fetch('/api/analyze', {
+        response = await fetchWithAuth('/api/analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
         });
       } catch (e) {
+        if (e.userMessage) throw e;
         throw { userMessage: '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.' };
       }
 
@@ -946,15 +2132,18 @@
     }
 
     async function saveEntry(text, result) {
-      const response = await fetch('/api/entries', {
+      const response = await fetchWithAuth('/api/entries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
           emotion: result.emotion,
           emoji: result.emoji,
           message: result.message,
           advice: result.advice,
+          emotion_hierarchy: result.ontology?.emotion_hierarchy || {},
+          situation_context: result.ontology?.situation_context || [],
+          confidence_score: result.ontology?.confidence || 0,
+          related_emotions: result.ontology?.related_emotions || [],
         }),
       });
       if (!response.ok) {
@@ -965,7 +2154,7 @@
 
     async function loadEntries() {
       try {
-        const response = await fetch('/api/entries');
+        const response = await fetchWithAuth('/api/entries');
         if (!response.ok) throw new Error();
         const entries = await response.json();
         renderHistory(entries);
@@ -976,7 +2165,7 @@
 
     async function deleteEntry(id) {
       try {
-        const response = await fetch('/api/entries/' + id, { method: 'DELETE' });
+        const response = await fetchWithAuth('/api/entries/' + id, { method: 'DELETE' });
         if (!response.ok) throw new Error();
       } catch {
         showError('삭제에 실패했습니다.');
@@ -1221,12 +2410,14 @@
     // ===== Tab Navigation =====
     const tabDiary = document.getElementById('tab-diary');
     const tabDashboard = document.getElementById('tab-dashboard');
+    const tabProfile = document.getElementById('tab-profile');
     const panelDiary = document.getElementById('panel-diary');
     const panelDashboard = document.getElementById('panel-dashboard');
+    const panelProfile = document.getElementById('panel-profile');
 
     function switchTab(activeTab) {
-      const tabs = [tabDiary, tabDashboard];
-      const panels = [panelDiary, panelDashboard];
+      const tabs = [tabDiary, tabDashboard, tabProfile];
+      const panels = [panelDiary, panelDashboard, panelProfile];
 
       tabs.forEach((tab, i) => {
         const isActive = tab === activeTab;
@@ -1237,13 +2428,17 @@
       if (activeTab === tabDashboard) {
         loadDashboard();
       }
+      if (activeTab === tabProfile) {
+        renderProfileScreen();
+      }
     }
 
     tabDiary.addEventListener('click', () => switchTab(tabDiary));
     tabDashboard.addEventListener('click', () => switchTab(tabDashboard));
+    tabProfile.addEventListener('click', () => switchTab(tabProfile));
 
     // Keyboard navigation for tabs
-    [tabDiary, tabDashboard].forEach((tab, idx, arr) => {
+    [tabDiary, tabDashboard, tabProfile].forEach((tab, idx, arr) => {
       tab.addEventListener('keydown', (e) => {
         let target = null;
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -1259,10 +2454,117 @@
       });
     });
 
+    // User menu button -> switch to profile tab
+    document.getElementById('btnUserMenu').addEventListener('click', () => {
+      switchTab(tabProfile);
+    });
+
+    // ===== Profile Screen =====
+    function renderProfileScreen() {
+      const avatarEl = document.getElementById('profileAvatar');
+      const nicknameDisplay = document.getElementById('profileDisplayNickname');
+      const emailDisplay = document.getElementById('profileDisplayEmail');
+      const totalEntries = document.getElementById('profileTotalEntries');
+      const joinDate = document.getElementById('profileJoinDate');
+      const nicknameInput = document.getElementById('profile-nickname');
+      const bioInput = document.getElementById('profile-bio');
+
+      if (userProfile) {
+        const nickname = userProfile.nickname || (currentUser && currentUser.email) || '--';
+        nicknameDisplay.textContent = nickname;
+        emailDisplay.textContent = (currentUser && currentUser.email) || '';
+        totalEntries.textContent = userProfile.total_entries || 0;
+        avatarEl.textContent = nickname.charAt(0).toUpperCase();
+
+        if (userProfile.created_at) {
+          joinDate.textContent = new Intl.DateTimeFormat('ko-KR', {
+            year: 'numeric', month: 'short', day: 'numeric'
+          }).format(new Date(userProfile.created_at));
+        } else {
+          joinDate.textContent = '--';
+        }
+
+        nicknameInput.value = userProfile.nickname || '';
+        bioInput.value = userProfile.bio || '';
+      } else if (currentUser) {
+        nicknameDisplay.textContent = currentUser.email || '--';
+        emailDisplay.textContent = currentUser.email || '';
+        avatarEl.textContent = (currentUser.email || '?').charAt(0).toUpperCase();
+      }
+    }
+
+    // Profile form submission
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nicknameInput = document.getElementById('profile-nickname');
+      const bioInput = document.getElementById('profile-bio');
+      const profileMessage = document.getElementById('profileMessage');
+      const saveBtn = document.getElementById('profileSaveBtn');
+
+      profileMessage.hidden = true;
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+
+      try {
+        const res = await fetchWithAuth('/api/profile', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            nickname: nicknameInput.value.trim(),
+            bio: bioInput.value.trim(),
+          }),
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data) {
+            userProfile = { ...userProfile, ...result.data };
+          }
+          profileMessage.textContent = '프로필이 저장되었습니다.';
+          profileMessage.className = 'profile-message success';
+          profileMessage.hidden = false;
+          renderProfileScreen();
+          updateUserMenu();
+        } else {
+          const result = await res.json();
+          profileMessage.textContent = result.error || '저장에 실패했습니다.';
+          profileMessage.className = 'profile-message error';
+          profileMessage.hidden = false;
+        }
+      } catch (err) {
+        if (err.userMessage) {
+          showError(err.userMessage);
+        } else {
+          profileMessage.textContent = '서버에 연결할 수 없습니다.';
+          profileMessage.className = 'profile-message error';
+          profileMessage.hidden = false;
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '저장';
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await fetchWithAuth('/api/auth/logout', { method: 'POST' });
+      } catch {
+        // Always proceed with local logout
+      }
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('sb-refresh-token');
+      currentUser = null;
+      accessToken = null;
+      refreshToken = null;
+      userProfile = null;
+      appInitialized = false;
+      showAuthScreen();
+    });
+
     // ===== Dashboard =====
     async function loadDashboard() {
       try {
-        const response = await fetch('/api/stats');
+        const response = await fetchWithAuth('/api/stats');
         if (!response.ok) throw new Error();
         const stats = await response.json();
         renderDashboard(stats);
@@ -1386,7 +2688,7 @@
     }
 
     // ===== Start =====
-    init();
+    checkAuth();
   </script>
 </body>
 </html>
