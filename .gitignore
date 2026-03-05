@@ -28,6 +28,7 @@ logs/
 # Temporary files
 .claude/
 .cursor-server/
+.omc/
 *.png
 *.jpg
 *.jpeg

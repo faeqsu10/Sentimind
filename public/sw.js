@@ -32,9 +32,10 @@ function openOfflineDB() {
 async function queueOfflineEntry(request) {
   try {
     const body = await request.clone().json();
+    const authHeader = request.headers.get('Authorization') || '';
     const db = await openOfflineDB();
     const tx = db.transaction('queue', 'readwrite');
-    tx.objectStore('queue').add({ url: request.url, body, timestamp: Date.now() });
+    tx.objectStore('queue').add({ url: request.url, body, authHeader, timestamp: Date.now() });
     await new Promise((r, j) => { tx.oncomplete = r; tx.onerror = j; });
     return new Response(JSON.stringify({
       data: { ...body, offline: true },
@@ -60,9 +61,11 @@ async function syncOfflineEntries() {
     if (!entries.length) return;
 
     for (const entry of entries) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (entry.authHeader) headers['Authorization'] = entry.authHeader;
       await fetch(entry.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(entry.body),
       });
     }

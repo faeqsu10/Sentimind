@@ -1,17 +1,19 @@
 {
-  "name": "study-04",
-  "version": "1.0.0",
-  "description": "",
+  "name": "sentimind",
+  "version": "2.1.0",
+  "description": "AI 공감 다이어리 - 감정 분석 및 공감 메시지 생성",
   "main": "server-v2.js",
   "scripts": {
     "start": "node server-v2.js",
     "dev": "nodemon server-v2.js",
     "start:legacy": "node server.js",
     "migrate": "node scripts/migrate-entries.js",
+    "migrate:legacy": "node scripts/migrate-to-supabase.js",
+    "health": "curl -s http://localhost:3000/api/health | node -e \"process.stdin.on('data',d=>console.log(JSON.parse(d)))\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["diary", "emotion", "ai", "gemini", "supabase"],
+  "author": "Sentimind Team",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
