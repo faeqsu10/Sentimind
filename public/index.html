@@ -1041,6 +1041,78 @@
     .legal-modal-body ul { margin: 0.3rem 0 0.6rem 1.2rem; }
     .legal-modal-body li { margin-bottom: 0.2rem; }
 
+    /* Calendar */
+    .calendar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+    }
+    .calendar-month-title {
+      font-family: var(--font-diary); font-size: 1.1rem; font-weight: 700;
+      color: var(--color-text);
+    }
+    .btn-cal-nav {
+      background: none; border: 1px solid var(--color-border); cursor: pointer;
+      color: var(--color-text-light); width: 32px; height: 32px;
+      border-radius: var(--radius-sm); font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 200ms ease;
+    }
+    .btn-cal-nav:hover { background: var(--color-surface-warm); color: var(--color-text); }
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    }
+    .cal-weekday {
+      text-align: center; font-size: 0.7rem; font-weight: 500;
+      color: var(--color-text-muted); padding: 4px 0;
+    }
+    .cal-day {
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      border-radius: var(--radius-sm); cursor: default;
+      font-size: 0.8rem; color: var(--color-text-light);
+      position: relative; transition: all 150ms ease;
+    }
+    .cal-day.empty { visibility: hidden; }
+    .cal-day.has-entry {
+      cursor: pointer; color: var(--color-text); font-weight: 500;
+      background: var(--color-surface-warm);
+    }
+    .cal-day.has-entry:hover { background: var(--color-primary); color: #fff; }
+    .cal-day.has-entry:hover .cal-emoji { filter: brightness(1.2); }
+    .cal-day.selected { background: var(--color-primary); color: #fff; }
+    .cal-day.today {
+      border: 2px solid var(--color-primary);
+    }
+    .cal-emoji {
+      font-size: 0.65rem; line-height: 1;
+    }
+    .cal-day-entries {
+      margin-top: 1rem; animation: fadeInUp 300ms ease both;
+    }
+    .cal-day-entries-header {
+      font-family: var(--font-diary); font-size: 0.95rem; font-weight: 600;
+      color: var(--color-text); margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-divider);
+    }
+    .cal-entry-card {
+      background: var(--gradient-response);
+      border-radius: var(--radius-md); padding: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .cal-entry-text {
+      font-family: var(--font-diary); font-size: 0.9rem;
+      color: var(--color-text); margin-bottom: 0.5rem; line-height: 1.6;
+    }
+    .cal-entry-meta {
+      display: flex; gap: 0.5rem; align-items: center;
+      font-size: 0.75rem; color: var(--color-text-light);
+    }
+    .cal-entry-emotion { font-weight: 500; }
+    .cal-entry-message {
+      font-size: 0.8rem; color: var(--color-text-light);
+      margin-top: 0.4rem; font-style: italic;
+    }
+
     /* Skeleton loading */
     .skeleton {
       background: linear-gradient(90deg, var(--color-surface-warm) 25%, var(--color-divider) 50%, var(--color-surface-warm) 75%);
@@ -1622,6 +1694,7 @@
 
     <nav class="tab-nav" role="tablist" aria-label="메뉴">
       <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary">일기</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-calendar" id="tab-calendar">달력</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-dashboard" id="tab-dashboard">통계</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-profile" id="tab-profile">프로필</button>
     </nav>
@@ -1694,6 +1767,16 @@
         <ul class="history-list" id="historyList" role="list"></ul>
         <p class="empty-state" id="emptyState" hidden>아직 작성한 일기가 없어요.</p>
       </section>
+      </div>
+
+      <div id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" hidden>
+        <div class="calendar-header">
+          <button class="btn-cal-nav" id="calPrev" aria-label="이전 달">&#x276E;</button>
+          <span class="calendar-month-title" id="calMonthTitle"></span>
+          <button class="btn-cal-nav" id="calNext" aria-label="다음 달">&#x276F;</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div id="calDayEntries"></div>
       </div>
 
       <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" hidden>
@@ -2836,15 +2919,17 @@
 
     // ===== Tab Navigation =====
     const tabDiary = document.getElementById('tab-diary');
+    const tabCalendar = document.getElementById('tab-calendar');
     const tabDashboard = document.getElementById('tab-dashboard');
     const tabProfile = document.getElementById('tab-profile');
     const panelDiary = document.getElementById('panel-diary');
+    const panelCalendar = document.getElementById('panel-calendar');
     const panelDashboard = document.getElementById('panel-dashboard');
     const panelProfile = document.getElementById('panel-profile');
 
     function switchTab(activeTab) {
-      const tabs = [tabDiary, tabDashboard, tabProfile];
-      const panels = [panelDiary, panelDashboard, panelProfile];
+      const tabs = [tabDiary, tabCalendar, tabDashboard, tabProfile];
+      const panels = [panelDiary, panelCalendar, panelDashboard, panelProfile];
 
       tabs.forEach((tab, i) => {
         const isActive = tab === activeTab;
@@ -2852,6 +2937,9 @@
         panels[i].hidden = !isActive;
       });
 
+      if (activeTab === tabCalendar) {
+        renderCalendar();
+      }
       if (activeTab === tabDashboard) {
         loadDashboard();
       }
@@ -2861,11 +2949,12 @@
     }
 
     tabDiary.addEventListener('click', () => switchTab(tabDiary));
+    tabCalendar.addEventListener('click', () => switchTab(tabCalendar));
     tabDashboard.addEventListener('click', () => switchTab(tabDashboard));
     tabProfile.addEventListener('click', () => switchTab(tabProfile));
 
     // Keyboard navigation for tabs
-    [tabDiary, tabDashboard, tabProfile].forEach((tab, idx, arr) => {
+    [tabDiary, tabCalendar, tabDashboard, tabProfile].forEach((tab, idx, arr) => {
       tab.addEventListener('keydown', (e) => {
         let target = null;
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -3239,6 +3328,104 @@
       });
     }
 
+    // ===== Calendar =====
+    let calYear, calMonth;
+    (function initCalDate() {
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+    })();
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const titleEl = document.getElementById('calMonthTitle');
+      const entriesDiv = document.getElementById('calDayEntries');
+      entriesDiv.innerHTML = '';
+
+      titleEl.textContent = `${calYear}년 ${calMonth + 1}월`;
+
+      // Build date->entries map from cached allEntries
+      const entryMap = {};
+      (allEntries || []).forEach(e => {
+        const d = (e.date || e.created_at || '').slice(0, 10);
+        if (!entryMap[d]) entryMap[d] = [];
+        entryMap[d].push(e);
+      });
+
+      const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      let html = weekdays.map(w => `<div class="cal-weekday">${w}</div>`).join('');
+
+      // Empty cells before first day
+      for (let i = 0; i < firstDay; i++) {
+        html += '<div class="cal-day empty"></div>';
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const entries = entryMap[dateStr];
+        const isToday = dateStr === todayStr;
+        const hasEntry = entries && entries.length > 0;
+        const emoji = hasEntry ? entries[0].emoji : '';
+        const classes = ['cal-day', isToday ? 'today' : '', hasEntry ? 'has-entry' : ''].filter(Boolean).join(' ');
+
+        html += `<div class="${classes}" data-date="${dateStr}" ${hasEntry ? 'tabindex="0" role="button" aria-label="' + dateStr + ' 일기 ' + entries.length + '건"' : ''}>
+          <span>${d}</span>
+          ${hasEntry ? '<span class="cal-emoji">' + escapeHtml(emoji) + '</span>' : ''}
+        </div>`;
+      }
+
+      grid.innerHTML = html;
+
+      // Click handler
+      grid.querySelectorAll('.cal-day.has-entry').forEach(el => {
+        const handler = () => {
+          grid.querySelectorAll('.cal-day.selected').forEach(s => s.classList.remove('selected'));
+          el.classList.add('selected');
+          showCalDayEntries(el.dataset.date, entryMap[el.dataset.date]);
+        };
+        el.addEventListener('click', handler);
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); } });
+      });
+    }
+
+    function showCalDayEntries(dateStr, entries) {
+      const div = document.getElementById('calDayEntries');
+      const dateLabel = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date(dateStr + 'T00:00:00'));
+
+      let html = `<div class="cal-day-entries">
+        <div class="cal-day-entries-header">${dateLabel} (${entries.length}건)</div>`;
+
+      entries.forEach(e => {
+        html += `<div class="cal-entry-card">
+          <p class="cal-entry-text">"${escapeHtml(e.text)}"</p>
+          <div class="cal-entry-meta">
+            <span>${escapeHtml(e.emoji)}</span>
+            <span class="cal-entry-emotion">${escapeHtml(e.emotion)}</span>
+          </div>
+          ${e.message ? '<p class="cal-entry-message">' + escapeHtml(e.message) + '</p>' : ''}
+        </div>`;
+      });
+
+      html += '</div>';
+      div.innerHTML = html;
+    }
+
+    // Calendar navigation
+    document.getElementById('calPrev').addEventListener('click', () => {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    });
+    document.getElementById('calNext').addEventListener('click', () => {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    });
+
     // ===== Dark Mode =====
     const darkToggle = document.getElementById('darkModeToggle');
     const darkKnob = document.getElementById('darkModeKnob');
@@ -3387,11 +3574,12 @@
           historyDetail.hidden = true;
         }
       }
-      // Alt+1/2/3: switch tabs
+      // Alt+1/2/3/4: switch tabs
       if (e.altKey && !e.ctrlKey && !e.metaKey) {
         if (e.key === '1') { e.preventDefault(); switchTab(tabDiary); }
-        if (e.key === '2') { e.preventDefault(); switchTab(tabDashboard); }
-        if (e.key === '3') { e.preventDefault(); switchTab(tabProfile); }
+        if (e.key === '2') { e.preventDefault(); switchTab(tabCalendar); }
+        if (e.key === '3') { e.preventDefault(); switchTab(tabDashboard); }
+        if (e.key === '4') { e.preventDefault(); switchTab(tabProfile); }
       }
     });
 
