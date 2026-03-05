@@ -3153,6 +3153,8 @@
       submitBtn.disabled = true;
       responseCard.hidden = true;
       document.getElementById('similarEntries').hidden = true;
+      const aiSection = responseCard.closest('.ai-response');
+      if (aiSection) aiSection.setAttribute('aria-busy', 'true');
       showSkeleton('analyze');
 
       try {
@@ -3171,6 +3173,7 @@
         showError(err.userMessage || '알 수 없는 오류가 발생했습니다.');
       } finally {
         hideSkeleton('analyze');
+        if (aiSection) aiSection.removeAttribute('aria-busy');
         submitBtn.disabled = diaryText.value.trim().length === 0;
       }
     }
@@ -3730,10 +3733,21 @@
       tabs.forEach((tab, i) => {
         const isActive = tab === activeTab;
         tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.setAttribute('tabindex', isActive ? '0' : '-1');
         panels[i].hidden = !isActive;
         if (isActive) {
           panels[i].style.animation = 'none';
           requestAnimationFrame(() => { panels[i].style.animation = ''; });
+
+          // Focus first interactive element in the new panel
+          requestAnimationFrame(() => {
+            const focusTarget = panels[i].querySelector(
+              'textarea, input:not([type="hidden"]), button:not([disabled]), [tabindex="0"]'
+            );
+            if (focusTarget && focusTarget.offsetParent !== null) {
+              focusTarget.focus({ preventScroll: true });
+            }
+          });
         }
       });
 
@@ -4518,15 +4532,19 @@
     function openLegalModal(type) {
       const content = legalContents[type];
       if (!content) return;
+      const overlay = document.getElementById('legalModal');
+      const modal = overlay.querySelector('.legal-modal');
       document.getElementById('legalModalTitle').textContent = content.title;
       document.getElementById('legalModalBody').innerHTML = content.body;
-      document.getElementById('legalModal').hidden = false;
-      document.body.style.overflow = 'hidden';
+      overlay.hidden = false;
+      openModalFocus(overlay, modal);
     }
 
     function closeLegalModal() {
-      document.getElementById('legalModal').hidden = true;
-      document.body.style.overflow = '';
+      const overlay = document.getElementById('legalModal');
+      const modal = overlay.querySelector('.legal-modal');
+      overlay.hidden = true;
+      closeModalFocus(overlay, modal);
     }
 
     document.getElementById('privacyLink').addEventListener('click', (e) => {
@@ -4576,13 +4594,17 @@
 
     function openShortcutModal() {
       renderShortcutList();
-      shortcutModal.hidden = false;
-      shortcutModalClose.focus();
+      const overlay = shortcutModal;
+      const modal = overlay.querySelector('.shortcut-modal');
+      overlay.hidden = false;
+      openModalFocus(overlay, modal);
     }
 
     function closeShortcutModal() {
-      shortcutModal.hidden = true;
-      shortcutHelpBtn.focus();
+      const overlay = shortcutModal;
+      const modal = overlay.querySelector('.shortcut-modal');
+      overlay.hidden = true;
+      closeModalFocus(overlay, modal);
     }
 
     // Update submit hint for Mac users
