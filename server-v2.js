@@ -1097,6 +1097,11 @@ app.get('/api/entries', authMiddleware, async (req, res) => {
         query = query.eq('emotion', req.query.emotion);
       }
 
+      // Optional bookmark filter
+      if (req.query.bookmarked === 'true') {
+        query = query.eq('is_bookmarked', true);
+      }
+
       // Optional text search (escape LIKE wildcards to prevent injection)
       if (req.query.search) {
         const safeSearch = req.query.search.replace(/[%_\\]/g, '\\$&');
@@ -1231,6 +1236,20 @@ app.patch('/api/entries/:id', authMiddleware, async (req, res) => {
 
     if (fetchErr || !existing) {
       return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+    }
+
+    // Bookmark toggle (no time restriction)
+    if (req.body.is_bookmarked !== undefined && Object.keys(req.body).length === 1) {
+      const { data, error } = await req.supabaseClient
+        .from('entries')
+        .update({ is_bookmarked: !!req.body.is_bookmarked })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        return res.status(500).json({ error: '북마크 변경에 실패했습니다.', code: 'INTERNAL_ERROR' });
+      }
+      return res.json({ ...data, date: data.created_at });
     }
 
     // Check 24-hour edit window

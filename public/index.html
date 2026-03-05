@@ -923,6 +923,13 @@
     .history-item:hover .btn-delete { opacity: 1; }
     .btn-delete:hover { color: #c0392b; }
     .btn-delete:focus-visible { opacity: 1; outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .btn-bookmark {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.1rem; color: var(--color-text-muted);
+      padding: 4px 6px; flex-shrink: 0; transition: color 200ms, transform 200ms;
+    }
+    .btn-bookmark.active { color: #F4A261; }
+    .btn-bookmark:hover { transform: scale(1.2); }
     @media (hover: none) { .btn-delete { opacity: 0.6; } }
     .history-item.deleting {
       animation: slideOut 300ms ease forwards;
@@ -2645,6 +2652,25 @@
       }
     }
 
+    async function toggleBookmark(entry) {
+      try {
+        const newState = !entry.is_bookmarked;
+        const response = await fetchWithAuth('/api/entries/' + entry.id, {
+          method: 'PATCH',
+          body: JSON.stringify({ is_bookmarked: newState }),
+        });
+        if (!response.ok) throw new Error();
+        entry.is_bookmarked = newState;
+        const btn = historyList.querySelector(`.btn-bookmark[data-id="${entry.id}"]`);
+        if (btn) {
+          btn.classList.toggle('active', newState);
+          btn.textContent = newState ? '★' : '☆';
+        }
+      } catch {
+        showError('즐겨찾기 변경에 실패했습니다.');
+      }
+    }
+
     async function deleteEntry(id) {
       if (!confirm('이 일기를 삭제하시겠습니까?')) return;
       try {
@@ -2849,9 +2875,14 @@
             <time class="history-date" datetime="${escapeHtml(entry.date || '')}">${dateStr}</time>
             <p class="history-text">${escapeHtml(entry.text)}</p>
           </div>
+          <button class="btn-bookmark${entry.is_bookmarked ? ' active' : ''}" aria-label="즐겨찾기" data-id="${escapeHtml(entry.id)}">${entry.is_bookmarked ? '★' : '☆'}</button>
           <button class="btn-delete" aria-label="삭제" data-id="${escapeHtml(entry.id)}">&times;</button>
         `;
 
+        li.querySelector('.btn-bookmark').addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleBookmark(entry);
+        });
         li.querySelector('.btn-delete').addEventListener('click', (e) => {
           e.stopPropagation();
           deleteEntry(entry.id);
