@@ -78,7 +78,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = config.gemini.model;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -496,8 +496,7 @@ const loginLimiter = rateLimit({
 // ---------------------------------------------------------------------------
 
 const corsOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
+  ...(IS_PRODUCTION ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000']),
   ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()) : []),
 ];
 
@@ -798,7 +797,21 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
     return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
   }
 
+  if (!req.body?.password) {
+    return res.status(400).json({ error: '비밀번호를 입력해주세요.', code: 'VALIDATION_ERROR' });
+  }
+
   try {
+    // 비밀번호 재확인
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: req.user.email,
+      password: req.body.password,
+    });
+    if (verifyError) {
+      logSecurityEvent('ACCOUNT_DELETE_VERIFY_FAILED', { requestId: rid, userId, ip: req.ip });
+      return res.status(401).json({ error: '비밀번호가 올바르지 않습니다.', code: 'INVALID_PASSWORD' });
+    }
+
     // 1. Soft-delete all user entries
     await req.supabaseClient
       .from('entries')
@@ -836,10 +849,24 @@ app.put('/api/auth/password', authMiddleware, async (req, res) => {
     return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
   }
 
+  if (!req.body?.currentPassword) {
+    return res.status(400).json({ error: '현재 비밀번호를 입력해주세요.', code: 'VALIDATION_ERROR' });
+  }
+
   const passV = validatePassword(req.body?.newPassword);
   if (!passV.valid) return res.status(400).json({ error: passV.error, code: 'VALIDATION_ERROR' });
 
   try {
+    // 현재 비밀번호 검증 (재로그인으로 확인)
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: req.user.email,
+      password: req.body.currentPassword,
+    });
+    if (verifyError) {
+      logSecurityEvent('PASSWORD_CHANGE_VERIFY_FAILED', { requestId: rid, userId: req.user?.id, ip: req.ip });
+      return res.status(401).json({ error: '현재 비밀번호가 올바르지 않습니다.', code: 'INVALID_PASSWORD' });
+    }
+
     const { error } = await req.supabaseClient.auth.updateUser({
       password: req.body.newPassword,
     });
@@ -1006,7 +1033,7 @@ app.post('/api/analyze', authMiddleware, analyzeLimiter, async (req, res) => {
 
       const response = await fetch(GEMINI_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(config.timeout),
       });
@@ -1644,7 +1671,7 @@ app.get('/api/report', authMiddleware, analyzeLimiter, async (req, res) => {
 
         const response = await fetch(GEMINI_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
           body: JSON.stringify(requestBody),
           signal: AbortSignal.timeout(config.timeout),
         });

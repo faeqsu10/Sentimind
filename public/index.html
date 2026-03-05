@@ -659,6 +659,194 @@
     .btn-danger:hover { background: #a93226; }
     .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* Profile Section Cards */
+    .profile-section-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-border);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .profile-section-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--color-divider);
+      background: var(--color-surface-warm);
+    }
+    .profile-section-card-header svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--color-text-light);
+    }
+    .profile-section-card-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
+    }
+    .profile-section-card-body {
+      padding: 1rem;
+    }
+
+    /* Profile streak in profile tab */
+    .profile-streak-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+    }
+    .profile-streak-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      line-height: 1;
+      min-width: 3rem;
+      text-align: center;
+    }
+    .profile-streak-info {
+      flex: 1;
+    }
+    .profile-streak-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .profile-streak-sub {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Bio character counter */
+    .profile-field-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.15rem;
+    }
+    .char-counter {
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      transition: color 200ms;
+    }
+    .char-counter.near-limit { color: var(--color-warning, #e67e22); }
+    .char-counter.at-limit { color: var(--color-error); font-weight: 600; }
+
+    /* Notification time presets */
+    .notification-time-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .notification-time-btn {
+      background: var(--color-surface-warm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.75rem;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-text);
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .notification-time-btn:hover {
+      border-color: var(--color-primary);
+      background: var(--color-surface);
+    }
+    .notification-time-btn[aria-pressed="true"] {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+    .notification-time-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* Dark mode toggle improved */
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0;
+    }
+    .setting-row + .setting-row {
+      border-top: 1px solid var(--color-divider);
+    }
+    .setting-row-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .setting-row-desc {
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      margin-top: 0.1rem;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--color-border);
+      border-radius: 12px;
+      transition: background 200ms;
+    }
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--color-primary);
+    }
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 200ms;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked ~ .toggle-knob {
+      transform: translateX(20px);
+    }
+    .toggle-switch input:focus-visible ~ .toggle-track {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* Password strength in profile */
+    .profile-pw-strength {
+      display: flex;
+      gap: 3px;
+      margin-top: 0.3rem;
+    }
+    .profile-pw-bar {
+      height: 3px;
+      flex: 1;
+      border-radius: 2px;
+      background: var(--color-divider);
+      transition: background 300ms;
+    }
+    .profile-pw-strength[data-level="weak"] .profile-pw-bar:nth-child(1) { background: #e74c3c; }
+    .profile-pw-strength[data-level="fair"] .profile-pw-bar:nth-child(-n+2) { background: #e67e22; }
+    .profile-pw-strength[data-level="good"] .profile-pw-bar:nth-child(-n+3) { background: #f1c40f; }
+    .profile-pw-strength[data-level="strong"] .profile-pw-bar { background: #27ae60; }
+
     .btn-logout {
       display: block;
       width: 100%;
@@ -2502,6 +2690,8 @@
 
       <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
         <div class="profile-screen" id="profileScreen">
+
+          <!-- 프로필 카드: 아바타 + 기본 정보 -->
           <div class="profile-card">
             <div class="profile-header">
               <div class="profile-avatar" id="profileAvatar" aria-hidden="true"></div>
@@ -2516,72 +2706,130 @@
                 <span class="profile-stat-label">일기 수</span>
               </div>
               <div class="profile-stat">
+                <span class="profile-stat-value" id="profileStreak">0</span>
+                <span class="profile-stat-label">연속 작성</span>
+              </div>
+              <div class="profile-stat">
                 <span class="profile-stat-value" id="profileJoinDate">--</span>
                 <span class="profile-stat-label">가입일</span>
               </div>
             </div>
+          </div>
 
-            <form class="profile-form" id="profileForm">
-              <div class="profile-field">
-                <label for="profile-nickname">닉네임</label>
-                <input type="text" id="profile-nickname" maxlength="30" placeholder="닉네임 입력">
-              </div>
-              <div class="profile-field">
-                <label for="profile-bio">자기소개</label>
-                <textarea id="profile-bio" rows="2" maxlength="200" placeholder="한 줄 소개를 적어보세요"></textarea>
-              </div>
-              <div class="profile-actions">
-                <button type="submit" class="btn-profile-save" id="profileSaveBtn">저장</button>
-              </div>
-            </form>
-            <div class="profile-message" id="profileMessage" hidden></div>
-
-            <!-- 다크 모드 -->
-            <div class="profile-section" style="padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.85rem; font-weight: 500;">다크 모드</span>
-              <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
-                <input type="checkbox" id="darkModeToggle" style="opacity:0;width:0;height:0;">
-                <span style="position:absolute;inset:0;background:var(--color-border);border-radius:12px;transition:background 200ms;"></span>
-                <span id="darkModeKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform 200ms;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
-              </label>
+          <!-- 프로필 편집 섹션 -->
+          <div class="profile-section-card">
+            <div class="profile-section-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <h3>프로필 편집</h3>
             </div>
-
-            <!-- 데이터 내보내기 -->
-            <details class="profile-section">
-              <summary class="profile-section-title">내 데이터 내보내기</summary>
-              <div style="padding: 1rem; display: flex; gap: 0.5rem;">
-                <button type="button" class="btn-profile-save" id="exportCsvBtn">CSV 다운로드</button>
-                <button type="button" class="btn-profile-back" id="exportJsonBtn">JSON 다운로드</button>
-              </div>
-            </details>
-
-            <!-- 비밀번호 변경 -->
-            <details class="profile-section">
-              <summary class="profile-section-title">비밀번호 변경</summary>
-              <form class="profile-form" id="passwordChangeForm">
+            <div class="profile-section-card-body">
+              <form class="profile-form" id="profileForm">
                 <div class="profile-field">
-                  <label for="new-password">새 비밀번호</label>
-                  <input type="password" id="new-password" minlength="8" placeholder="8자 이상, 숫자 포함" required>
+                  <label for="profile-nickname">닉네임</label>
+                  <input type="text" id="profile-nickname" maxlength="30" placeholder="닉네임 입력" autocomplete="nickname">
                 </div>
                 <div class="profile-field">
-                  <label for="confirm-password">비밀번호 확인</label>
-                  <input type="password" id="confirm-password" minlength="8" placeholder="비밀번호를 다시 입력" required>
+                  <label for="profile-bio">자기소개</label>
+                  <textarea id="profile-bio" rows="2" maxlength="200" placeholder="한 줄 소개를 적어보세요" aria-describedby="bioCharCount"></textarea>
+                  <div class="profile-field-footer">
+                    <span class="char-counter" id="bioCharCount" aria-live="polite">0 / 200</span>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <label id="notificationTimeLabel">알림 시간</label>
+                  <div class="notification-time-group" role="radiogroup" aria-labelledby="notificationTimeLabel">
+                    <button type="button" class="notification-time-btn" data-time="08:00" aria-pressed="false" role="radio">08:00</button>
+                    <button type="button" class="notification-time-btn" data-time="12:00" aria-pressed="false" role="radio">12:00</button>
+                    <button type="button" class="notification-time-btn" data-time="18:00" aria-pressed="false" role="radio">18:00</button>
+                    <button type="button" class="notification-time-btn" data-time="21:00" aria-pressed="false" role="radio">21:00</button>
+                    <button type="button" class="notification-time-btn" data-time="22:00" aria-pressed="false" role="radio">22:00</button>
+                    <input type="time" id="profile-notification-custom" class="notification-time-btn" style="width: 5.5rem; text-align: center;" aria-label="직접 시간 선택">
+                  </div>
                 </div>
                 <div class="profile-actions">
-                  <button type="submit" class="btn-profile-save" id="passwordChangeBtn">비밀번호 변경</button>
+                  <button type="submit" class="btn-profile-save" id="profileSaveBtn">저장</button>
                 </div>
               </form>
-            </details>
-
-            <!-- 계정 관리 -->
-            <details class="profile-section profile-section-danger">
-              <summary class="profile-section-title">계정 관리</summary>
-              <p class="danger-warning">회원탈퇴 시 모든 일기 데이터가 삭제되며 복구할 수 없습니다.</p>
-              <button type="button" class="btn-danger" id="deleteAccountBtn">회원탈퇴</button>
-            </details>
-
-            <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
+              <div class="profile-message" id="profileMessage" hidden></div>
+            </div>
           </div>
+
+          <!-- 앱 설정 섹션 -->
+          <div class="profile-section-card">
+            <div class="profile-section-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <h3>앱 설정</h3>
+            </div>
+            <div class="profile-section-card-body">
+              <div class="setting-row">
+                <div>
+                  <div class="setting-row-label" id="darkModeLabel">다크 모드</div>
+                  <div class="setting-row-desc">어두운 배경으로 눈의 피로를 줄여요</div>
+                </div>
+                <label class="toggle-switch" aria-labelledby="darkModeLabel">
+                  <input type="checkbox" id="darkModeToggle">
+                  <span class="toggle-track"></span>
+                  <span class="toggle-knob" id="darkModeKnob"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="setting-row-label">데이터 내보내기</div>
+                  <div class="setting-row-desc">내 일기 데이터를 파일로 저장해요</div>
+                </div>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button type="button" class="notification-time-btn" id="exportCsvBtn" style="font-size: 0.78rem;">CSV</button>
+                  <button type="button" class="notification-time-btn" id="exportJsonBtn" style="font-size: 0.78rem;">JSON</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 계정 관리 섹션 -->
+          <div class="profile-section-card">
+            <div class="profile-section-card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <h3>계정 관리</h3>
+            </div>
+            <div class="profile-section-card-body">
+              <!-- 비밀번호 변경 -->
+              <details class="profile-section" style="margin-top:0; border:none;">
+                <summary class="profile-section-title" style="background:none; padding-left:0;">비밀번호 변경</summary>
+                <form class="profile-form" id="passwordChangeForm" style="padding: 0.75rem 0 0;">
+                  <div class="profile-field">
+                    <label for="current-password">현재 비밀번호</label>
+                    <input type="password" id="current-password" placeholder="현재 비밀번호 입력" autocomplete="current-password" required>
+                  </div>
+                  <div class="profile-field">
+                    <label for="new-password">새 비밀번호</label>
+                    <input type="password" id="new-password" minlength="8" placeholder="8자 이상, 숫자 포함" autocomplete="new-password" required>
+                    <div class="profile-pw-strength" id="profilePwStrength" data-level="" aria-label="비밀번호 강도">
+                      <div class="profile-pw-bar"></div>
+                      <div class="profile-pw-bar"></div>
+                      <div class="profile-pw-bar"></div>
+                      <div class="profile-pw-bar"></div>
+                    </div>
+                  </div>
+                  <div class="profile-field">
+                    <label for="confirm-password">비밀번호 확인</label>
+                    <input type="password" id="confirm-password" minlength="8" placeholder="비밀번호를 다시 입력" autocomplete="new-password" required>
+                  </div>
+                  <div class="profile-actions">
+                    <button type="submit" class="btn-profile-save" id="passwordChangeBtn">비밀번호 변경</button>
+                  </div>
+                </form>
+              </details>
+
+              <!-- 회원탈퇴 -->
+              <details class="profile-section profile-section-danger" style="margin-top:0.75rem;">
+                <summary class="profile-section-title" style="padding-left:0;">회원탈퇴</summary>
+                <p class="danger-warning" style="padding-left:0;">회원탈퇴 시 모든 일기 데이터가 삭제되며 복구할 수 없습니다.</p>
+                <button type="button" class="btn-danger" id="deleteAccountBtn" style="margin-left:0;">회원탈퇴</button>
+              </details>
+            </div>
+          </div>
+
+          <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
         </div>
       </div>
     </main>
@@ -4197,9 +4445,11 @@
       const nicknameDisplay = document.getElementById('profileDisplayNickname');
       const emailDisplay = document.getElementById('profileDisplayEmail');
       const totalEntries = document.getElementById('profileTotalEntries');
+      const profileStreakEl = document.getElementById('profileStreak');
       const joinDate = document.getElementById('profileJoinDate');
       const nicknameInput = document.getElementById('profile-nickname');
       const bioInput = document.getElementById('profile-bio');
+      const bioCounter = document.getElementById('bioCharCount');
 
       if (userProfile) {
         const nickname = userProfile.nickname || (currentUser && currentUser.email) || '--';
@@ -4218,14 +4468,93 @@
 
         nicknameInput.value = userProfile.nickname || '';
         bioInput.value = userProfile.bio || '';
+
+        // Update bio char counter
+        if (bioCounter) {
+          const len = (userProfile.bio || '').length;
+          bioCounter.textContent = len + ' / 200';
+          bioCounter.classList.toggle('near-limit', len >= 160 && len < 200);
+          bioCounter.classList.toggle('at-limit', len >= 200);
+        }
+
+        // Sync notification time presets
+        const savedTime = userProfile.notification_time || '';
+        document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+          btn.setAttribute('aria-pressed', btn.dataset.time === savedTime ? 'true' : 'false');
+        });
+        const customTimeInput = document.getElementById('profile-notification-custom');
+        if (customTimeInput) {
+          const presetTimes = ['08:00', '12:00', '18:00', '21:00', '22:00'];
+          if (savedTime && !presetTimes.includes(savedTime)) {
+            customTimeInput.value = savedTime;
+          } else {
+            customTimeInput.value = '';
+          }
+        }
       } else if (currentUser) {
         nicknameDisplay.textContent = currentUser.email || '--';
         emailDisplay.textContent = currentUser.email || '';
         avatarEl.textContent = (currentUser.email || '?').charAt(0).toUpperCase();
       }
+
+      // Streak: reuse sidebar calculation
+      if (profileStreakEl) {
+        const entries = allEntries || [];
+        const dateSet = new Set();
+        entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let streak = 0;
+        let checkDate = new Date(today);
+        const todayStr = checkDate.toISOString().split('T')[0];
+        if (!dateSet.has(todayStr)) checkDate.setDate(checkDate.getDate() - 1);
+        while (true) {
+          const ds = checkDate.toISOString().split('T')[0];
+          if (dateSet.has(ds)) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+          else break;
+        }
+        profileStreakEl.textContent = streak;
+      }
     }
 
     // Profile form submission
+    // Bio character counter
+    document.getElementById('profile-bio').addEventListener('input', function() {
+      const counter = document.getElementById('bioCharCount');
+      if (!counter) return;
+      const len = this.value.length;
+      counter.textContent = len + ' / 200';
+      counter.classList.toggle('near-limit', len >= 160 && len < 200);
+      counter.classList.toggle('at-limit', len >= 200);
+    });
+
+    // Notification time preset buttons
+    document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.notification-time-btn[data-time]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+        const customInput = document.getElementById('profile-notification-custom');
+        if (customInput) customInput.value = '';
+      });
+    });
+    // Custom time input clears presets
+    const profileNotifCustom = document.getElementById('profile-notification-custom');
+    if (profileNotifCustom) {
+      profileNotifCustom.addEventListener('change', function() {
+        if (this.value) {
+          document.querySelectorAll('.notification-time-btn[data-time]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        }
+      });
+    }
+
+    // Password strength indicator in profile
+    document.getElementById('new-password').addEventListener('input', function() {
+      const strengthEl = document.getElementById('profilePwStrength');
+      if (strengthEl) {
+        strengthEl.dataset.level = getPasswordStrength(this.value);
+      }
+    });
+
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const nicknameInput = document.getElementById('profile-nickname');
@@ -4237,13 +4566,28 @@
       saveBtn.disabled = true;
       saveBtn.textContent = '저장 중...';
 
+      // Determine selected notification time
+      let notificationTime = null;
+      const activePreset = document.querySelector('.notification-time-btn[data-time][aria-pressed="true"]');
+      const customTimeInput = document.getElementById('profile-notification-custom');
+      if (activePreset) {
+        notificationTime = activePreset.dataset.time;
+      } else if (customTimeInput && customTimeInput.value) {
+        notificationTime = customTimeInput.value;
+      }
+
+      const patchBody = {
+        nickname: nicknameInput.value.trim(),
+        bio: bioInput.value.trim(),
+      };
+      if (notificationTime) {
+        patchBody.notification_time = notificationTime;
+      }
+
       try {
         const res = await fetchWithAuth('/api/profile', {
           method: 'PATCH',
-          body: JSON.stringify({
-            nickname: nicknameInput.value.trim(),
-            bio: bioInput.value.trim(),
-          }),
+          body: JSON.stringify(patchBody),
         });
 
         if (res.ok) {
@@ -4298,12 +4642,21 @@
     // Password Change
     document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const currentPass = document.getElementById('current-password').value;
       const newPass = document.getElementById('new-password').value;
       const confirmPass = document.getElementById('confirm-password').value;
       const btn = document.getElementById('passwordChangeBtn');
 
+      if (!currentPass) {
+        showToast('현재 비밀번호를 입력해주세요.', 'error');
+        return;
+      }
+      if (newPass.length < 8) {
+        showToast('새 비밀번호는 8자 이상이어야 합니다.', 'error');
+        return;
+      }
       if (newPass !== confirmPass) {
-        showError('비밀번호가 일치하지 않습니다.');
+        showToast('비밀번호가 일치하지 않습니다.', 'error');
         return;
       }
 
@@ -4312,18 +4665,21 @@
       try {
         const res = await fetchWithAuth('/api/auth/password', {
           method: 'PUT',
-          body: JSON.stringify({ newPassword: newPass }),
+          body: JSON.stringify({ currentPassword: currentPass, newPassword: newPass }),
         });
         const result = await res.json();
         if (res.ok) {
-          showError('비밀번호가 변경되었습니다.');
+          showToast('비밀번호가 변경되었습니다.', 'success');
+          document.getElementById('current-password').value = '';
           document.getElementById('new-password').value = '';
           document.getElementById('confirm-password').value = '';
+          const strengthEl = document.getElementById('profilePwStrength');
+          if (strengthEl) strengthEl.dataset.level = '';
         } else {
-          showError(result.error || '비밀번호 변경에 실패했습니다.');
+          showToast(result.error || '비밀번호 변경에 실패했습니다.', 'error');
         }
       } catch {
-        showError('서버에 연결할 수 없습니다.');
+        showToast('서버에 연결할 수 없습니다.', 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = '비밀번호 변경';
@@ -4350,17 +4706,17 @@
 
     // Account Deletion
     document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+      const password = prompt('회원탈퇴를 위해 비밀번호를 입력해주세요.');
+      if (!password) return;
+
       const confirmed = confirm('정말로 회원탈퇴하시겠습니까?\n모든 일기 데이터가 삭제되며 복구할 수 없습니다.');
       if (!confirmed) return;
-
-      const doubleConfirm = confirm('마지막 확인입니다.\n회원탈퇴를 진행하시겠습니까?');
-      if (!doubleConfirm) return;
 
       const btn = document.getElementById('deleteAccountBtn');
       btn.disabled = true;
       btn.textContent = '처리 중...';
       try {
-        const res = await fetchWithAuth('/api/auth/account', { method: 'DELETE' });
+        const res = await fetchWithAuth('/api/auth/account', { method: 'DELETE', body: JSON.stringify({ password }) });
         if (res.ok) {
           alert('회원탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
           resetSessionAndUI();
@@ -4958,12 +5314,10 @@
 
     // ===== Dark Mode =====
     const darkToggle = document.getElementById('darkModeToggle');
-    const darkKnob = document.getElementById('darkModeKnob');
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       darkToggle.checked = theme === 'dark';
-      darkKnob.style.transform = theme === 'dark' ? 'translateX(20px)' : 'translateX(0)';
       document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#1a1a2e' : '#FFF8F0';
     }
 
