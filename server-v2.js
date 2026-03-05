@@ -372,6 +372,21 @@ function calculateTokenCost(usageMetadata) {
   return { input, output, thinking, cached, total, inputCost, outputCost, thinkingCost, totalCost };
 }
 
+// Sanitize string fields to prevent stored XSS
+// 서버 측에서 HTML 특수문자를 이스케이프하여 저장
+function sanitizeString(str, maxLength = 500) {
+  if (typeof str !== 'string') return '';
+  return str.slice(0, maxLength)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Validate that a value is a plain object (not array, not null)
+function isPlainObject(val) {
+  return val !== null && typeof val === 'object' && !Array.isArray(val);
+}
+
 // Generate a request ID for tracing
 function requestId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -487,7 +502,20 @@ const corsOrigins = [
 ];
 
 app.use(helmet({
-  contentSecurityPolicy: false, // Inline scripts/styles in single HTML file
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],  // 단일 HTML 인라인 스크립트 허용
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", "https://generativelanguage.googleapis.com", ...(process.env.SUPABASE_URL ? [process.env.SUPABASE_URL] : [])],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 }));
 app.use(cors({ origin: corsOrigins }));
@@ -569,7 +597,8 @@ app.post('/api/auth/signup', signupLimiter, async (req, res) => {
       if (error.message.includes('email rate limit') || error.status === 429) {
         return res.status(429).json({ error: '이메일 발송 한도를 초과했습니다. 1시간 후 다시 시도해주세요.', code: 'EMAIL_RATE_LIMITED' });
       }
-      return res.status(400).json({ error: error.message, code: 'SIGNUP_ERROR' });
+      logger.warn('회원가입 Supabase 오류', { requestId: rid, error: error.message });
+      return res.status(400).json({ error: '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.', code: 'SIGNUP_ERROR' });
     }
 
     // Supabase returns user without identities for repeated signup (already registered)
@@ -815,7 +844,7 @@ app.put('/api/auth/password', authMiddleware, async (req, res) => {
 
     if (error) {
       logger.warn('비밀번호 변경 실패', { requestId: rid, error: error.message });
-      return res.status(400).json({ error: error.message, code: 'PASSWORD_CHANGE_ERROR' });
+      return res.status(400).json({ error: '비밀번호 변경에 실패했습니다. 다시 시도해주세요.', code: 'PASSWORD_CHANGE_ERROR' });
     }
 
     logSecurityEvent('PASSWORD_CHANGED', { requestId: rid, userId: req.user?.id, ip: req.ip });
@@ -1048,7 +1077,7 @@ app.post('/api/analyze', authMiddleware, analyzeLimiter, async (req, res) => {
         attempt: attempt + 1,
         errorName: err.name,
         errorMessage: err.message,
-        stack: err.stack,
+        ...(IS_PRODUCTION ? {} : { stack: err.stack }),
       });
       if (err instanceof SyntaxError) continue;
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
@@ -1161,14 +1190,14 @@ app.post('/api/entries', authMiddleware, async (req, res) => {
         id: generateId(),
         user_id: req.user.id,
         text: textV.value,
-        emotion: req.body.emotion || '알 수 없음',
-        emoji: req.body.emoji || '💭',
-        message: req.body.message || '',
-        advice: req.body.advice || '',
-        emotion_hierarchy: req.body.emotion_hierarchy || {},
-        situation_context: req.body.situation_context || [],
+        emotion: sanitizeString(req.body.emotion || '알 수 없음', 50),
+        emoji: sanitizeString(req.body.emoji || '💭', 10),
+        message: sanitizeString(req.body.message || '', 1000),
+        advice: sanitizeString(req.body.advice || '', 500),
+        emotion_hierarchy: isPlainObject(req.body.emotion_hierarchy) ? req.body.emotion_hierarchy : {},
+        situation_context: Array.isArray(req.body.situation_context) ? req.body.situation_context : [],
         confidence_score: confV.value,
-        related_emotions: req.body.related_emotions || [],
+        related_emotions: Array.isArray(req.body.related_emotions) ? req.body.related_emotions : [],
       };
 
       const { data, error } = await req.supabaseClient
@@ -1270,19 +1299,25 @@ app.patch('/api/entries/:id', authMiddleware, async (req, res) => {
     }
 
     // If reanalyze is requested, re-run through Gemini (handled by client calling /api/analyze)
-    // Server just stores the updated fields
-    if (req.body.emotion !== undefined) updates.emotion = req.body.emotion;
-    if (req.body.emoji !== undefined) updates.emoji = req.body.emoji;
-    if (req.body.message !== undefined) updates.message = req.body.message;
-    if (req.body.advice !== undefined) updates.advice = req.body.advice;
-    if (req.body.emotion_hierarchy !== undefined) updates.emotion_hierarchy = req.body.emotion_hierarchy;
-    if (req.body.situation_context !== undefined) updates.situation_context = req.body.situation_context;
+    // Server sanitizes all string fields to prevent stored XSS
+    if (req.body.emotion !== undefined) updates.emotion = sanitizeString(req.body.emotion, 50);
+    if (req.body.emoji !== undefined) updates.emoji = sanitizeString(req.body.emoji, 10);
+    if (req.body.message !== undefined) updates.message = sanitizeString(req.body.message, 1000);
+    if (req.body.advice !== undefined) updates.advice = sanitizeString(req.body.advice, 500);
+    if (req.body.emotion_hierarchy !== undefined) {
+      updates.emotion_hierarchy = isPlainObject(req.body.emotion_hierarchy) ? req.body.emotion_hierarchy : {};
+    }
+    if (req.body.situation_context !== undefined) {
+      updates.situation_context = Array.isArray(req.body.situation_context) ? req.body.situation_context : [];
+    }
     if (req.body.confidence_score !== undefined) {
       const confV = validateConfidenceScore(req.body.confidence_score);
       if (!confV.valid) return res.status(400).json({ error: confV.error, code: 'VALIDATION_ERROR' });
       updates.confidence_score = confV.value;
     }
-    if (req.body.related_emotions !== undefined) updates.related_emotions = req.body.related_emotions;
+    if (req.body.related_emotions !== undefined) {
+      updates.related_emotions = Array.isArray(req.body.related_emotions) ? req.body.related_emotions : [];
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: '수정할 항목이 없습니다.', code: 'VALIDATION_ERROR' });
@@ -1371,21 +1406,35 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
   const rid = requestId();
   const startTime = Date.now();
 
-  logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id });
+  // Period filter: 7d, 30d, 90d, all (default)
+  const VALID_PERIODS = { '7d': 7, '30d': 30, '90d': 90, 'all': 0 };
+  const periodParam = req.query.period || 'all';
+  const periodDays = VALID_PERIODS[periodParam];
+  if (periodDays === undefined) {
+    return res.status(400).json({ error: "period 파라미터는 '7d', '30d', '90d', 'all' 중 하나여야 합니다.", code: 'VALIDATION_ERROR' });
+  }
+
+  const periodCutoff = periodDays > 0 ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString() : null;
+
+  logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id, period: periodParam });
 
   try {
-    // Supabase path: RPC-based stats (DB-side aggregation)
+    // Supabase path: direct queries with date filter (replaces RPC for period support)
     if (USE_SUPABASE && req.supabaseClient) {
-      // 3 parallel queries: RPC aggregation + latest 5 entries + streak profile
-      const [rpcResult, latestResult, profileResult] = await Promise.all([
-        req.supabaseClient.rpc('get_user_stats', { p_user_id: req.user.id }),
-        req.supabaseClient
-          .from('entries')
-          .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
-          .eq('user_id', req.user.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false })
-          .limit(5),
+      // Build filtered entries query
+      let entriesQuery = req.supabaseClient
+        .from('entries')
+        .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
+        .eq('user_id', req.user.id)
+        .is('deleted_at', null);
+      if (periodCutoff) {
+        entriesQuery = entriesQuery.gte('created_at', periodCutoff);
+      }
+      entriesQuery = entriesQuery.order('created_at', { ascending: false });
+
+      // Profile query (always unfiltered - streak is global)
+      const [entriesResult, profileResult] = await Promise.all([
+        entriesQuery,
         req.supabaseClient
           .from('user_profiles')
           .select('current_streak, max_streak, last_entry_date')
@@ -1393,61 +1442,81 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
           .single(),
       ]);
 
-      if (rpcResult.error) {
-        logger.error('통계 조회 실패 (RPC)', { requestId: rid, error: rpcResult.error.message });
-        return res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
-      }
-      if (latestResult.error) {
-        logger.error('최근 일기 조회 실패', { requestId: rid, error: latestResult.error.message });
+      if (entriesResult.error) {
+        logger.error('통계 조회 실패', { requestId: rid, error: entriesResult.error.message });
         return res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
       }
 
-      const rpcData = rpcResult.data || {};
-      const latestEntries = latestResult.data || [];
+      const allEntries = entriesResult.data || [];
       const profile = profileResult.data;
 
-      // Build emotion_distribution object from RPC array
+      // Aggregate stats from filtered entries
       const emotionFreq = {};
-      (rpcData.emotion_distribution || []).forEach(({ emotion, count }) => {
-        emotionFreq[emotion] = count;
+      const situationFreq = {};
+      let totalConfidence = 0;
+
+      allEntries.forEach(entry => {
+        const emotion = entry.emotion || '알 수 없음';
+        emotionFreq[emotion] = (emotionFreq[emotion] || 0) + 1;
+
+        if (entry.situation_context && Array.isArray(entry.situation_context)) {
+          entry.situation_context.forEach(ctx => {
+            const key = ctx.situation || ctx.domain || '기타';
+            situationFreq[key] = (situationFreq[key] || 0) + 1;
+          });
+        }
+
+        totalConfidence += (entry.confidence_score || 0);
       });
 
-      const topEmotions = (rpcData.emotion_distribution || [])
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+      const topEmotions = Object.entries(emotionFreq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([emotion, count]) => ({ emotion, count }));
 
-      const topSituations = (rpcData.situation_counts || [])
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+      const topSituations = Object.entries(situationFreq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([situation, count]) => ({ situation, count }));
+
+      const avgConfidence = allEntries.length > 0
+        ? Math.round(totalConfidence / allEntries.length)
+        : 0;
 
       // Determine if user wrote today
       const today = new Date().toISOString().split('T')[0];
       const todayCompleted = profile?.last_entry_date === today;
 
       const stats = {
-        total_entries: rpcData.total_entries || 0,
-        avg_confidence: Math.round(rpcData.avg_confidence || 0),
+        total_entries: allEntries.length,
+        avg_confidence: avgConfidence,
         emotion_distribution: emotionFreq,
         top_emotions: topEmotions,
         top_situations: topSituations,
         hourly_distribution: {},
-        latest_entries: latestEntries.map(e => ({ ...e, date: e.created_at })),
+        latest_entries: allEntries.slice(0, 5).map(e => ({ ...e, date: e.created_at })),
         streak: {
           current: profile?.current_streak || 0,
           max: profile?.max_streak || 0,
           today_completed: todayCompleted,
         },
+        period: periodParam,
       };
 
       const duration = Date.now() - startTime;
-      logger.info('통계 조회 성공', { requestId: rid, totalEntries: stats.total_entries, duration: `${duration}ms` });
+      logger.info('통계 조회 성공', { requestId: rid, totalEntries: stats.total_entries, period: periodParam, duration: `${duration}ms` });
 
       res.set('Cache-Control', 'private, max-age=60');
       return res.json(stats);
     }
 
-    // JSON fallback (identical to v1)
-    const entries = await readEntriesFromFile();
+    // JSON fallback (with period filter)
+    let entries = await readEntriesFromFile();
+    if (periodCutoff) {
+      const cutoffDate = new Date(periodCutoff);
+      entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
+    }
+
     const emotionFreq = {};
     const situationFreq = {};
     const hourlyEmotions = {};
@@ -1480,10 +1549,11 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
       top_situations: Object.entries(situationFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([situation, count]) => ({ situation, count })),
       hourly_distribution: hourlyEmotions,
       latest_entries: entries.slice(0, 5),
+      period: periodParam,
     };
 
     const duration = Date.now() - startTime;
-    logger.info('통계 조회 성공 (JSON)', { requestId: rid, totalEntries: entries.length, duration: `${duration}ms` });
+    logger.info('통계 조회 성공 (JSON)', { requestId: rid, totalEntries: entries.length, period: periodParam, duration: `${duration}ms` });
     res.json(stats);
   } catch (err) {
     logger.error('통계 조회 오류', { requestId: rid, error: err.message });
@@ -1675,19 +1745,33 @@ app.get('/api/export', authMiddleware, async (req, res) => {
 
     const format = req.query.format || 'csv';
 
+    if (format !== 'csv' && format !== 'json') {
+      return res.status(400).json({ error: "format은 'csv' 또는 'json'만 가능합니다.", code: 'VALIDATION_ERROR' });
+    }
+
     if (format === 'json') {
       res.setHeader('Content-Disposition', 'attachment; filename="sentimind-export.json"');
       return res.json(entries);
     }
 
-    // CSV format
+    // CSV format - CSV injection 방지: 위험 문자로 시작하는 셀에 단일 따옴표 접두사 추가
+    function csvSafe(str) {
+      let s = (str || '').replace(/"/g, '""');
+      if (/^[=+\-@\t\r]/.test(s)) {
+        s = "'" + s;
+      }
+      return s;
+    }
+
     const csvHeader = '날짜,감정,이모지,텍스트,공감메시지,조언,신뢰도';
     const csvRows = entries.map(e => {
-      const date = e.created_at || e.date || '';
-      const text = (e.text || '').replace(/"/g, '""');
-      const msg = (e.message || '').replace(/"/g, '""');
-      const advice = (e.advice || '').replace(/"/g, '""');
-      return `"${date}","${e.emotion || ''}","${e.emoji || ''}","${text}","${msg}","${advice}",${e.confidence_score || 0}`;
+      const date = csvSafe(e.created_at || e.date || '');
+      const text = csvSafe(e.text || '');
+      const msg = csvSafe(e.message || '');
+      const advice = csvSafe(e.advice || '');
+      const emotion = csvSafe(e.emotion || '');
+      const emoji = csvSafe(e.emoji || '');
+      return `"${date}","${emotion}","${emoji}","${text}","${msg}","${advice}",${e.confidence_score || 0}`;
     });
     const csv = '\uFEFF' + csvHeader + '\n' + csvRows.join('\n');
 
@@ -1765,7 +1849,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  logger.error('Uncaught Exception', { error: err.message, ...(IS_PRODUCTION ? {} : { stack: err.stack }) });
   process.exit(1);
 });
 
