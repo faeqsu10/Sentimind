@@ -30,7 +30,7 @@
       --color-secondary: #D4A574;
       --color-text: #5D4E37;
       --color-text-light: #7A6B59;
-      --color-text-muted: #8C7E6E;
+      --color-text-muted: #7D6F5C;
       --color-border: #E8DDD0;
       --color-divider: #F0E6D9;
       --color-error: #c62828;
@@ -2592,6 +2592,15 @@
       updateSidebarWeeklyChart();
     }
 
+    function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
+      return '<div class="sidebar-latest">' +
+        '<div class="sidebar-latest-emoji" aria-hidden="true">' + escapeHtml(emoji || '') + '</div>' +
+        '<p class="sidebar-latest-emotion">' + escapeHtml(emotion || '') + '</p>' +
+        '<p class="sidebar-latest-message">' + escapeHtml(message || '') + '</p>' +
+        (timeLabel ? '<p class="sidebar-latest-time">' + escapeHtml(timeLabel) + '</p>' : '') +
+      '</div>';
+    }
+
     function updateSidebarLatest() {
       const container = document.getElementById('sidebarLatestContent');
       if (!container) return;
@@ -2601,27 +2610,13 @@
         const timeStr = r._time ? new Intl.DateTimeFormat('ko-KR', {
           hour: '2-digit', minute: '2-digit'
         }).format(new Date(r._time)) : '';
-
-        container.innerHTML =
-          '<div class="sidebar-latest">' +
-            '<div class="sidebar-latest-emoji" aria-hidden="true">' + escapeHtml(r.emoji || '') + '</div>' +
-            '<p class="sidebar-latest-emotion">' + escapeHtml(r.emotion || '') + '</p>' +
-            '<p class="sidebar-latest-message">' + escapeHtml(r.message || '') + '</p>' +
-            (timeStr ? '<p class="sidebar-latest-time">' + escapeHtml(timeStr) + '</p>' : '') +
-          '</div>';
+        container.innerHTML = renderSidebarLatestCard(r.emoji, r.emotion, r.message, timeStr);
       } else if (allEntries && allEntries.length > 0) {
         const latest = allEntries[0];
         const dateStr = latest.date ? new Intl.DateTimeFormat('ko-KR', {
           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         }).format(new Date(latest.date)) : '';
-
-        container.innerHTML =
-          '<div class="sidebar-latest">' +
-            '<div class="sidebar-latest-emoji" aria-hidden="true">' + escapeHtml(latest.emoji || '') + '</div>' +
-            '<p class="sidebar-latest-emotion">' + escapeHtml(latest.emotion || '') + '</p>' +
-            '<p class="sidebar-latest-message">' + escapeHtml(latest.message || '') + '</p>' +
-            (dateStr ? '<p class="sidebar-latest-time">' + escapeHtml(dateStr) + '</p>' : '') +
-          '</div>';
+        container.innerHTML = renderSidebarLatestCard(latest.emoji, latest.emotion, latest.message, dateStr);
       } else {
         container.innerHTML = '<p class="sidebar-empty">아직 분석 결과가 없어요</p>';
       }

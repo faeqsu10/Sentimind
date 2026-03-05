@@ -1150,6 +1150,7 @@ app.get('/api/entries', authMiddleware, async (req, res) => {
       const entries = (data || []).map(e => ({ ...e, date: e.created_at }));
 
       res.set('X-Total-Count', String(count || 0));
+      res.set('Cache-Control', 'private, max-age=10');
 
       const duration = Date.now() - startTime;
       logger.info('일기 목록 조회 성공', { requestId: rid, count: entries.length, duration: `${duration}ms` });
