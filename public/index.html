@@ -2786,7 +2786,6 @@
     const historyList = document.getElementById('historyList');
     const historyDetail = document.getElementById('historyDetail');
     const emptyState = document.getElementById('emptyState');
-    const errorToast = document.getElementById('errorToast');
     const todayDate = document.getElementById('todayDate');
     const charCount = document.getElementById('charCount');
 
@@ -3920,7 +3919,6 @@
       return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    let errorTimer = null;
     function showError(msg) {
       showToast(msg, 'error');
     }
@@ -4245,6 +4243,24 @@
       }
     });
 
+    // Shared cleanup for logout and account deletion
+    function resetSessionAndUI() {
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('sb-refresh-token');
+      currentUser = null;
+      accessToken = null;
+      refreshToken = null;
+      userProfile = null;
+      appInitialized = false;
+      historyList.innerHTML = '';
+      responseCard.hidden = true;
+      document.getElementById('similarEntries').hidden = true;
+      historyDetail.hidden = true;
+      diaryText.value = '';
+      charCount.textContent = '';
+      showAuthScreen();
+    }
+
     // Account Deletion
     document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
       const confirmed = confirm('정말로 회원탈퇴하시겠습니까?\n모든 일기 데이터가 삭제되며 복구할 수 없습니다.');
@@ -4260,18 +4276,7 @@
         const res = await fetchWithAuth('/api/auth/account', { method: 'DELETE' });
         if (res.ok) {
           alert('회원탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
-          localStorage.removeItem('sb-access-token');
-          localStorage.removeItem('sb-refresh-token');
-          currentUser = null;
-          accessToken = null;
-          refreshToken = null;
-          userProfile = null;
-          appInitialized = false;
-          historyList.innerHTML = '';
-          responseCard.hidden = true;
-          document.getElementById('similarEntries').hidden = true;
-          historyDetail.hidden = true;
-          showAuthScreen();
+          resetSessionAndUI();
         } else {
           const result = await res.json();
           showError(result.error || '회원탈퇴에 실패했습니다.');
@@ -4291,21 +4296,7 @@
       } catch {
         // Always proceed with local logout
       }
-      localStorage.removeItem('sb-access-token');
-      localStorage.removeItem('sb-refresh-token');
-      currentUser = null;
-      accessToken = null;
-      refreshToken = null;
-      userProfile = null;
-      appInitialized = false;
-      // Clear previous user's UI data
-      historyList.innerHTML = '';
-      responseCard.hidden = true;
-      document.getElementById('similarEntries').hidden = true;
-      historyDetail.hidden = true;
-      diaryText.value = '';
-      charCount.textContent = '';
-      showAuthScreen();
+      resetSessionAndUI();
     });
 
     // ===== Dashboard =====
