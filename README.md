@@ -15,20 +15,29 @@
 ## 🛠 기술 스택
 
 ### 백엔드
-- **Runtime**: Node.js
-- **Framework**: Express.js
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js 5.x
 - **AI API**: Google Gemini 2.5 Flash
-- **데이터베이스**: JSON 파일 (Phase 5: PostgreSQL + Supabase)
+- **데이터베이스**:
+  - Supabase PostgreSQL (클라우드)
+  - JSON 파일 (로컬 폴백)
+- **인증**: Supabase Auth (Phase 6+)
 
 ### 프론트엔드
 - **구조**: 단일 HTML 파일 (CSS/JS 인라인)
+- **스타일**: CSS Grid/Flexbox (반응형)
 - **폰트**: Google Fonts (Gowun Batang, Gowun Dodum)
-- **상태**: 서버 기반 (localStorage 미사용)
+- **상태 관리**: 서버 기반 (localStorage 미사용)
+
+### 배포
+- **클라우드**: Vercel (Serverless)
+- **데이터**: Supabase PostgreSQL
+- **CI/CD**: GitHub (자동 배포)
 
 ### 온톨로지
 - **감정 분류**: 3단계 계층 (30개 세부 감정)
 - **상황 분석**: 5개 도메인 (17개 컨텍스트)
-- **신뢰도 계산**: 텍스트 길이 + 키워드 매칭
+- **신뢰도 계산**: Gemini 모델 기반 확률
 
 ## 📁 프로젝트 구조
 
@@ -36,15 +45,28 @@
 Sentimind/
 ├── server.js                    # Express 백엔드 + OntologyEngine
 ├── public/
-│   └── index.html              # 단일 프론트엔드 (1,392줄)
+│   └── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 ├── data/
 │   ├── entries.json            # 일기 저장소
 │   ├── emotion-ontology.json   # 감정 분류 체계
 │   └── situation-ontology.json # 상황 분석 도메인
-├── docs/
-│   └── PRD.md                  # 11주 개발 일정 (Phase 5-10)
+├── docs/                        # 기술 문서
+│   ├── ARCHITECTURE.md         # 시스템 아키텍처
+│   ├── DATABASE.md             # Supabase 스키마 & RLS
+│   ├── API.md                  # API 엔드포인트 참조
+│   └── DEPLOYMENT.md           # 배포 가이드
+├── guides/                      # 개발 가이드
+│   ├── SETUP.md                # 로컬 환경 설정
+│   ├── TEAM_WORKFLOW.md        # 팀 협업 프로세스
+│   ├── TROUBLESHOOTING.md      # 문제 해결
+│   └── COMMIT_CONVENTION.md    # 커밋 메시지 규칙
+├── plans/                       # 프로젝트 계획
+│   ├── PHASE5.md               # Phase 5 상세 계획
+│   └── ROADMAP.md              # 전체 프로젝트 로드맵
+├── logs/                        # 서버 로그 (자동 생성)
 ├── package.json                # 의존성
-├── .env                        # API 키 (미포함)
+├── vercel.json                 # Vercel 배포 설정
+├── .env                        # API 키 (미포함, .env.example 참고)
 └── README.md                   # 본 파일
 ```
 
@@ -195,14 +217,21 @@ GET /api/stats
 
 ## 🎯 Phase 5: Supabase Backend Migration
 
-현재 진행 상황:
-- ✅ PRD 작성 완료 (11주 일정, 5-6명 팀)
-- 🔄 Supabase 계정 생성 대기
-- ⏳ PostgreSQL 스키마 생성
-- ⏳ 데이터 마이그레이션 스크립트
-- ⏳ Express API 업데이트
+**기간**: 2026-03-05 ~ 2026-03-26 (2-3주)
+**상태**: 🔄 진행 중
 
-자세한 내용은 [docs/PRD.md](./docs/PRD.md) 참고
+**완료 사항**
+- ✅ Supabase 프로젝트 생성
+- ✅ 프로젝트 문서화 완성 (DATABASE.md, ARCHITECTURE.md)
+- ✅ 팀 가이드 작성 (SETUP.md, TEAM_WORKFLOW.md, TROUBLESHOOTING.md)
+
+**진행 중**
+- 🔄 데이터베이스 스키마 생성
+- 🔄 RLS 정책 설정
+- 🔄 Express API 업데이트
+- 🔄 데이터 마이그레이션
+
+자세한 내용: [plans/PHASE5.md](./plans/PHASE5.md)
 
 ## 📝 환경 변수
 
@@ -247,13 +276,34 @@ curl -X POST http://localhost:3000/api/analyze \
 
 MIT License - [LICENSE](LICENSE) 파일 참고
 
-## 🔗 링크
+## 📚 문서 링크
+
+### 기술 문서
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) - 시스템 아키텍처 및 데이터 흐름
+- [docs/DATABASE.md](./docs/DATABASE.md) - Supabase 스키마, RLS, 마이그레이션 전략
+- [docs/API.md](./docs/API.md) - 모든 API 엔드포인트 참조 및 예시
+- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) - 로컬/Vercel 배포 가이드
+
+### 개발 가이드
+- [guides/SETUP.md](./guides/SETUP.md) - 로컬 개발 환경 설정 (5분)
+- [guides/TEAM_WORKFLOW.md](./guides/TEAM_WORKFLOW.md) - 팀 협업 프로세스 및 PR 규칙
+- [guides/TROUBLESHOOTING.md](./guides/TROUBLESHOOTING.md) - 일반적인 문제 해결
+- [guides/COMMIT_CONVENTION.md](./guides/COMMIT_CONVENTION.md) - 커밋 메시지 컨벤션
+
+### 계획 & 로드맵
+- [plans/PHASE5.md](./plans/PHASE5.md) - Phase 5 상세 개발 계획 (2-3주)
+- [plans/ROADMAP.md](./plans/ROADMAP.md) - 전체 프로젝트 로드맵 (10+ Phase)
+- [CLAUDE.md](./CLAUDE.md) - 개발 원칙 및 기술 결정사항
+- [TEAM_GUIDE.md](./TEAM_GUIDE.md) - 팀 가이드 및 협업 방식
+
+## 🔗 외부 링크
 
 - **GitHub**: https://github.com/faeqsu10/Sentimind
+- **Vercel 배포**: https://sentimind-delta.vercel.app
+- **Supabase 콘솔**: https://app.supabase.com
 - **Google Gemini API**: https://ai.google.dev/
-- **Supabase**: https://supabase.com/
 
 ---
 
 **마지막 업데이트**: 2026-03-05
-**서버 상태**: ✅ 실행 중 (PID 7218)
+**현재 상태**: Phase 5 진행 중 🔄
