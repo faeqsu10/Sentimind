@@ -1540,8 +1540,18 @@ app.use('/api', (req, res) => {
 // ---------------------------------------------------------------------------
 
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
-  res.status(500).json({ error: '서버 내부 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: '잘못된 요청 형식입니다.', code: 'INVALID_JSON' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: '요청 본문이 너무 큽니다.', code: 'PAYLOAD_TOO_LARGE' });
+  }
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: IS_PRODUCTION ? undefined : err.stack,
+  });
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ error: '서버 내부 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
 });
 
 // ---------------------------------------------------------------------------

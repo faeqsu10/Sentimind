@@ -1040,6 +1040,61 @@
     .legal-modal-body ul { margin: 0.3rem 0 0.6rem 1.2rem; }
     .legal-modal-body li { margin-bottom: 0.2rem; }
 
+    /* Edit entry */
+    .btn-edit-detail {
+      background: none; border: 1px solid var(--color-border); cursor: pointer;
+      color: var(--color-text-light); font-size: 0.75rem; padding: 4px 10px;
+      border-radius: var(--radius-sm); font-family: var(--font-body);
+      transition: all 200ms ease;
+    }
+    .btn-edit-detail:hover { background: var(--color-surface-warm); color: var(--color-text); }
+    .edit-textarea {
+      width: 100%; min-height: 80px; padding: 0.6rem;
+      border: 1px solid var(--color-primary); border-radius: var(--radius-sm);
+      font-family: var(--font-diary); font-size: 0.9rem; line-height: 1.6;
+      color: var(--color-text); background: var(--color-surface);
+      resize: vertical; outline: none;
+    }
+    .edit-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-edit-save {
+      background: var(--color-primary); color: #fff; border: none;
+      padding: 6px 14px; border-radius: var(--radius-sm); font-family: var(--font-body);
+      font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-edit-save:hover { background: var(--color-primary-hover); }
+    .btn-edit-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-edit-cancel {
+      background: none; color: var(--color-text-light); border: 1px solid var(--color-border);
+      padding: 6px 14px; border-radius: var(--radius-sm); font-family: var(--font-body);
+      font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-edit-cancel:hover { background: var(--color-surface-warm); }
+    .edit-char-count { font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.3rem; }
+
+    /* Dark mode */
+    [data-theme="dark"] {
+      --color-bg: #1a1a2e;
+      --color-surface: #25253e;
+      --color-surface-warm: #2d2d4a;
+      --color-primary: #e8a87c;
+      --color-primary-hover: #d4956a;
+      --color-secondary: #d4a574;
+      --color-text: #e0d6cc;
+      --color-text-light: #a89e94;
+      --color-text-muted: #7a7068;
+      --color-border: #3a3a55;
+      --color-divider: #2f2f48;
+      --color-error: #ef5350;
+      --color-error-bg: #3e1a1a;
+      --color-success: #66bb6a;
+      --color-success-bg: #1a3e1a;
+      --gradient-response: linear-gradient(135deg, #2d2d4a 0%, #33334f 50%, #2a2a45 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+      --shadow-glow: 0 0 20px rgba(232,168,124,0.1);
+    }
+
     /* History detail modal */
     .history-detail {
       background: var(--gradient-response);
@@ -1652,6 +1707,16 @@
             </form>
             <div class="profile-message" id="profileMessage" hidden></div>
 
+            <!-- 다크 모드 -->
+            <div class="profile-section" style="padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.85rem; font-weight: 500;">다크 모드</span>
+              <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+                <input type="checkbox" id="darkModeToggle" style="opacity:0;width:0;height:0;">
+                <span style="position:absolute;inset:0;background:var(--color-border);border-radius:12px;transition:background 200ms;"></span>
+                <span id="darkModeKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform 200ms;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+              </label>
+            </div>
+
             <!-- 데이터 내보내기 -->
             <details class="profile-section">
               <summary class="profile-section-title">내 데이터 내보내기</summary>
@@ -1983,6 +2048,10 @@
         if (res.ok) {
           const result = await res.json();
           userProfile = result.data || null;
+          // Apply server theme if no local override
+          if (userProfile && userProfile.theme && !localStorage.getItem('sentimind-theme')) {
+            applyTheme(userProfile.theme);
+          }
         }
       } catch {
         userProfile = null;
@@ -2622,13 +2691,19 @@
         year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
       }).format(new Date(entry.date));
 
+      const createdAt = new Date(entry.date || entry.created_at);
+      const canEdit = (Date.now() - createdAt.getTime()) < 24 * 60 * 60 * 1000;
+
       historyDetail.innerHTML = `
         <div class="history-detail">
           <div class="detail-header">
             <span class="detail-date">${dateStr}</span>
-            <button class="btn-close-detail" aria-label="닫기">&times;</button>
+            <div style="display:flex;gap:0.4rem;align-items:center;">
+              ${canEdit ? '<button class="btn-edit-detail" id="editEntryBtn">편집</button>' : ''}
+              <button class="btn-close-detail" aria-label="닫기">&times;</button>
+            </div>
           </div>
-          <p class="detail-diary">"${escapeHtml(entry.text)}"</p>
+          <p class="detail-diary" id="detailDiaryText">"${escapeHtml(entry.text)}"</p>
           <span class="emotion-emoji">${escapeHtml(entry.emoji)}</span>
           <p class="emotion-label">감정: ${escapeHtml(entry.emotion)}</p>
           <p class="empathy-message">${escapeHtml(entry.message)}</p>
@@ -2640,6 +2715,57 @@
       historyDetail.querySelector('.btn-close-detail').addEventListener('click', () => {
         historyDetail.hidden = true;
       });
+
+      const editBtn = document.getElementById('editEntryBtn');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          const diaryP = document.getElementById('detailDiaryText');
+          const originalText = entry.text;
+          diaryP.outerHTML = `
+            <div id="editContainer">
+              <textarea class="edit-textarea" id="editTextarea" maxlength="500">${escapeHtml(originalText)}</textarea>
+              <div class="edit-char-count"><span id="editCharCount">${originalText.length}</span>/500</div>
+              <div class="edit-actions">
+                <button class="btn-edit-save" id="editSaveBtn">저장</button>
+                <button class="btn-edit-cancel" id="editCancelBtn">취소</button>
+              </div>
+            </div>
+          `;
+          editBtn.hidden = true;
+          const textarea = document.getElementById('editTextarea');
+          const charEl = document.getElementById('editCharCount');
+          textarea.focus();
+          textarea.addEventListener('input', () => { charEl.textContent = textarea.value.length; });
+
+          document.getElementById('editCancelBtn').addEventListener('click', () => {
+            showHistoryDetail(entry);
+          });
+
+          document.getElementById('editSaveBtn').addEventListener('click', async () => {
+            const newText = textarea.value.trim();
+            if (!newText || newText.length > 500) { showError('1~500자로 입력해주세요.'); return; }
+            if (newText === originalText) { showHistoryDetail(entry); return; }
+            const saveBtn = document.getElementById('editSaveBtn');
+            saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
+            try {
+              const res = await fetchWithAuth('/api/entries/' + entry.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: newText }),
+              });
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || '수정 실패');
+              }
+              const updated = await res.json();
+              Object.assign(entry, updated.data || updated);
+              entry.text = newText;
+              showHistoryDetail(entry);
+              await loadEntries();
+            } catch (e) { showError(e.message || '일기 수정에 실패했습니다.'); saveBtn.disabled = false; saveBtn.textContent = '저장'; }
+          });
+        });
+      }
     }
 
     // ===== Utils =====
@@ -3036,6 +3162,31 @@
         container.appendChild(div);
       });
     }
+
+    // ===== Dark Mode =====
+    const darkToggle = document.getElementById('darkModeToggle');
+    const darkKnob = document.getElementById('darkModeKnob');
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      darkToggle.checked = theme === 'dark';
+      darkKnob.style.transform = theme === 'dark' ? 'translateX(20px)' : 'translateX(0)';
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#1a1a2e' : '#FFF8F0';
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('sentimind-theme');
+    if (savedTheme) applyTheme(savedTheme);
+
+    darkToggle.addEventListener('change', async () => {
+      const theme = darkToggle.checked ? 'dark' : 'light';
+      applyTheme(theme);
+      localStorage.setItem('sentimind-theme', theme);
+      // Sync to server if logged in
+      if (accessToken) {
+        try { await fetchWithAuth('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) }); } catch {}
+      }
+    });
 
     // ===== Legal Modals =====
     const legalContents = {
