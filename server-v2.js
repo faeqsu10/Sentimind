@@ -1482,6 +1482,52 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /api/export - 데이터 내보내기 (CSV)
+app.get('/api/export', authMiddleware, async (req, res) => {
+  const rid = requestId();
+  logger.info('GET /api/export', { requestId: rid, userId: req.user?.id });
+
+  try {
+    let entries = [];
+    if (USE_SUPABASE && req.supabaseClient) {
+      const { data, error } = await req.supabaseClient
+        .from('entries')
+        .select('text, emotion, emoji, message, advice, confidence_score, created_at')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      entries = data || [];
+    } else {
+      entries = await readEntriesFromFile();
+    }
+
+    const format = req.query.format || 'csv';
+
+    if (format === 'json') {
+      res.setHeader('Content-Disposition', 'attachment; filename="sentimind-export.json"');
+      return res.json(entries);
+    }
+
+    // CSV format
+    const csvHeader = '날짜,감정,이모지,텍스트,공감메시지,조언,신뢰도';
+    const csvRows = entries.map(e => {
+      const date = e.created_at || e.date || '';
+      const text = (e.text || '').replace(/"/g, '""');
+      const msg = (e.message || '').replace(/"/g, '""');
+      const advice = (e.advice || '').replace(/"/g, '""');
+      return `"${date}","${e.emotion || ''}","${e.emoji || ''}","${text}","${msg}","${advice}",${e.confidence_score || 0}`;
+    });
+    const csv = '\uFEFF' + csvHeader + '\n' + csvRows.join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="sentimind-export.csv"');
+    res.send(csv);
+  } catch (err) {
+    logger.error('데이터 내보내기 오류', { requestId: rid, error: err.message });
+    res.status(500).json({ error: '데이터 내보내기에 실패했습니다.', code: 'INTERNAL_ERROR' });
+  }
+});
+
 // 404 Handler (API routes only)
 // ---------------------------------------------------------------------------
 
