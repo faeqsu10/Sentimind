@@ -372,6 +372,27 @@ function calculateBackoffDelay(attempt) {
 }
 
 // ---------------------------------------------------------------------------
+// Token Cost Calculator
+// ---------------------------------------------------------------------------
+
+function calculateTokenCost(usageMetadata) {
+  if (!usageMetadata) return null;
+  const input    = usageMetadata.promptTokenCount        ?? 0;
+  const output   = usageMetadata.candidatesTokenCount    ?? 0;
+  const thinking = usageMetadata.thoughtsTokenCount      ?? 0;
+  const cached   = usageMetadata.cachedContentTokenCount ?? 0;
+  const total    = usageMetadata.totalTokenCount         ?? (input + output);
+
+  const p = config.pricing;
+  const inputCost    = parseFloat(((input    / 1_000_000) * p.inputPerMillion).toFixed(8));
+  const outputCost   = parseFloat(((output   / 1_000_000) * p.outputPerMillion).toFixed(8));
+  const thinkingCost = parseFloat(((thinking / 1_000_000) * p.thinkingPerMillion).toFixed(8));
+  const totalCost    = parseFloat((inputCost + outputCost + thinkingCost).toFixed(8));
+
+  return { input, output, thinking, cached, total, inputCost, outputCost, thinkingCost, totalCost };
+}
+
+// ---------------------------------------------------------------------------
 // Rate Limiter (POST /api/analyze only)
 // ---------------------------------------------------------------------------
 
@@ -507,6 +528,7 @@ app.post('/api/analyze', analyzeLimiter, async (req, res) => {
 
       const data = await response.json();
       const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const tokenCost = calculateTokenCost(data.usageMetadata);
 
       if (!content) {
         lastError = new Error('Empty response from Gemini');
@@ -527,7 +549,18 @@ app.post('/api/analyze', analyzeLimiter, async (req, res) => {
         requestId,
         emotion: enrichedResult.emotion,
         confidence: enrichedResult.ontology?.confidence,
-        duration: `${duration}ms`
+        duration: `${duration}ms`,
+        ...(tokenCost && {
+          tokens: {
+            input: tokenCost.input, output: tokenCost.output,
+            thinking: tokenCost.thinking, cached: tokenCost.cached, total: tokenCost.total,
+          },
+          costUsd: {
+            input: tokenCost.inputCost, output: tokenCost.outputCost,
+            thinking: tokenCost.thinkingCost, total: tokenCost.totalCost,
+          },
+          model: config.gemini.model,
+        }),
       });
 
       return res.json(enrichedResult);

@@ -92,4 +92,15 @@ module.exports = {
     // - 1: 어제 로그만 삭제 (스토리지 제약 시)
     retentionDays: parseInt(process.env.LOG_RETENTION_DAYS || '7', 10),
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Gemini API 가격 (USD per 1M tokens)
+  // ═══════════════════════════════════════════════════════════════════
+  // 각 가격은 .env에서 환경변수로 오버라이드 가능
+  // 가격 변동 시 여기서 수정 (코드 재배포 불필요)
+  pricing: {
+    inputPerMillion:    parseFloat(process.env.GEMINI_PRICE_INPUT    || '0.15'),  // $0.15/1M
+    outputPerMillion:   parseFloat(process.env.GEMINI_PRICE_OUTPUT   || '0.60'),  // $0.60/1M
+    thinkingPerMillion: parseFloat(process.env.GEMINI_PRICE_THINKING || '3.50'),  // $3.50/1M
+  },
 };
