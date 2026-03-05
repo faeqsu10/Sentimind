@@ -924,6 +924,12 @@
     .btn-delete:hover { color: #c0392b; }
     .btn-delete:focus-visible { opacity: 1; outline: 2px solid var(--color-primary); outline-offset: 2px; }
     @media (hover: none) { .btn-delete { opacity: 0.6; } }
+    .history-item.deleting {
+      animation: slideOut 300ms ease forwards;
+    }
+    @keyframes slideOut {
+      to { transform: translateX(100%); opacity: 0; max-height: 0; margin: 0; padding: 0; overflow: hidden; }
+    }
     .history-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
     .empty-state {
       text-align: center;
@@ -2644,6 +2650,12 @@
       try {
         const response = await fetchWithAuth('/api/entries/' + id, { method: 'DELETE' });
         if (!response.ok) throw new Error();
+        // Slide-out animation
+        const item = historyList.querySelector(`[data-id="${id}"]`)?.closest('.history-item');
+        if (item) {
+          item.classList.add('deleting');
+          await new Promise(r => setTimeout(r, 300));
+        }
         await loadEntries();
         if (historyDetail.dataset.activeId === id) historyDetail.hidden = true;
       } catch {
@@ -2690,7 +2702,8 @@
     function renderConfidenceBadge(confidence) {
       const pct = confidence || 0;
       confidenceBadgePercent.textContent = pct + '%';
-      confidenceBadgeFill.style.width = pct + '%';
+      confidenceBadgeFill.style.width = '0%';
+      requestAnimationFrame(() => { confidenceBadgeFill.style.width = pct + '%'; });
 
       // Color level
       let level = 'mid';
