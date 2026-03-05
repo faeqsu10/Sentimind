@@ -1266,9 +1266,6 @@
     .cal-day.has-entry:hover { background: var(--color-primary); color: #fff; }
     .cal-day.has-entry:hover .cal-emoji { filter: brightness(1.2); }
     .cal-day.selected { background: var(--color-primary); color: #fff; }
-    .cal-day.today {
-      border: 2px solid var(--color-primary);
-    }
     .cal-emoji {
       font-size: 0.65rem; line-height: 1;
     }
@@ -1301,6 +1298,91 @@
     .cal-entry-message {
       font-size: 0.8rem; color: var(--color-text-light);
       margin-top: 0.4rem; font-style: italic;
+    }
+
+    /* Calendar: "today" button */
+    .btn-cal-today {
+      background: none; border: 1px solid var(--color-primary);
+      color: var(--color-primary); cursor: pointer;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 12px; border-radius: var(--radius-sm);
+      font-family: var(--font-ui);
+      transition: all 200ms ease;
+    }
+    .btn-cal-today:hover { background: var(--color-primary); color: #fff; }
+    .btn-cal-today:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .calendar-header-center {
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    /* Calendar: clickable all days */
+    .cal-day.clickable { cursor: pointer; }
+    .cal-day.clickable:hover { background: var(--color-surface-warm); }
+    .cal-day.selected .cal-dot { box-shadow: 0 0 0 1px #fff; }
+
+    /* Calendar: today emphasis (override base) */
+    .cal-day.today {
+      border: 2px solid var(--color-primary);
+      font-weight: 700; color: var(--color-primary);
+    }
+    .cal-day.today.has-entry { color: var(--color-text); }
+    .cal-day.today.selected { color: #fff; border-color: transparent; }
+
+    /* Calendar: no-entry message */
+    .cal-no-entry {
+      text-align: center; padding: 1.5rem 1rem;
+      color: var(--color-text-muted); font-size: 0.85rem;
+      font-family: var(--font-diary);
+    }
+
+    /* Calendar: monthly summary */
+    .cal-monthly-summary {
+      margin-top: 1.25rem; padding: 1rem;
+      background: var(--gradient-response);
+      border-radius: var(--radius-md);
+      animation: fadeInUp 300ms ease both;
+    }
+    .cal-summary-title {
+      font-family: var(--font-diary); font-size: 0.85rem;
+      font-weight: 600; color: var(--color-text);
+      margin-bottom: 0.75rem;
+    }
+    .cal-summary-stats {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.75rem; padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--color-divider);
+    }
+    .cal-stat-item { text-align: center; flex: 1; }
+    .cal-stat-value {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--color-primary); line-height: 1.2;
+    }
+    .cal-stat-label {
+      font-size: 0.7rem; color: var(--color-text-muted); margin-top: 2px;
+    }
+    .cal-stat-divider {
+      width: 1px; height: 28px; background: var(--color-divider);
+    }
+    .cal-top-emotions {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .cal-top-emotion-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 500;
+      background: var(--color-surface-warm);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .cal-top-emotion-dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    }
+    .cal-top-emotion-count {
+      color: var(--color-text-muted); font-size: 0.7rem;
+    }
+    .cal-summary-empty {
+      font-size: 0.8rem; color: var(--color-text-muted);
+      text-align: center; padding: 0.5rem 0;
     }
 
     /* Skeleton loading */
@@ -2361,11 +2443,15 @@
       <div id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" hidden>
         <div class="calendar-header">
           <button class="btn-cal-nav" id="calPrev" aria-label="이전 달">&#x276E;</button>
-          <span class="calendar-month-title" id="calMonthTitle"></span>
+          <div class="calendar-header-center">
+            <span class="calendar-month-title" id="calMonthTitle"></span>
+            <button class="btn-cal-today" id="calToday" aria-label="오늘로 이동">오늘</button>
+          </div>
           <button class="btn-cal-nav" id="calNext" aria-label="다음 달">&#x276F;</button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
         <div id="calDayEntries"></div>
+        <div id="calMonthlySummary"></div>
       </div>
 
       <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" hidden>
@@ -3894,7 +3980,6 @@
             try {
               const res = await fetchWithAuth('/api/entries/' + entry.id, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: newText }),
               });
               if (!res.ok) {
@@ -4687,7 +4772,6 @@
         const entries = entryMap[dateStr];
         const isToday = dateStr === todayStr;
         const hasEntry = entries && entries.length > 0;
-        const emoji = hasEntry ? entries[0].emoji : '';
         const classes = ['cal-day', isToday ? 'today' : '', hasEntry ? 'has-entry' : ''].filter(Boolean).join(' ');
 
         html += `<div class="${classes}" data-date="${dateStr}" ${hasEntry ? 'tabindex="0" role="button" aria-label="' + dateStr + ' 일기 ' + entries.length + '건"' : ''}>
@@ -4765,7 +4849,7 @@
       localStorage.setItem('sentimind-theme', theme);
       // Sync to server if logged in
       if (accessToken) {
-        try { await fetchWithAuth('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) }); } catch {}
+        try { await fetchWithAuth('/api/profile', { method: 'PATCH', body: JSON.stringify({ theme }) }); } catch {}
       }
     });
 
