@@ -1295,6 +1295,34 @@
       to { transform: translateX(100%); opacity: 0; max-height: 0; margin: 0; padding: 0; overflow: hidden; }
     }
     .history-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    /* 더 보기 버튼 */
+    .history-load-more {
+      list-style: none;
+      text-align: center;
+      padding: 0.75rem 0;
+    }
+    .btn-load-more {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-primary);
+      font-family: var(--font-ui);
+      font-size: clamp(0.8rem, 0.75rem + 0.25vw, 0.9rem);
+      cursor: pointer;
+      transition: background 200ms ease, box-shadow 200ms ease;
+    }
+    .btn-load-more:hover {
+      background: var(--color-bg);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-load-more:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
     .empty-state {
       text-align: center;
       color: var(--color-text-muted);
@@ -4053,15 +4081,24 @@
       confidenceMeter.innerHTML = '';
     }
 
+    // ===== 유틸리티: 디바운스 =====
+    function debounce(fn, ms) {
+      let timer;
+      return function(...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), ms); };
+    }
+
     // ===== History Filter & Search =====
     let allEntries = [];
     let activeFilters = new Set();
+    let currentPage = 1;
+    const PAGE_SIZE = 20;
 
     const historySearch = document.getElementById('historySearch');
     const filterChips = document.getElementById('filterChips');
     const filterResultCount = document.getElementById('filterResultCount');
 
-    historySearch.addEventListener('input', applyFilters);
+    // 검색 입력에 300ms 디바운스 적용 (불필요한 필터링 연산 방지)
+    historySearch.addEventListener('input', debounce(applyFilters, 300));
 
     function buildFilterChips(entries) {
       const emotions = new Set();
@@ -4089,7 +4126,13 @@
       });
     }
 
+    // 현재 필터링된 결과를 보관 (페이지네이션에서 참조)
+    let filteredEntries = [];
+
     function applyFilters() {
+      // 필터/검색 변경 시 페이지를 첫 페이지로 리셋
+      currentPage = 1;
+
       const query = historySearch.value.trim().toLowerCase();
       let filtered = allEntries;
 
@@ -4101,6 +4144,7 @@
         filtered = filtered.filter(e => activeFilters.has(e.emotion));
       }
 
+      filteredEntries = filtered;
       renderHistoryList(filtered);
 
       // Show result count when filtering is active
@@ -4114,7 +4158,6 @@
     }
 
     // ===== Render History =====
-    const MAX_DISPLAY = 50;
 
     function renderHistory(entries) {
       allEntries = entries;
@@ -4123,10 +4166,20 @@
       applyFilters();
     }
 
+    /**
+     * 히스토리 목록 렌더링 (DocumentFragment + 페이지네이션)
+     * - DocumentFragment로 DOM 접근 최소화
+     * - PAGE_SIZE(20개) 단위로 표시, "더 보기" 버튼으로 추가 로드
+     */
     function renderHistoryList(entries) {
-      const displayEntries = entries.slice(0, MAX_DISPLAY);
+      const displayEntries = entries.slice(0, currentPage * PAGE_SIZE);
+      const hasMore = entries.length > displayEntries.length;
+
       historyList.innerHTML = '';
       emptyState.hidden = entries.length > 0;
+
+      // DocumentFragment로 모아서 한 번에 DOM에 삽입
+      const fragment = document.createDocumentFragment();
 
       displayEntries.forEach(entry => {
         const li = document.createElement('li');
@@ -4162,8 +4215,27 @@
         li.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showHistoryDetail(entry); }
         });
-        historyList.appendChild(li);
+        fragment.appendChild(li);
       });
+
+      // "더 보기" 버튼 (남은 항목이 있을 때만 표시)
+      if (hasMore) {
+        const loadMoreLi = document.createElement('li');
+        loadMoreLi.className = 'history-load-more';
+        const remaining = entries.length - displayEntries.length;
+        const btn = document.createElement('button');
+        btn.className = 'btn-load-more';
+        btn.textContent = `더 보기 (${remaining}건 남음)`;
+        btn.setAttribute('aria-label', `나머지 ${remaining}건의 일기 더 보기`);
+        btn.addEventListener('click', () => {
+          currentPage++;
+          renderHistoryList(filteredEntries);
+        });
+        loadMoreLi.appendChild(btn);
+        fragment.appendChild(loadMoreLi);
+      }
+
+      historyList.appendChild(fragment);
     }
 
     function showHistoryDetail(entry) {
