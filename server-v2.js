@@ -26,6 +26,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -488,6 +489,10 @@ const corsOrigins = [
   ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()) : []),
 ];
 
+app.use(helmet({
+  contentSecurityPolicy: false, // Inline scripts/styles in single HTML file
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors({ origin: corsOrigins }));
 
 app.use(express.json({ limit: '10kb' }));
