@@ -5,11 +5,13 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const rateLimit = require('express-rate-limit');
+const config = require('./config/llm-config');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = config.gemini.model;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 // Supabase 클라이언트 초기화
@@ -70,13 +72,13 @@ class Logger {
     try {
       const files = fs.readdirSync(LOGS_DIR);
       const now = Date.now();
-      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const retentionMs = config.logs.retentionDays * 24 * 60 * 60 * 1000;
 
       files.forEach(file => {
         if (file.startsWith('app-') && file.endsWith('.log')) {
           const filePath = path.join(LOGS_DIR, file);
           const stats = fs.statSync(filePath);
-          if (now - stats.mtimeMs > sevenDaysMs) {
+          if (now - stats.mtimeMs > retentionMs) {
             fs.unlinkSync(filePath);
             console.log(`[LOG] 오래된 로그 삭제: ${file}`);
           }
@@ -360,6 +362,28 @@ function parseGeminiResponse(text) {
 }
 
 // ---------------------------------------------------------------------------
+// Exponential Backoff
+// ---------------------------------------------------------------------------
+
+function calculateBackoffDelay(attempt) {
+  const exponentialDelay = config.retry.baseDelay * Math.pow(2, attempt);
+  const jitter = Math.random() * exponentialDelay * 0.1; // 10% jitter
+  return exponentialDelay + jitter;
+}
+
+// ---------------------------------------------------------------------------
+// Rate Limiter (POST /api/analyze only)
+// ---------------------------------------------------------------------------
+
+const analyzeLimiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+  standardHeaders: 'draft-6',
+  legacyHeaders: false,
+});
+
+// ---------------------------------------------------------------------------
 // Middleware
 // ---------------------------------------------------------------------------
 
@@ -380,7 +404,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ---------------------------------------------------------------------------
 
 // POST /api/analyze - Analyze diary text via Gemini API
-app.post('/api/analyze', async (req, res) => {
+app.post('/api/analyze', analyzeLimiter, async (req, res) => {
   const startTime = Date.now();
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -415,14 +439,13 @@ app.post('/api/analyze', async (req, res) => {
     contents: [{ role: 'user', parts: [{ text: text.trim() }] }],
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
     generationConfig: {
-      maxOutputTokens: 1024,
-      temperature: 0.7,
-      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: config.gemini.maxOutputTokens,
+      temperature: config.gemini.temperature,
+      thinkingConfig: { thinkingBudget: config.gemini.thinkingBudget },
     },
   };
 
-  // Retry up to 2 times for JSON parse failures
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = config.retry.maxRetries;
   let lastError = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -433,7 +456,7 @@ app.post('/api/analyze', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(config.timeout),
       });
 
       if (!response.ok) {
@@ -453,8 +476,19 @@ app.post('/api/analyze', async (req, res) => {
           textLength: text.length
         });
 
+        // 429: 지수 백오프로 재시도
+        if (status === 429 && attempt < MAX_RETRIES) {
+          const delay = calculateBackoffDelay(attempt);
+          logger.warn('API 요청 한도 초과, 백오프 후 재시도', {
+            requestId,
+            attempt: attempt + 1,
+            delayMs: Math.round(delay),
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
         if (status === 429) {
-          logger.warn('API 요청 한도 초과', { requestId });
+          logger.warn('API 요청 한도 초과 (재시도 소진)', { requestId });
           return res.status(429).json({
             error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
           });
@@ -508,12 +542,12 @@ app.post('/api/analyze', async (req, res) => {
         stack: err.stack
       });
 
-      // If it's a JSON parse error, retry
+      // JSON 파싱 오류: 재시도
       if (err instanceof SyntaxError) {
         logger.warn('JSON 파싱 오류, 재시도', { requestId, attempt: attempt + 1 });
         continue;
       }
-      // For network/timeout errors, don't retry
+      // 타임아웃: 즉시 실패
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
         logger.error('요청 타임아웃', { requestId });
         return res.status(504).json({
