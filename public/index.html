@@ -15,11 +15,13 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Sentimind — AI 공감 다이어리">
   <meta name="twitter:description" content="AI가 감정을 분석하고 공감 메시지를 보내주는 감정 다이어리">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet"></noscript>
   <style>
     :root {
       --color-bg: #FFF8F0;
@@ -4718,7 +4720,7 @@
     }
 
     // ===== Calendar =====
-    let calYear, calMonth;
+    let calYear, calMonth, calSelectedDate = null;
     (function initCalDate() {
       const now = new Date();
       calYear = now.getFullYear();
@@ -4739,25 +4741,35 @@
       return map[e] || 'var(--color-primary)';
     }
 
-    function renderCalendar() {
-      const grid = document.getElementById('calendarGrid');
-      const titleEl = document.getElementById('calMonthTitle');
-      const entriesDiv = document.getElementById('calDayEntries');
-      entriesDiv.innerHTML = '';
-
-      titleEl.textContent = `${calYear}년 ${calMonth + 1}월`;
-
-      // Build date->entries map from cached allEntries
+    function buildCalEntryMap() {
       const entryMap = {};
       (allEntries || []).forEach(e => {
         const d = (e.date || e.created_at || '').slice(0, 10);
         if (!entryMap[d]) entryMap[d] = [];
         entryMap[d].push(e);
       });
+      return entryMap;
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const titleEl = document.getElementById('calMonthTitle');
+      const entriesDiv = document.getElementById('calDayEntries');
+      const todayBtn = document.getElementById('calToday');
+      entriesDiv.innerHTML = '';
+
+      titleEl.textContent = `${calYear}년 ${calMonth + 1}월`;
+
+      // Show/hide "today" button when viewing a different month
+      const now = new Date();
+      const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
+      todayBtn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+
+      const entryMap = buildCalEntryMap();
 
       const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = now.toISOString().slice(0, 10);
 
       const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
       let html = weekdays.map(w => `<div class="cal-weekday">${w}</div>`).join('');
@@ -4772,9 +4784,18 @@
         const entries = entryMap[dateStr];
         const isToday = dateStr === todayStr;
         const hasEntry = entries && entries.length > 0;
-        const classes = ['cal-day', isToday ? 'today' : '', hasEntry ? 'has-entry' : ''].filter(Boolean).join(' ');
+        const isSelected = dateStr === calSelectedDate;
+        const classes = ['cal-day', 'clickable',
+          isToday ? 'today' : '',
+          hasEntry ? 'has-entry' : '',
+          isSelected ? 'selected' : ''
+        ].filter(Boolean).join(' ');
 
-        html += `<div class="${classes}" data-date="${dateStr}" ${hasEntry ? 'tabindex="0" role="button" aria-label="' + dateStr + ' 일기 ' + entries.length + '건"' : ''}>
+        const ariaLabel = hasEntry
+          ? `${dateStr} 일기 ${entries.length}건`
+          : `${dateStr} 일기 없음`;
+
+        html += `<div class="${classes}" data-date="${dateStr}" tabindex="0" role="button" aria-label="${ariaLabel}">
           <span>${d}</span>
           ${hasEntry ? '<span class="cal-dots">' + entries.slice(0, 3).map(en => '<span class="cal-dot" style="background:' + emotionColor(en.emotion) + '"></span>').join('') + '</span>' : ''}
         </div>`;
@@ -4782,21 +4803,45 @@
 
       grid.innerHTML = html;
 
-      // Click handler
-      grid.querySelectorAll('.cal-day.has-entry').forEach(el => {
+      // Click handler for ALL day cells
+      grid.querySelectorAll('.cal-day.clickable').forEach(el => {
         const handler = () => {
+          calSelectedDate = el.dataset.date;
           grid.querySelectorAll('.cal-day.selected').forEach(s => s.classList.remove('selected'));
           el.classList.add('selected');
-          showCalDayEntries(el.dataset.date, entryMap[el.dataset.date]);
+          const dayEntries = entryMap[el.dataset.date] || [];
+          showCalDayEntries(el.dataset.date, dayEntries);
         };
         el.addEventListener('click', handler);
         el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); } });
       });
+
+      // Render monthly summary
+      renderMonthlySummary(entryMap, daysInMonth);
+
+      // Restore selected date view if within current month
+      if (calSelectedDate) {
+        const selParts = calSelectedDate.split('-');
+        if (parseInt(selParts[0]) === calYear && parseInt(selParts[1]) - 1 === calMonth) {
+          const dayEntries = entryMap[calSelectedDate] || [];
+          showCalDayEntries(calSelectedDate, dayEntries);
+        } else {
+          calSelectedDate = null;
+        }
+      }
     }
 
     function showCalDayEntries(dateStr, entries) {
       const div = document.getElementById('calDayEntries');
       const dateLabel = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date(dateStr + 'T00:00:00'));
+
+      if (!entries || entries.length === 0) {
+        div.innerHTML = `<div class="cal-day-entries">
+          <div class="cal-day-entries-header">${dateLabel}</div>
+          <p class="cal-no-entry">이 날에는 일기가 없습니다</p>
+        </div>`;
+        return;
+      }
 
       let html = `<div class="cal-day-entries">
         <div class="cal-day-entries-header">${dateLabel} (${entries.length}건)</div>`;
@@ -4816,15 +4861,98 @@
       div.innerHTML = html;
     }
 
+    function renderMonthlySummary(entryMap, daysInMonth) {
+      const summaryDiv = document.getElementById('calMonthlySummary');
+      const monthPrefix = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`;
+
+      // Collect all entries for this month
+      const monthEntries = [];
+      let writingDays = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
+        const dayEntries = entryMap[dateStr];
+        if (dayEntries && dayEntries.length > 0) {
+          writingDays++;
+          monthEntries.push(...dayEntries);
+        }
+      }
+
+      if (monthEntries.length === 0) {
+        summaryDiv.innerHTML = `<div class="cal-monthly-summary">
+          <div class="cal-summary-title">${calMonth + 1}월 감정 요약</div>
+          <p class="cal-summary-empty">이번 달에는 아직 작성한 일기가 없습니다</p>
+        </div>`;
+        return;
+      }
+
+      // Count emotions
+      const emotionCounts = {};
+      monthEntries.forEach(e => {
+        const em = (e.emotion || '').trim();
+        if (em) emotionCounts[em] = (emotionCounts[em] || 0) + 1;
+      });
+
+      // Sort by count and take top 3
+      const topEmotions = Object.entries(emotionCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      // Writing rate
+      const writeRate = Math.round((writingDays / daysInMonth) * 100);
+
+      let html = `<div class="cal-monthly-summary">
+        <div class="cal-summary-title">${calMonth + 1}월 감정 요약</div>
+        <div class="cal-summary-stats">
+          <div class="cal-stat-item">
+            <div class="cal-stat-value">${writingDays}/${daysInMonth}</div>
+            <div class="cal-stat-label">작성일 / 전체</div>
+          </div>
+          <div class="cal-stat-divider"></div>
+          <div class="cal-stat-item">
+            <div class="cal-stat-value">${monthEntries.length}</div>
+            <div class="cal-stat-label">총 일기 수</div>
+          </div>
+          <div class="cal-stat-divider"></div>
+          <div class="cal-stat-item">
+            <div class="cal-stat-value">${writeRate}%</div>
+            <div class="cal-stat-label">작성률</div>
+          </div>
+        </div>`;
+
+      if (topEmotions.length > 0) {
+        html += '<div class="cal-top-emotions">';
+        topEmotions.forEach(([emotion, count]) => {
+          html += `<span class="cal-top-emotion-chip">
+            <span class="cal-top-emotion-dot" style="background:${emotionColor(emotion)}"></span>
+            ${escapeHtml(emotion)}
+            <span class="cal-top-emotion-count">${count}회</span>
+          </span>`;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      summaryDiv.innerHTML = html;
+    }
+
     // Calendar navigation
     document.getElementById('calPrev').addEventListener('click', () => {
       calMonth--;
       if (calMonth < 0) { calMonth = 11; calYear--; }
+      calSelectedDate = null;
       renderCalendar();
     });
     document.getElementById('calNext').addEventListener('click', () => {
       calMonth++;
       if (calMonth > 11) { calMonth = 0; calYear++; }
+      calSelectedDate = null;
+      renderCalendar();
+    });
+    document.getElementById('calToday').addEventListener('click', () => {
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+      calSelectedDate = now.toISOString().slice(0, 10);
       renderCalendar();
     });
 
