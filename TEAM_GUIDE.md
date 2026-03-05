@@ -165,6 +165,16 @@ Thu-Fri: 버그 수정 + 성능 최적화
 | **Weekly Meeting** | 진행상황 검토 | 주 1회 |
 | **Email** | 공식 공지 | 필요시 |
 
+### 커밋 메시지 컨벤션
+
+**모든 팀원이 따를 커밋 메시지 규칙**: [`CLAUDE.md` - Git Commit Convention](./CLAUDE.md#git-commit-convention)
+
+**핵심 규칙**:
+- 형식: `<타입>(<범위>): <한국어 설명>` (예: `feat(api): Gemini 감정 분석 추가`)
+- 10가지 타입: `feat`, `fix`, `docs`, `chore`, `data`, `infra`, `phase` 등
+- 한글 설명 35자 이내, 마침표 금지
+- PR 리뷰 시 커밋 메시지 규칙 준수 확인
+
 ---
 
 ## 🔧 개발 환경 설정
