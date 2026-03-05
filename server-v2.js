@@ -1374,16 +1374,18 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
   logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id });
 
   try {
-    // Supabase path: SQL-based stats
+    // Supabase path: RPC-based stats (DB-side aggregation)
     if (USE_SUPABASE && req.supabaseClient) {
-      // Parallel queries for performance
-      const [entriesResult, profileResult] = await Promise.all([
+      // 3 parallel queries: RPC aggregation + latest 5 entries + streak profile
+      const [rpcResult, latestResult, profileResult] = await Promise.all([
+        req.supabaseClient.rpc('get_user_stats', { p_user_id: req.user.id }),
         req.supabaseClient
           .from('entries')
           .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
           .eq('user_id', req.user.id)
           .is('deleted_at', null)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5),
         req.supabaseClient
           .from('user_profiles')
           .select('current_streak, max_streak, last_entry_date')
@@ -1391,61 +1393,45 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
           .single(),
       ]);
 
-      if (entriesResult.error) {
-        logger.error('통계 조회 실패', { requestId: rid, error: entriesResult.error.message });
+      if (rpcResult.error) {
+        logger.error('통계 조회 실패 (RPC)', { requestId: rid, error: rpcResult.error.message });
+        return res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
+      }
+      if (latestResult.error) {
+        logger.error('최근 일기 조회 실패', { requestId: rid, error: latestResult.error.message });
         return res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
       }
 
-      const entries = entriesResult.data || [];
+      const rpcData = rpcResult.data || {};
+      const latestEntries = latestResult.data || [];
       const profile = profileResult.data;
 
-      // Compute stats in memory (same logic as v1 but from Supabase data)
+      // Build emotion_distribution object from RPC array
       const emotionFreq = {};
-      const situationFreq = {};
-      const hourlyEmotions = {};
-
-      entries.forEach(entry => {
-        const emotion = entry.emotion || '알 수 없음';
-        emotionFreq[emotion] = (emotionFreq[emotion] || 0) + 1;
-
-        if (Array.isArray(entry.situation_context)) {
-          entry.situation_context.forEach(ctx => {
-            const key = `${ctx.domain}/${ctx.context}`;
-            situationFreq[key] = (situationFreq[key] || 0) + 1;
-          });
-        }
-
-        const date = new Date(entry.created_at);
-        const hour = date.getHours();
-        const hourKey = `${hour}:00`;
-        if (!hourlyEmotions[hourKey]) hourlyEmotions[hourKey] = {};
-        hourlyEmotions[hourKey][emotion] = (hourlyEmotions[hourKey][emotion] || 0) + 1;
+      (rpcData.emotion_distribution || []).forEach(({ emotion, count }) => {
+        emotionFreq[emotion] = count;
       });
 
-      const avgConfidence = entries.reduce((sum, e) => sum + (e.confidence_score || 0), 0) / Math.max(entries.length, 1);
+      const topEmotions = (rpcData.emotion_distribution || [])
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
-      const topEmotions = Object.entries(emotionFreq)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([emotion, count]) => ({ emotion, count }));
-
-      const topSituations = Object.entries(situationFreq)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([situation, count]) => ({ situation, count }));
+      const topSituations = (rpcData.situation_counts || [])
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
       // Determine if user wrote today
       const today = new Date().toISOString().split('T')[0];
       const todayCompleted = profile?.last_entry_date === today;
 
       const stats = {
-        total_entries: entries.length,
-        avg_confidence: Math.round(avgConfidence),
+        total_entries: rpcData.total_entries || 0,
+        avg_confidence: Math.round(rpcData.avg_confidence || 0),
         emotion_distribution: emotionFreq,
         top_emotions: topEmotions,
         top_situations: topSituations,
-        hourly_distribution: hourlyEmotions,
-        latest_entries: entries.slice(0, 5).map(e => ({ ...e, date: e.created_at })),
+        hourly_distribution: {},
+        latest_entries: latestEntries.map(e => ({ ...e, date: e.created_at })),
         streak: {
           current: profile?.current_streak || 0,
           max: profile?.max_streak || 0,
@@ -1454,7 +1440,7 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
       };
 
       const duration = Date.now() - startTime;
-      logger.info('통계 조회 성공', { requestId: rid, totalEntries: entries.length, duration: `${duration}ms` });
+      logger.info('통계 조회 성공', { requestId: rid, totalEntries: stats.total_entries, duration: `${duration}ms` });
 
       res.set('Cache-Control', 'private, max-age=60');
       return res.json(stats);
