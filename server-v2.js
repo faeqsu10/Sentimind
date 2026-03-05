@@ -157,7 +157,9 @@ class Logger {
     };
 
     const colors = { DEBUG: '\x1b[36m', INFO: '\x1b[32m', WARN: '\x1b[33m', ERROR: '\x1b[31m' };
-    console.log(`${colors[level]}[${level}] ${message}\x1b[0m${data ? ` | ${JSON.stringify(data)}` : ''}`);
+    let dataStr = '';
+    try { dataStr = data ? JSON.stringify(data) : ''; } catch { dataStr = '[circular]'; }
+    console.log(`${colors[level]}[${level}] ${message}\x1b[0m${dataStr ? ` | ${dataStr}` : ''}`);
 
     try {
       fs.appendFileSync(this._getLogFile(), JSON.stringify(logEntry) + '\n', 'utf-8');
@@ -646,9 +648,11 @@ app.post('/api/auth/logout', authMiddleware, async (req, res) => {
   }
 
   try {
-    const token = req.headers.authorization?.slice(7);
-    if (token) {
-      await supabase.auth.admin?.signOut?.(token);
+    if (supabaseAdmin) {
+      const userId = req.user?.id;
+      if (userId) {
+        await supabaseAdmin.auth.admin.signOut(userId, 'global');
+      }
     }
     logger.info('로그아웃 성공', { requestId: rid, userId: req.user?.id });
     res.json({ data: { success: true } });
@@ -761,10 +765,11 @@ app.get('/api/profile', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: '프로필을 찾을 수 없습니다.', code: 'NOT_FOUND' });
     }
 
-    // Get total entries count
+    // Get total entries count (exclude soft-deleted)
     const { count } = await req.supabaseClient
       .from('entries')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null);
 
     res.json({
       data: {
@@ -995,6 +1000,7 @@ app.get('/api/entries', authMiddleware, async (req, res) => {
       let query = req.supabaseClient
         .from('entries')
         .select('*', { count: 'exact' })
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -1266,6 +1272,7 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
         req.supabaseClient
           .from('entries')
           .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
+          .is('deleted_at', null)
           .order('created_at', { ascending: false }),
         req.supabaseClient
           .from('user_profiles')
@@ -1430,6 +1437,15 @@ async function start() {
     process.exit(1);
   }
 }
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Promise Rejection', { error: reason?.message || String(reason) });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  process.exit(1);
+});
 
 start().catch(err => {
   logger.error('예상치 못한 에러', { error: err.message });
