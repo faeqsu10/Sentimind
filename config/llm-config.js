@@ -19,7 +19,7 @@ module.exports = {
   timeout: parseInt(process.env.GEMINI_TIMEOUT || '30000', 10), // ms
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || '60000', 10), // 1분
-    max: parseInt(process.env.RATE_LIMIT_MAX || '8', 10), // 8 req/min (Free Tier 10 RPM 이하)
+    max: parseInt(process.env.RATE_LIMIT_MAX || '200', 10), // Tier 1 API Key: 300 RPM (65% 안전선)
   },
   logs: {
     retentionDays: parseInt(process.env.LOG_RETENTION_DAYS || '7', 10),
