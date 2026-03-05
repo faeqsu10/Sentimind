@@ -1,0 +1,18 @@
+{
+  "name": "Sentimind - AI 공감 다이어리",
+  "short_name": "Sentimind",
+  "description": "한 줄 일기를 쓰면 AI가 감정을 분석하고 공감 메시지를 보내주는 감정 다이어리",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#FFF8F0",
+  "orientation": "portrait-primary",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

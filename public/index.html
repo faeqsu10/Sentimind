@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+  <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
@@ -1040,6 +1041,47 @@
     .legal-modal-body ul { margin: 0.3rem 0 0.6rem 1.2rem; }
     .legal-modal-body li { margin-bottom: 0.2rem; }
 
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--color-surface-warm) 25%, var(--color-divider) 50%, var(--color-surface-warm) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-line { height: 1em; margin-bottom: 0.5rem; }
+    .skeleton-line:last-child { width: 60%; }
+    .skeleton-card { height: 60px; margin-bottom: 0.5rem; border-radius: var(--radius-md); }
+    .skeleton-summary { height: 70px; border-radius: var(--radius-md); }
+
+    /* Stats period filter */
+    .period-filter {
+      display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .period-chip {
+      font-family: var(--font-body); font-size: 0.75rem;
+      padding: 4px 12px; border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text-light);
+      cursor: pointer; transition: all 200ms ease;
+    }
+    .period-chip:hover { background: var(--color-surface-warm); }
+    .period-chip.active {
+      background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+    }
+
+    /* Keyboard shortcut hint */
+    .shortcut-hint {
+      font-size: 0.65rem; color: var(--color-text-muted);
+      margin-top: 0.3rem; text-align: right;
+    }
+    kbd {
+      display: inline-block; padding: 1px 5px;
+      font-family: var(--font-body); font-size: 0.6rem;
+      background: var(--color-surface-warm); border: 1px solid var(--color-border);
+      border-radius: 3px; color: var(--color-text-light);
+    }
+
     /* Edit entry */
     .btn-edit-detail {
       background: none; border: 1px solid var(--color-border); cursor: pointer;
@@ -1592,6 +1634,7 @@
           <textarea id="diary-text" placeholder="오늘 하루는 어땠나요?" rows="3" maxlength="500"></textarea>
           <div class="form-actions">
             <span class="char-count" id="charCount" aria-live="polite"></span>
+            <p class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 전송</p>
             <button type="submit" class="btn-submit" id="submitBtn" disabled>
               <span>보내기</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1655,6 +1698,12 @@
 
       <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" hidden>
         <div class="dashboard" id="dashboardContent">
+          <div class="period-filter" id="periodFilter" role="group" aria-label="기간 필터">
+            <button class="period-chip active" data-days="0">전체</button>
+            <button class="period-chip" data-days="7">1주</button>
+            <button class="period-chip" data-days="30">1개월</button>
+            <button class="period-chip" data-days="90">3개월</button>
+          </div>
           <div class="dashboard-summary" id="dashboardSummary"></div>
           <div class="dashboard-section" id="topEmotionsSection">
             <h3 class="dashboard-section-title">자주 느낀 감정 (Top 5)</h3>
@@ -2469,6 +2518,8 @@
     }
 
     async function loadEntries() {
+      // Show skeleton while loading
+      historyList.innerHTML = Array(3).fill('<li class="history-item"><div class="skeleton skeleton-card"></div></li>').join('');
       try {
         const response = await fetchWithAuth('/api/entries');
         if (!response.ok) throw new Error();
@@ -3036,17 +3087,42 @@
     });
 
     // ===== Dashboard =====
+    let cachedStats = null;
+    let activePeriodDays = 0;
+
     async function loadDashboard() {
+      const summaryEl = document.getElementById('dashboardSummary');
+      summaryEl.innerHTML = '<div class="skeleton skeleton-summary"></div><div class="skeleton skeleton-summary" style="margin-top:0.5rem;"></div>';
       try {
         const response = await fetchWithAuth('/api/stats');
         if (!response.ok) throw new Error();
-        const stats = await response.json();
-        renderDashboard(stats);
+        cachedStats = await response.json();
+        renderDashboard(filterStatsByPeriod(cachedStats, activePeriodDays));
       } catch {
-        const content = document.getElementById('dashboardContent');
-        content.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
+        summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
       }
     }
+
+    function filterStatsByPeriod(stats, days) {
+      if (!days || days === 0) return stats;
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const filtered = (stats.latest_entries || []).filter(e => new Date(e.date || e.created_at) >= cutoff);
+      // Recompute basic stats from filtered entries
+      const emotionFreq = {};
+      filtered.forEach(e => { emotionFreq[e.emotion] = (emotionFreq[e.emotion] || 0) + 1; });
+      const topEmotions = Object.entries(emotionFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([emotion, count]) => ({ emotion, count }));
+      return { ...stats, total_entries: filtered.length, top_emotions: topEmotions, latest_entries: filtered.slice(0, 5) };
+    }
+
+    // Period filter click handler
+    document.getElementById('periodFilter').addEventListener('click', (e) => {
+      const chip = e.target.closest('.period-chip');
+      if (!chip) return;
+      document.querySelectorAll('#periodFilter .period-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activePeriodDays = parseInt(chip.dataset.days) || 0;
+      if (cachedStats) renderDashboard(filterStatsByPeriod(cachedStats, activePeriodDays));
+    });
 
     function renderDashboard(stats) {
       // Summary cards
@@ -3292,6 +3368,37 @@
     document.getElementById('legalModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeLegalModal();
     });
+
+    // ===== Keyboard Shortcuts =====
+    document.addEventListener('keydown', (e) => {
+      // Ctrl+Enter or Cmd+Enter: submit diary
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !appContainer.hidden) {
+        const text = diaryText.value.trim();
+        if (text && !submitBtn.disabled) {
+          e.preventDefault();
+          diaryForm.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+      }
+      // Escape: close modals/details
+      if (e.key === 'Escape') {
+        if (!document.getElementById('legalModal').hidden) {
+          closeLegalModal();
+        } else if (!historyDetail.hidden) {
+          historyDetail.hidden = true;
+        }
+      }
+      // Alt+1/2/3: switch tabs
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === '1') { e.preventDefault(); switchTab(tabDiary); }
+        if (e.key === '2') { e.preventDefault(); switchTab(tabDashboard); }
+        if (e.key === '3') { e.preventDefault(); switchTab(tabProfile); }
+      }
+    });
+
+    // ===== PWA Service Worker =====
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
 
     // ===== Start =====
     checkAuth();
