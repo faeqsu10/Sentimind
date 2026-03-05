@@ -705,7 +705,13 @@
       animation: scaleIn 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
     }
     .response-card[hidden] { display: none; }
-    .emotion-emoji { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+    .emotion-emoji { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
+    .emotion-emoji.pop { animation: emojiPop 500ms 200ms cubic-bezier(0.34,1.56,0.64,1) both; }
+    @keyframes emojiPop {
+      0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+      60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
     .emotion-label {
       font-size: clamp(0.8rem, 0.75rem + 0.3vw, 0.875rem);
       color: var(--color-text-light);
@@ -1147,6 +1153,9 @@
       font-size: 0.65rem; color: var(--color-text-muted);
       margin-top: 0.3rem; text-align: right;
     }
+    @media (hover: none), (pointer: coarse) {
+      .shortcut-hint { display: none; }
+    }
     kbd {
       display: inline-block; padding: 1px 5px;
       font-family: var(--font-body); font-size: 0.6rem;
@@ -1187,26 +1196,26 @@
 
     /* Dark mode */
     [data-theme="dark"] {
-      --color-bg: #1a1a2e;
-      --color-surface: #25253e;
-      --color-surface-warm: #2d2d4a;
+      --color-bg: #1e1a17;
+      --color-surface: #27211c;
+      --color-surface-warm: #2f2820;
       --color-primary: #e8a87c;
       --color-primary-hover: #d4956a;
       --color-secondary: #d4a574;
       --color-text: #e0d6cc;
       --color-text-light: #a89e94;
       --color-text-muted: #7a7068;
-      --color-border: #3a3a55;
-      --color-divider: #2f2f48;
+      --color-border: #3d3530;
+      --color-divider: #332c26;
       --color-error: #ef5350;
       --color-error-bg: #3e1a1a;
       --color-success: #66bb6a;
       --color-success-bg: #1a3e1a;
-      --gradient-response: linear-gradient(135deg, #2d2d4a 0%, #33334f 50%, #2a2a45 100%);
+      --gradient-response: linear-gradient(135deg, #2f2820 0%, #352e26 50%, #2a2420 100%);
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
       --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-      --shadow-glow: 0 0 20px rgba(232,168,124,0.1);
+      --shadow-glow: 0 0 20px rgba(232,168,124,0.15);
     }
 
     /* History detail modal */
@@ -1349,6 +1358,11 @@
       outline-offset: -2px;
     }
     .tab-panel[hidden] { display: none; }
+    .tab-panel { animation: tabFadeIn 250ms ease-out both; }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
     /* Dashboard */
     .dashboard {
@@ -1423,6 +1437,13 @@
       transition: width 600ms cubic-bezier(0.25,0.46,0.45,0.94);
       min-width: 2px;
     }
+    .bar-fill[data-emotion="기쁨"], .bar-fill[data-emotion="감사"], .bar-fill[data-emotion="설렘"] { background: #F4A261; }
+    .bar-fill[data-emotion="슬픔"], .bar-fill[data-emotion="외로움"], .bar-fill[data-emotion="그리움"] { background: #7EB8DA; }
+    .bar-fill[data-emotion="분노"], .bar-fill[data-emotion="짜증"], .bar-fill[data-emotion="억울함"] { background: #E76F51; }
+    .bar-fill[data-emotion="불안"], .bar-fill[data-emotion="걱정"], .bar-fill[data-emotion="두려움"] { background: #9C89B8; }
+    .bar-fill[data-emotion="평온"], .bar-fill[data-emotion="편안함"], .bar-fill[data-emotion="안도"] { background: #A8DAAB; }
+    .bar-fill[data-emotion="사랑"], .bar-fill[data-emotion="애정"] { background: #F2A0A0; }
+    .bar-fill[data-emotion="피곤"], .bar-fill[data-emotion="지침"], .bar-fill[data-emotion="무기력"] { background: #B0A89A; }
     .bar-count {
       min-width: 2em;
       font-size: 0.75rem;
@@ -2653,6 +2674,13 @@
       responseCard.hidden = false;
       responseCard.style.animation = 'none';
       requestAnimationFrame(() => { responseCard.style.animation = ''; });
+
+      // Emoji bounce animation
+      responseEmoji.classList.remove('pop');
+      requestAnimationFrame(() => { responseEmoji.classList.add('pop'); });
+
+      // Auto-scroll to response card
+      setTimeout(() => { responseCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     }
 
     function renderConfidenceBadge(confidence) {
@@ -2906,7 +2934,7 @@
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
-      return div.innerHTML;
+      return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     let errorTimer = null;
@@ -2935,6 +2963,10 @@
         const isActive = tab === activeTab;
         tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
         panels[i].hidden = !isActive;
+        if (isActive) {
+          panels[i].style.animation = 'none';
+          requestAnimationFrame(() => { panels[i].style.animation = ''; });
+        }
       });
 
       if (activeTab === tabCalendar) {
@@ -3284,6 +3316,7 @@
 
         const fill = document.createElement('div');
         fill.className = 'bar-fill' + (isSituation ? ' situation' : '');
+        if (!isSituation) fill.setAttribute('data-emotion', item[labelKey]);
         // Animate from 0
         fill.style.width = '0%';
         requestAnimationFrame(() => {

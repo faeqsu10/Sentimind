@@ -126,20 +126,20 @@ class Logger {
     return this.levels[level] >= this.levels[this.logLevel];
   }
 
-  _cleanOldLogs() {
+  async _cleanOldLogs() {
     try {
-      const files = fs.readdirSync(LOGS_DIR);
+      const files = await fs.promises.readdir(LOGS_DIR);
       const now = Date.now();
       const retentionMs = config.logs.retentionDays * 24 * 60 * 60 * 1000;
-      files.forEach(file => {
+      for (const file of files) {
         if (file.startsWith('app-') && file.endsWith('.log')) {
           const filePath = path.join(LOGS_DIR, file);
-          const stats = fs.statSync(filePath);
+          const stats = await fs.promises.stat(filePath);
           if (now - stats.mtimeMs > retentionMs) {
-            fs.unlinkSync(filePath);
+            await fs.promises.unlink(filePath);
           }
         }
-      });
+      }
     } catch (err) {
       console.error(`Log cleanup error: ${err.message}`);
     }
@@ -162,11 +162,8 @@ class Logger {
     try { dataStr = data ? JSON.stringify(data) : ''; } catch { dataStr = '[circular]'; }
     console.log(`${colors[level]}[${level}] ${message}\x1b[0m${dataStr ? ` | ${dataStr}` : ''}`);
 
-    try {
-      fs.appendFileSync(this._getLogFile(), JSON.stringify(logEntry) + '\n', 'utf-8');
-    } catch (err) {
-      console.error(`Log write error: ${err.message}`);
-    }
+    fs.promises.appendFile(this._getLogFile(), JSON.stringify(logEntry) + '\n', 'utf-8')
+      .catch(err => console.error(`Log write error: ${err.message}`));
   }
 
   debug(msg, data) { this._log('DEBUG', msg, data); }
