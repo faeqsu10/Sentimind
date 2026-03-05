@@ -1339,6 +1339,19 @@
     </div>
   </div>
 
+  <!-- ===== Welcome (Signup Complete) Screen ===== -->
+  <div class="onboarding-screen" id="welcomeScreen" hidden>
+    <div class="onboarding-card" style="text-align: center; padding: 3rem 2rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+      <h2 style="font-family: var(--font-diary); font-size: 1.5rem; margin-bottom: 0.75rem;">회원가입이 완료되었습니다!</h2>
+      <p style="color: var(--color-text-light); margin-bottom: 2rem; line-height: 1.6;">
+        이메일 인증이 확인되었어요.<br>
+        이제 감정 일기를 시작해볼까요?
+      </p>
+      <button type="button" class="btn-onboarding-next" id="welcomeStartBtn" style="width: 100%;">시작하기</button>
+    </div>
+  </div>
+
   <!-- ===== Onboarding Screen ===== -->
   <div class="onboarding-screen" id="onboardingScreen" hidden>
     <div class="onboarding-progress" id="onboardingProgress" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" aria-label="온보딩 진행 단계">
@@ -1699,8 +1712,75 @@
       }
     }
 
+    // ===== Auth: Handle email confirmation redirect =====
+    async function handleAuthRedirect() {
+      const hash = window.location.hash;
+      if (\!hash || \!hash.includes('access_token')) return false;
+
+      // Parse tokens from URL hash (#access_token=...&refresh_token=...&type=signup)
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      const refresh = params.get('refresh_token');
+      const type = params.get('type');
+
+      if (\!token) return false;
+
+      // Clear the hash from URL
+      history.replaceState(null, '', window.location.pathname);
+
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data && result.data.id) {
+            currentUser = result.data;
+            accessToken = token;
+            refreshToken = refresh;
+            localStorage.setItem('sb-access-token', token);
+            if (refresh) localStorage.setItem('sb-refresh-token', refresh);
+
+            if (type === 'signup') {
+              // Show welcome screen first
+              showWelcomeScreen();
+              return true;
+            }
+            // Other redirects (password reset etc)
+            await loadProfile();
+            if (userProfile && \!userProfile.onboarding_completed) {
+              showOnboarding();
+            } else {
+              showApp();
+            }
+            return true;
+          }
+        }
+      } catch {
+        // Fall through
+      }
+      return false;
+    }
+
+    // ===== Welcome Screen =====
+    function showWelcomeScreen() {
+      document.getElementById('authScreen').hidden = true;
+      document.getElementById('onboardingScreen').hidden = true;
+      document.querySelector('.app-container').hidden = true;
+      document.getElementById('welcomeScreen').hidden = false;
+    }
+
+    document.getElementById('welcomeStartBtn').addEventListener('click', () => {
+      document.getElementById('welcomeScreen').hidden = true;
+      showOnboarding();
+    });
+
     // ===== Auth: checkAuth on page load =====
     async function checkAuth() {
+      // First check for email confirmation redirect
+      const handled = await handleAuthRedirect();
+      if (handled) return;
+
       const token = localStorage.getItem('sb-access-token');
       const refresh = localStorage.getItem('sb-refresh-token');
       if (token) {
