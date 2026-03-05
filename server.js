@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = config.gemini.model;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 // Supabase 클라이언트 초기화
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -475,7 +475,7 @@ app.post('/api/analyze', analyzeLimiter, async (req, res) => {
 
       const response = await fetch(GEMINI_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(config.timeout),
       });

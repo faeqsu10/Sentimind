@@ -189,16 +189,6 @@ logger.info('Sentimind v2 서버 시작', {
 // Security Event Logger
 // ---------------------------------------------------------------------------
 
-function maskEmail(email) {
-  if (!email || typeof email !== 'string') return '***';
-  const [local, domain] = email.split('@');
-  if (!domain) return '***';
-  const maskedLocal = local.length <= 2
-    ? '*'.repeat(local.length)
-    : local[0] + '*'.repeat(local.length - 2) + local[local.length - 1];
-  return `${maskedLocal}@${domain}`;
-}
-
 function logSecurityEvent(event, details) {
   logger.warn(`[SECURITY] ${event}`, {
     ...details,

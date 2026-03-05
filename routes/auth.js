@@ -271,8 +271,8 @@ module.exports = function (deps) {
     }
 
     try {
-      // 비밀번호 재확인
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
+      // 비밀번호 재확인 (user-scoped client로 세션 오염 방지)
+      const { error: verifyError } = await req.supabaseClient.auth.signInWithPassword({
         email: req.user.email,
         password: req.body.password,
       });
@@ -326,8 +326,8 @@ module.exports = function (deps) {
     if (!passV.valid) return res.status(400).json({ error: passV.error, code: 'VALIDATION_ERROR' });
 
     try {
-      // 현재 비밀번호 검증 (재로그인으로 확인)
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
+      // 현재 비밀번호 검증 (user-scoped client로 세션 오염 방지)
+      const { error: verifyError } = await req.supabaseClient.auth.signInWithPassword({
         email: req.user.email,
         password: req.body.currentPassword,
       });

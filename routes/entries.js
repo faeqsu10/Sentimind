@@ -145,10 +145,10 @@ module.exports = function (deps) {
         id: generateId(),
         date: new Date().toISOString(),
         text: textV.value,
-        emotion: req.body.emotion || '알 수 없음',
-        emoji: req.body.emoji || '💭',
-        message: req.body.message || '',
-        advice: req.body.advice || '',
+        emotion: sanitizeString(req.body.emotion || '알 수 없음', 50),
+        emoji: sanitizeString(req.body.emoji || '💭', 10),
+        message: sanitizeString(req.body.message || '', 1000),
+        advice: sanitizeString(req.body.advice || '', 500),
       };
 
       const entries = await readEntries();
@@ -278,6 +278,7 @@ module.exports = function (deps) {
           .select('id')
           .eq('id', id)
           .eq('user_id', req.user.id)
+          .is('deleted_at', null)
           .single();
 
         if (fetchErr || !existing) {
