@@ -544,11 +544,13 @@ app.get('/api/health', async (req, res) => {
   // Check Gemini API key presence (not actual API call to avoid cost)
   geminiStatus = !!GEMINI_API_KEY;
 
+  const pkg = require('./package.json');
   res.json({
     status: 'ok',
-    version: '2.1.0',
+    version: pkg.version,
     supabase: supabaseStatus,
     gemini: geminiStatus,
+    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });
 });
@@ -1829,15 +1831,30 @@ async function start() {
       }
     }
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info('서버 시작 완료', {
         port: PORT,
         url: `http://localhost:${PORT}`,
-        version: '2.1.0',
+        version: require('./package.json').version,
         supabase: USE_SUPABASE ? 'enabled' : 'disabled',
         corsOrigins,
       });
     });
+
+    // Graceful shutdown
+    const shutdown = (signal) => {
+      logger.info(`${signal} 수신, 서버 종료 중...`);
+      server.close(() => {
+        logger.info('서버 정상 종료 완료');
+        process.exit(0);
+      });
+      setTimeout(() => {
+        logger.warn('강제 종료 (타임아웃 10초 초과)');
+        process.exit(1);
+      }, 10000);
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (err) {
     logger.error('서버 시작 실패', { error: err.message });
     process.exit(1);
