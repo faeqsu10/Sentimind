@@ -8,11 +8,30 @@
   "theme_color": "#FFF8F0",
   "orientation": "portrait-primary",
   "lang": "ko",
+  "categories": ["lifestyle", "health"],
   "icons": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>",
       "sizes": "any",
       "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "새 일기 쓰기",
+      "url": "/?tab=diary",
+      "description": "오늘의 감정을 기록하세요"
+    },
+    {
+      "name": "달력 보기",
+      "url": "/?tab=calendar",
+      "description": "날짜별 감정 달력"
+    },
+    {
+      "name": "통계",
+      "url": "/?tab=dashboard",
+      "description": "감정 통계 대시보드"
     }
   ]
 }
