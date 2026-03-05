@@ -1479,7 +1479,7 @@
     .cal-day.empty { visibility: hidden; }
     .cal-day.has-entry {
       cursor: pointer; color: var(--color-text); font-weight: 500;
-      background: var(--color-surface-warm);
+      transition: background-color 300ms ease;
     }
     .cal-day.has-entry:hover { background: var(--color-primary); color: #fff; }
     .cal-day.has-entry:hover .cal-emoji { filter: brightness(1.2); }
@@ -2382,6 +2382,103 @@
         transition-duration: 0.01ms !important;
       }
     }
+
+    /* === Feature 1: Calendar legend === */
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; justify-content: center; }
+    .cal-legend-item { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--color-text-muted); }
+    .cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    /* === Feature 2: Streak sparkle & badges === */
+    @keyframes sparkle {
+      0%, 100% { box-shadow: var(--shadow-sm); }
+      50% { box-shadow: 0 0 15px rgba(232,168,124,0.5), 0 0 30px rgba(232,168,124,0.3); }
+    }
+    .sparkle { animation: sparkle 0.75s ease 2; }
+    .profile-badges { margin-top: 1rem; }
+    .profile-badges-title {
+      font-family: var(--font-diary); font-size: 0.9rem; font-weight: 600;
+      color: var(--color-text); margin-bottom: 0.75rem;
+    }
+    .badges-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+    }
+    .badge-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 0.75rem 0.5rem; border-radius: var(--radius-md);
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      opacity: 0.4; filter: grayscale(1); transition: all 300ms ease;
+    }
+    .badge-item.achieved { opacity: 1; filter: none; border-color: var(--color-primary); }
+    .badge-emoji { font-size: 1.5rem; }
+    .badge-name { font-size: 0.7rem; color: var(--color-text); font-weight: 500; text-align: center; }
+    .badge-days { font-size: 0.65rem; color: var(--color-text-muted); }
+
+    /* === Feature 3: Confetti animation === */
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+    }
+    @keyframes gradientPulse {
+      0% { background-size: 100% 100%; }
+      50% { background-size: 150% 150%; }
+      100% { background-size: 100% 100%; }
+    }
+    .confetti-container {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9999; overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute; top: -10px;
+      width: 10px; height: 10px; border-radius: 2px;
+      animation: confettiFall 2s ease-out forwards;
+    }
+    .response-card.pulse-bg {
+      animation: gradientPulse 1s ease-in-out 1;
+    }
+
+    /* === Feature 4: Insight cards === */
+    .insight-card {
+      padding: 0.75rem; margin-bottom: 0.5rem;
+      background: var(--gradient-response);
+      border-radius: var(--radius-md);
+      animation: fadeInUp 300ms ease both;
+    }
+    .insight-card:last-child { margin-bottom: 0; }
+    .insight-icon { font-size: 1.2rem; margin-bottom: 0.25rem; }
+    .insight-text {
+      font-size: 0.8rem; color: var(--color-text); line-height: 1.5;
+      font-family: var(--font-diary);
+    }
+    .insight-label {
+      font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.25rem;
+    }
+    .insight-empty {
+      font-size: 0.8rem; color: var(--color-text-muted); text-align: center;
+      padding: 1rem 0; font-family: var(--font-diary);
+    }
+
+    /* === Feature 5: Emotion theme colors === */
+    [data-emotion-theme="joy"] .response-card { background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 50%, #FFCC80 100%); }
+    [data-emotion-theme="sadness"] .response-card { background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%); }
+    [data-emotion-theme="anger"] .response-card { background: linear-gradient(135deg, #FBE9E7 0%, #FFCCBC 50%, #FFAB91 100%); }
+    [data-emotion-theme="anxiety"] .response-card { background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 50%, #CE93D8 100%); }
+    [data-emotion-theme="peace"] .response-card { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%); }
+    [data-emotion-theme="love"] .response-card { background: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 50%, #F48FB1 100%); }
+    [data-emotion-theme="tired"] .response-card { background: linear-gradient(135deg, #EFEBE9 0%, #D7CCC8 50%, #BCAAA4 100%); }
+    [data-theme="dark"][data-emotion-theme="joy"] .response-card { background: linear-gradient(135deg, #3E2723 0%, #4E342E 50%, #5D4037 100%); }
+    [data-theme="dark"][data-emotion-theme="sadness"] .response-card { background: linear-gradient(135deg, #1A237E 0%, #283593 50%, #1A237E 100%); }
+    [data-theme="dark"][data-emotion-theme="anger"] .response-card { background: linear-gradient(135deg, #3E1A1A 0%, #4E2020 50%, #5D2626 100%); }
+    [data-theme="dark"][data-emotion-theme="anxiety"] .response-card { background: linear-gradient(135deg, #2A1A3E 0%, #3A2050 50%, #4A2660 100%); }
+    [data-theme="dark"][data-emotion-theme="peace"] .response-card { background: linear-gradient(135deg, #1A3E1A 0%, #204E20 50%, #265D26 100%); }
+    [data-theme="dark"][data-emotion-theme="love"] .response-card { background: linear-gradient(135deg, #3E1A2A 0%, #4E2035 50%, #5D2640 100%); }
+    [data-theme="dark"][data-emotion-theme="tired"] .response-card { background: linear-gradient(135deg, #2A2520 0%, #3A3028 50%, #4A3B30 100%); }
+    .history-item[data-emotion-group="joy"] { border-left: 3px solid #F4A261; }
+    .history-item[data-emotion-group="sadness"] { border-left: 3px solid #7EB8DA; }
+    .history-item[data-emotion-group="anger"] { border-left: 3px solid #E76F51; }
+    .history-item[data-emotion-group="anxiety"] { border-left: 3px solid #9C89B8; }
+    .history-item[data-emotion-group="peace"] { border-left: 3px solid #A8DAAB; }
+    .history-item[data-emotion-group="love"] { border-left: 3px solid #F2A0A0; }
+    .history-item[data-emotion-group="tired"] { border-left: 3px solid #B0A89A; }
   </style>
 </head>
 <body>
@@ -2744,6 +2841,12 @@
             </div>
           </div>
 
+          <!-- 스트릭 배지 -->
+          <div class="profile-badges" id="profileBadges">
+            <h3 class="profile-badges-title">달성 배지</h3>
+            <div class="badges-grid" id="badgesGrid"></div>
+          </div>
+
           <!-- 프로필 편집 섹션 -->
           <div class="profile-section-card">
             <div class="profile-section-card-header">
@@ -2894,6 +2997,12 @@
         </div>
       </div>
 
+      <!-- Emotion Insights -->
+      <div class="sidebar-card" id="sidebarInsights">
+        <h2 class="sidebar-card-title">감정 인사이트</h2>
+        <div id="insightCards"></div>
+      </div>
+
       <!-- Weekly Mini Chart (1024px+) -->
       <div class="sidebar-card sidebar-weekly-chart" id="sidebarWeeklyChart">
         <h2 class="sidebar-card-title">이번 주 감정</h2>
@@ -2954,6 +3063,7 @@
       updateSidebarToday();
       updateSidebarStreak();
       updateSidebarWeeklyChart();
+      renderInsightCards();
     }
 
     function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -3047,6 +3157,8 @@
       }
 
       streakCountEl.textContent = streak;
+      checkStreakMilestone(streak);
+      renderProfileBadges();
 
       const hasTodayEntry = dateSet.has(todayStr);
       if (streak === 0) {
@@ -3072,6 +3184,215 @@
         }
         streakDotsEl.innerHTML = dots.join('');
       }
+    }
+
+    // ===== Streak Badge Milestones =====
+    const STREAK_MILESTONES = [
+      { days: 3, name: '시작의 불꽃', emoji: '🔥' },
+      { days: 7, name: '일주일 전사', emoji: '⚔️' },
+      { days: 14, name: '습관의 씨앗', emoji: '🌱' },
+      { days: 30, name: '한 달의 기적', emoji: '🌟' },
+      { days: 50, name: '반백의 여정', emoji: '💫' },
+      { days: 100, name: '백일의 기록자', emoji: '👑' },
+    ];
+
+    function checkStreakMilestone(streak) {
+      const milestone = STREAK_MILESTONES.find(m => m.days === streak);
+      if (!milestone) return;
+      const key = 'streak_celebrated_' + milestone.days;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+      showToast(milestone.emoji + ' ' + milestone.name + '! ' + milestone.days + '일 연속 작성 달성!', 'success');
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const streakCard = document.getElementById('sidebarStreak');
+        if (streakCard) {
+          streakCard.classList.add('sparkle');
+          setTimeout(() => streakCard.classList.remove('sparkle'), 1500);
+        }
+      }
+    }
+
+    function renderProfileBadges() {
+      const grid = document.getElementById('badgesGrid');
+      if (!grid) return;
+      const entries = allEntries || [];
+      const dateSet = new Set();
+      entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+      const sortedDates = [...dateSet].sort();
+      let maxStreak = 0, tempStreak = sortedDates.length > 0 ? 1 : 0;
+      for (let i = 1; i < sortedDates.length; i++) {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        const diff = (curr - prev) / (1000 * 60 * 60 * 24);
+        if (diff === 1) { tempStreak++; } else { maxStreak = Math.max(maxStreak, tempStreak); tempStreak = 1; }
+      }
+      const streakEl = document.getElementById('streakCount');
+      const currentStreak = parseInt(streakEl?.textContent || '0');
+      maxStreak = Math.max(maxStreak, tempStreak, currentStreak);
+
+      grid.innerHTML = STREAK_MILESTONES.map(m => {
+        const achieved = maxStreak >= m.days;
+        return '<div class="badge-item' + (achieved ? ' achieved' : '') + '" title="' + m.name + ' (' + m.days + '일)">' +
+          '<span class="badge-emoji">' + m.emoji + '</span>' +
+          '<span class="badge-name">' + m.name + '</span>' +
+          '<span class="badge-days">' + m.days + '일</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ===== Confetti Animation =====
+    function createConfetti(emotion) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const container = document.createElement('div');
+      container.className = 'confetti-container';
+      container.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(container);
+
+      const color = emotionColor(emotion);
+      const colors = [color, '#F4A261', '#7EB8DA', '#A8DAAB', '#9C89B8'];
+      const isMobile = window.innerWidth < 768;
+      const count = isMobile ? 10 : 20;
+
+      for (let i = 0; i < count; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 0.5 + 's';
+        piece.style.animationDuration = (1.5 + Math.random()) + 's';
+        const size = 6 + Math.random() * 8;
+        piece.style.width = size + 'px';
+        piece.style.height = size + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        container.appendChild(piece);
+      }
+      setTimeout(() => container.remove(), 2500);
+    }
+
+    // ===== Emotion Theme =====
+    function getEmotionGroup(emotion) {
+      const e = (emotion || '').trim();
+      const groups = {
+        joy: ['기쁨','감사','설렘','행복'],
+        sadness: ['슬픔','외로움','그리움','우울'],
+        anger: ['분노','짜증','억울함','화남'],
+        anxiety: ['불안','걱정','두려움','긴장'],
+        peace: ['평온','편안함','안도','여유'],
+        love: ['사랑','애정'],
+        tired: ['피곤','지침','무기력'],
+      };
+      for (const [group, emotions] of Object.entries(groups)) {
+        if (emotions.includes(e)) return group;
+      }
+      return '';
+    }
+
+    // ===== Emotion Insights =====
+    function generateInsights(entries) {
+      if (!entries || entries.length < 5) return [];
+      const insights = [];
+      const now = new Date();
+      const oneWeekAgo = new Date(now); oneWeekAgo.setDate(now.getDate() - 7);
+      const twoWeeksAgo = new Date(now); twoWeeksAgo.setDate(now.getDate() - 14);
+
+      const thisWeek = entries.filter(e => new Date(e.date || e.created_at) >= oneWeekAgo);
+      const lastWeek = entries.filter(e => {
+        const d = new Date(e.date || e.created_at);
+        return d >= twoWeeksAgo && d < oneWeekAgo;
+      });
+
+      // Insight 1: Weekly emotion change
+      if (thisWeek.length > 0) {
+        const twCount = {};
+        thisWeek.forEach(e => { twCount[e.emotion] = (twCount[e.emotion] || 0) + 1; });
+        const topEmotion = Object.entries(twCount).sort((a, b) => b[1] - a[1])[0];
+        if (topEmotion) {
+          const lwCount = {};
+          lastWeek.forEach(e => { lwCount[e.emotion] = (lwCount[e.emotion] || 0) + 1; });
+          const lastWeekSame = lwCount[topEmotion[0]] || 0;
+          const diff = topEmotion[1] - lastWeekSame;
+          const diffText = diff > 0 ? '+' + diff : diff === 0 ? '동일' : String(diff);
+          insights.push({
+            icon: '📊', label: '주간 감정 변화',
+            text: '이번 주 가장 많이 느낀 감정은 "' + topEmotion[0] + '" ' + topEmotion[1] + '회 (지난주 대비 ' + diffText + ')'
+          });
+        }
+      }
+
+      // Insight 2: Day-of-week pattern
+      const dayMap = [0, 0, 0, 0, 0, 0, 0];
+      const dayEmotions = [{}, {}, {}, {}, {}, {}, {}];
+      entries.slice(0, 90).forEach(e => {
+        if (!e.emotion) return;
+        const day = new Date(e.date || e.created_at).getDay();
+        dayMap[day]++;
+        dayEmotions[day][e.emotion] = (dayEmotions[day][e.emotion] || 0) + 1;
+      });
+      const busiestDay = dayMap.indexOf(Math.max(...dayMap));
+      const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const busiestEmotion = Object.entries(dayEmotions[busiestDay]).sort((a, b) => b[1] - a[1])[0];
+      if (busiestEmotion) {
+        insights.push({
+          icon: '📅', label: '요일별 패턴',
+          text: dayNames[busiestDay] + '에 가장 많이 일기를 써요 (주로 "' + busiestEmotion[0] + '" 감정)'
+        });
+      }
+
+      // Insight 3: Consecutive same emotion
+      const recent = entries.slice(0, 5);
+      if (recent.length >= 3) {
+        const firstEmotion = recent[0].emotion;
+        let consecutiveCount = 0;
+        for (const e of recent) {
+          if (e.emotion === firstEmotion) consecutiveCount++;
+          else break;
+        }
+        if (consecutiveCount >= 3) {
+          insights.push({
+            icon: '🔄', label: '연속 감정',
+            text: '최근 ' + consecutiveCount + '회 연속 "' + firstEmotion + '" 감정이에요'
+          });
+        }
+      }
+
+      // Insight 4: Total entries milestone
+      const totalCount = entries.length;
+      const milestones = [10, 25, 50, 100, 200, 500];
+      const nextMilestone = milestones.find(m => m > totalCount);
+      if (nextMilestone) {
+        insights.push({
+          icon: '🎯', label: '작성 목표',
+          text: '총 ' + totalCount + '개의 일기를 작성했어요! ' + nextMilestone + '개까지 ' + (nextMilestone - totalCount) + '개 남았어요'
+        });
+      }
+
+      return insights;
+    }
+
+    function renderInsightCards() {
+      const container = document.getElementById('insightCards');
+      if (!container) return;
+      const insights = generateInsights(allEntries);
+
+      if (insights.length === 0) {
+        container.innerHTML = '<p class="insight-empty">일기를 5개 이상 작성하면 인사이트가 나타나요</p>';
+        return;
+      }
+
+      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+      const startIdx = dayOfYear % insights.length;
+      const selected = [];
+      for (let i = 0; i < Math.min(2, insights.length); i++) {
+        selected.push(insights[(startIdx + i) % insights.length]);
+      }
+
+      container.innerHTML = selected.map(ins =>
+        '<div class="insight-card">' +
+          '<div class="insight-icon">' + ins.icon + '</div>' +
+          '<div class="insight-text">' + escapeHtml(ins.text) + '</div>' +
+          '<div class="insight-label">' + escapeHtml(ins.label) + '</div>' +
+        '</div>'
+      ).join('');
     }
 
     function updateSidebarWeeklyChart() {
@@ -3824,6 +4145,7 @@
 
       submitBtn.disabled = true;
       responseCard.hidden = true;
+      document.documentElement.removeAttribute('data-emotion-theme');
       document.getElementById('similarEntries').hidden = true;
       const aiSection = responseCard.closest('.ai-response');
       if (aiSection) aiSection.setAttribute('aria-busy', 'true');
@@ -3974,6 +4296,18 @@
       responseCard.hidden = false;
       responseCard.style.animation = 'none';
       requestAnimationFrame(() => { responseCard.style.animation = ''; });
+
+      // Apply emotion theme color
+      const emotionGroup = getEmotionGroup(result.emotion);
+      document.documentElement.setAttribute('data-emotion-theme', emotionGroup);
+
+      // Confetti celebration
+      createConfetti(result.emotion);
+
+      // Gradient pulse on response card
+      responseCard.classList.remove('pulse-bg');
+      requestAnimationFrame(() => { responseCard.classList.add('pulse-bg'); });
+      setTimeout(() => responseCard.classList.remove('pulse-bg'), 1500);
 
       // Emoji bounce animation
       responseEmoji.classList.remove('pop');
@@ -4184,6 +4518,8 @@
       displayEntries.forEach(entry => {
         const li = document.createElement('li');
         li.className = 'history-item';
+        const eg = getEmotionGroup(entry.emotion);
+        if (eg) li.setAttribute('data-emotion-group', eg);
         li.setAttribute('role', 'button');
         li.setAttribute('tabindex', '0');
 
