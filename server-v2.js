@@ -567,6 +567,16 @@ app.post('/api/auth/signup', signupLimiter, async (req, res) => {
       return res.status(400).json({ error: error.message, code: 'SIGNUP_ERROR' });
     }
 
+    // Supabase returns user without identities for repeated signup (already registered)
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+      logSecurityEvent('SIGNUP_REPEATED', {
+        requestId: rid,
+        email: maskEmail(emailV.value),
+        ip: req.ip,
+      });
+      return res.status(409).json({ error: '이미 등록된 이메일입니다.', code: 'CONFLICT' });
+    }
+
     logger.info('회원가입 성공', { requestId: rid, userId: data.user?.id });
 
     res.status(201).json({
@@ -577,7 +587,7 @@ app.post('/api/auth/signup', signupLimiter, async (req, res) => {
         },
         session: data.session,
       },
-      message: data.session ? '회원가입 완료' : '인증 이메일이 발송되었습니다',
+      message: data.session ? '회원가입 완료' : '인증 이메일이 발송되었습니다. 메일함을 확인해주세요.',
     });
   } catch (err) {
     logger.error('회원가입 처리 중 오류', { requestId: rid, error: err.message });
