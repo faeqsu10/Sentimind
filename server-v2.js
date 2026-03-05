@@ -569,6 +569,9 @@ app.post('/api/auth/signup', signupLimiter, async (req, res) => {
       if (error.message.includes('already registered') || error.status === 422) {
         return res.status(409).json({ error: '이미 등록된 이메일입니다.', code: 'CONFLICT' });
       }
+      if (error.message.includes('email rate limit') || error.status === 429) {
+        return res.status(429).json({ error: '이메일 발송 한도를 초과했습니다. 1시간 후 다시 시도해주세요.', code: 'EMAIL_RATE_LIMITED' });
+      }
       return res.status(400).json({ error: error.message, code: 'SIGNUP_ERROR' });
     }
 
