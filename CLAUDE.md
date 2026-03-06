@@ -8,7 +8,7 @@ AI 공감 다이어리 — 사용자가 한 줄 일기를 쓰면 AI(Google Gemin
 
 ## Commands
 
-- **서버 실행**: `node server.js` (http://localhost:3000)
+- **서버 실행**: `node server-v2.js` (http://localhost:3000)
 - **의존성 설치**: `npm install`
 
 ## Architecture
@@ -24,7 +24,8 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - **server.js**: Express 백엔드. Gemini API 프록시(`POST /api/analyze`), 일기 CRUD(`/api/entries`), 정적 파일 서빙(`public/`). API 키는 `.env`에서 로드하여 서버에서만 사용.
 - **public/index.html**: HTML 마크업만 (~900줄). CSS/JS는 외부 파일로 분리.
 - **public/css/**: base.css (변수/리셋), layout.css (그리드/탭), components.css (UI 컴포넌트+다크모드), landing.css (랜딩 페이지)
-- **public/js/**: ES Module로 분리된 12개 파일. `app.js`가 진입점, `state.js`가 공유 상태, 나머지는 기능별 모듈 (auth, guest, diary, history, calendar, stats, profile, sidebar, api, utils)
+- **public/js/**: ES Module로 분리된 13개 파일. `app.js`가 진입점, `state.js`가 공유 상태, `analytics.js`가 이벤트 트래킹, 나머지는 기능별 모듈 (auth, guest, diary, history, calendar, stats, profile, sidebar, api, utils)
+- **routes/analytics.js**: POST /api/analytics — 이벤트 배치 수집 (최대 50개/요청, sendBeacon 호환)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
 
 ## Key Technical Decisions
