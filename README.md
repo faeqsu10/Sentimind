@@ -49,14 +49,15 @@ Sentimind/
 │   ├── profile.js              # 프로필 관리
 │   ├── stats.js                # 통계 조회 (기간 필터)
 │   ├── report.js               # AI 리포트 생성
-│   └── migrate.js              # 게스트→회원 데이터 마이그레이션
+│   ├── migrate.js              # 게스트→회원 데이터 마이그레이션
+│   └── analytics.js            # 이벤트 트래킹 수집
 ├── config/
 │   ├── llm-config.js           # Gemini API 설정 (모델, 프롬프트)
 │   └── supabase-config.js      # Supabase 클라이언트 & 설정
 ├── lib/
 │   ├── auth-middleware.js      # JWT 인증 미들웨어
 │   └── validators.js           # 입력 검증 유틸리티
-├── migrations/                 # Supabase 마이그레이션 (001~008)
+├── migrations/                 # Supabase 마이그레이션 (001~010)
 ├── public/
 │   ├── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 │   ├── sw.js                   # Service Worker (오프라인 동기화)
@@ -197,6 +198,7 @@ Sentimind/
 - 🔄 게스트→회원 데이터 마이그레이션
 - 🗑️ Soft delete (복구 가능)
 - 🎯 신규 사용자 온보딩 플로우
+- 📊 이벤트 트래킹 (10개 핵심 이벤트, 배치 전송, sendBeacon)
 
 ## 🔌 API 엔드포인트
 
@@ -343,6 +345,15 @@ Authorization: Bearer {token}
 POST /api/migrate/from-guest
 Authorization: Bearer {token}
 {"guestToken": "guest_token_here"}
+```
+
+### 이벤트 트래킹 (인증 불필요)
+
+```bash
+POST /api/analytics
+Content-Type: application/json
+{"events": [{"event": "landing_viewed", "session_id": "uuid", ...}]}
+# 응답: {"accepted": 1}
 ```
 
 ## 📊 개발 진행 상황

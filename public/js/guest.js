@@ -1,6 +1,7 @@
 import { state, GUEST_STORAGE_KEY, GUEST_MAX_ENTRIES, GUEST_MAX_DAYS } from './state.js';
 import { escapeHtml, showError } from './utils.js';
 import { fetchWithAuth, analyzeEmotion } from './api.js';
+import { track } from './analytics.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -128,6 +129,11 @@ export function showSignupModal(reason) {
   }
   overlay.hidden = false;
   document.getElementById('signupModalSignupBtn').focus();
+  // E-04: signup_modal_shown
+  track('signup_modal_shown', {
+    reason,
+    guest_usage_count: GUEST_MAX_ENTRIES - getGuestRemaining(),
+  });
 }
 
 function hideSignupModal() {

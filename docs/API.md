@@ -254,6 +254,45 @@ GET /api/stats
 
 ---
 
+## 6. 이벤트 트래킹 (POST /api/analytics)
+
+사용자 행동 이벤트를 배치로 수집합니다. 인증 불필요.
+
+**요청**
+```javascript
+POST /api/analytics
+Content-Type: application/json
+
+{
+  "events": [
+    {
+      "event": "landing_viewed",
+      "session_id": "uuid-string",
+      "is_guest": true,
+      "theme": "light",
+      "device_type": "desktop",
+      "referrer": "https://google.com",
+      "is_returning": false
+    }
+  ]
+}
+```
+
+**응답 (성공)**
+```json
+{
+  "accepted": 1
+}
+```
+
+**기술 상세**
+- **배치 크기**: 최대 50개 이벤트/요청
+- **클라이언트**: `navigator.sendBeacon` 우선, `fetch keepalive` 폴백
+- **저장**: Supabase `analytics_events` 테이블 (service_role 키 사용)
+- **핵심 이벤트**: landing_viewed, diary_submitted, ai_response_received, signup_completed, app_session_started, tab_switched, onboarding_step_viewed, ai_feedback_submitted, signup_modal_shown, ai_analysis_failed
+
+---
+
 ## 에러 처리
 
 모든 API 응답은 다음 HTTP 상태 코드를 사용합니다.

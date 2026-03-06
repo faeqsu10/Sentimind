@@ -650,6 +650,7 @@ app.use('/api', require('./routes/entries')(routeDeps));
 app.use('/api', require('./routes/stats')(routeDeps));
 app.use('/api', require('./routes/report')(routeDeps));
 app.use('/api', require('./routes/migrate')(routeDeps));
+app.use('/api/analytics', require('./routes/analytics')(routeDeps));
 
 // 404 Handler (API routes only)
 // ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { showError, isValidEmail, getPasswordStrength } from './utils.js';
 import { fetchWithAuth, loadProfile } from './api.js';
+import { track } from './analytics.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -244,6 +245,14 @@ export function initAuthForms() {
         signupMessage.hidden = false;
         return;
       }
+
+      // E-06: signup_completed
+      const guestEntries = JSON.parse(localStorage.getItem('sentimind-guest-entries') || '[]');
+      track('signup_completed', {
+        has_nickname: !!(nicknameInput.value.trim()),
+        had_guest_data: guestEntries.length > 0,
+        email_verification_required: !result.data.session,
+      });
 
       if (result.data.session) {
         state.currentUser = result.data.user;

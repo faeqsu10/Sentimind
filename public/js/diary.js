@@ -1,6 +1,7 @@
 import { state, DOMAIN_EMOJI } from './state.js';
 import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback } from './api.js';
+import { track } from './analytics.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -16,6 +17,18 @@ export async function handleSubmit(e) {
   const text = diaryText.value.trim();
   if (!text) return;
 
+  // E-11: diary_submitted
+  const now = new Date();
+  const isFirstDiary = (state.allEntries || []).length === 0;
+  track('diary_submitted', {
+    text_length: text.length,
+    entry_hour: now.getHours(),
+    entry_day_of_week: now.getDay(),
+    is_guest: state.guestMode,
+    total_entries_count: (state.allEntries || []).length,
+  });
+
+  const submitStartTime = Date.now();
   submitBtn.disabled = true;
   responseCard.hidden = true;
   document.getElementById('feedbackSection').hidden = true;
@@ -46,6 +59,12 @@ export async function handleSubmit(e) {
     // Show retention card
     showRetentionCard();
   } catch (err) {
+    // E-24: ai_analysis_failed
+    track('ai_analysis_failed', {
+      error_message: (err.userMessage || 'unknown').slice(0, 200),
+      text_length: text.length,
+      is_guest: state.guestMode,
+    });
     showError(err.userMessage || '지금 마음을 읽기 어려운 상황이에요. 잠시 후 다시 이야기해주세요.');
   } finally {
     hideSkeleton('analyze');
@@ -87,6 +106,15 @@ export function showResponse(result) {
   responseCard.hidden = false;
   responseCard.style.animation = 'none';
   requestAnimationFrame(() => { responseCard.style.animation = ''; });
+
+  // E-12: ai_response_received
+  track('ai_response_received', {
+    emotion: result.emotion,
+    emotion_level1: result.ontology?.emotion_hierarchy?.level1 || null,
+    confidence_score: result.ontology?.confidence || 0,
+    has_ontology: !!result.ontology,
+    situation_domains: (result.ontology?.situation_context || []).map(c => c.domain),
+  });
 
   const emotionGroup = getEmotionGroup(result.emotion);
   document.documentElement.setAttribute('data-emotion-theme', emotionGroup);
@@ -283,6 +311,12 @@ async function handleFeedbackClick(rating) {
 
   try {
     await submitFeedback(entryId, rating);
+    // E-13: ai_feedback_submitted
+    track('ai_feedback_submitted', {
+      rating,
+      emotion: state.latestAnalysisResult?.emotion || '',
+      confidence_score: state.latestAnalysisResult?.ontology?.confidence || 0,
+    });
     feedbackButtons.hidden = true;
     feedbackThanks.hidden = false;
   } catch (err) {

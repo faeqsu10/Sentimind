@@ -10,6 +10,7 @@ import { renderCalendar, setupCalendar } from './calendar.js';
 import { loadDashboard, setupStats } from './stats.js';
 import { updateSidebar, createConfetti, renderProfileBadges } from './sidebar.js';
 import { setupProfile, renderProfileScreen, initProfileEventListeners } from './profile.js';
+import { track } from './analytics.js';
 
 // ===== DOM Elements =====
 const landingScreen = document.getElementById('landingScreen');
@@ -50,12 +51,22 @@ function pushScreen(screen) {
 function showLanding(pushHistory = true) {
   setScreen('landing');
   if (pushHistory) pushScreen('landing');
+  // E-01: landing_viewed
+  const params = new URLSearchParams(window.location.search);
+  track('landing_viewed', {
+    referrer: document.referrer || '',
+    utm_source: params.get('utm_source') || null,
+    utm_medium: params.get('utm_medium') || null,
+    is_returning: !!localStorage.getItem('sb-access-token'),
+  });
 }
 
 function showAuthScreen(pushHistory = true) {
   setScreen('auth');
   if (pushHistory) pushScreen('auth');
   showAuthCard('login');
+  // E-05: auth_form_started
+  track('auth_form_started', { form_type: 'login', entry_source: state.guestMode ? 'guest_modal' : 'landing_cta' });
 }
 
 function showDemo(pushHistory = true) {
@@ -77,6 +88,15 @@ function showApp(pushHistory = true) {
   setScreen('app');
   if (pushHistory) pushScreen('app');
   updateUserMenu();
+  // E-20: app_session_started
+  const lastSession = localStorage.getItem('sentimind-last-session');
+  const daysSinceLast = lastSession ? Math.floor((Date.now() - new Date(lastSession).getTime()) / 86400000) : null;
+  localStorage.setItem('sentimind-last-session', new Date().toISOString());
+  track('app_session_started', {
+    days_since_last_session: daysSinceLast,
+    total_entries: (state.allEntries || []).length,
+    current_streak: state.userProfile?.current_streak || 0,
+  });
   initApp();
 }
 
@@ -127,7 +147,18 @@ function updateUserMenu() {
 }
 
 // ===== Onboarding =====
+let onboardingStepTime = Date.now();
 function updateOnboardingUI() {
+  // E-08: onboarding_step_viewed
+  const prevStep = state.onboardingStep > 1 ? state.onboardingStep - 1 : null;
+  const now = Date.now();
+  track('onboarding_step_viewed', {
+    step: state.onboardingStep,
+    previous_step: prevStep,
+    time_on_previous_step_sec: Math.round((now - onboardingStepTime) / 1000),
+  });
+  onboardingStepTime = now;
+
   document.querySelectorAll('.onboarding-dot').forEach(dot => {
     const step = parseInt(dot.dataset.step);
     dot.classList.toggle('active', step === state.onboardingStep);
@@ -254,9 +285,26 @@ const panelCalendar = document.getElementById('panel-calendar');
 const panelDashboard = document.getElementById('panel-dashboard');
 const panelProfile = document.getElementById('panel-profile');
 
+let currentTabName = 'diary';
+let tabSwitchTime = Date.now();
+
 function switchTab(activeTab) {
   const tabs = [tabDiary, tabCalendar, tabDashboard, tabProfile];
   const panels = [panelDiary, panelCalendar, panelDashboard, panelProfile];
+  const tabNames = ['diary', 'calendar', 'dashboard', 'profile'];
+  const newTab = tabNames[tabs.indexOf(activeTab)] || 'diary';
+
+  // E-14: tab_switched
+  if (newTab !== currentTabName) {
+    const now = Date.now();
+    track('tab_switched', {
+      from_tab: currentTabName,
+      to_tab: newTab,
+      time_on_previous_tab_sec: Math.round((now - tabSwitchTime) / 1000),
+    });
+    currentTabName = newTab;
+    tabSwitchTime = now;
+  }
 
   tabs.forEach((tab, i) => {
     const isActive = tab === activeTab;
