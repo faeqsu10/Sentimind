@@ -628,7 +628,29 @@
           <div class="filter-chips" id="filterChips" role="group" aria-label="마음 필터"></div>
           <p class="filter-result-count" id="filterResultCount" hidden aria-live="polite"></p>
         </div>
-        <div id="historyDetail" hidden aria-live="polite"></div>
+        <div id="historyDetail" class="history-detail-overlay" hidden aria-live="polite">
+          <div class="history-detail-content">
+            <button class="history-detail-close" id="detailClose" aria-label="닫기">&times;</button>
+            <p class="history-detail-date" id="detailDate"></p>
+            <div class="history-detail-emotion">
+              <span class="history-detail-emoji" id="detailEmoji"></span>
+              <span class="history-detail-emotion-text" id="detailEmotion"></span>
+            </div>
+            <div class="history-detail-section">
+              <h4>나의 이야기</h4>
+              <p class="history-detail-text" id="detailText"></p>
+            </div>
+            <div class="history-detail-section">
+              <h4>마음이의 공감</h4>
+              <p class="history-detail-message" id="detailMessage"></p>
+            </div>
+            <div class="history-detail-section">
+              <h4>따뜻한 한마디</h4>
+              <p class="history-detail-advice" id="detailAdvice"></p>
+            </div>
+            <button class="btn-detail-delete" id="detailDelete">이 이야기 지우기</button>
+          </div>
+        </div>
         <ul class="history-list" id="historyList" role="list"></ul>
         <p class="empty-state" id="emptyState" hidden>첫 이야기를 기다리고 있어요.</p>
       </section>
