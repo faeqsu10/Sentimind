@@ -48,6 +48,15 @@ export async function handleSubmit(e) {
       savedEntry = await saveEntry(text, result);
     }
 
+    // E-10: first_diary_submitted
+    if (isFirstDiary) {
+      track('first_diary_submitted', {
+        text_length: text.length,
+        entry_hour: now.getHours(),
+        is_guest: state.guestMode,
+      });
+    }
+
     diaryText.value = '';
     diaryText.style.height = 'auto';
     charCount.textContent = '';

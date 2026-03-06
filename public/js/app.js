@@ -601,14 +601,17 @@ document.addEventListener('keydown', (e) => {
 
 // ===== Landing: Button handlers =====
 document.getElementById('landingStartBtn').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'hero_start', cta_position: 'hero' });
   showAuthScreen();
   showAuthCard('signup');
 });
 document.getElementById('landingSignupBtn').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'signup', cta_position: 'footer' });
   showAuthScreen();
   showAuthCard('signup');
 });
 document.getElementById('landingDemoBtn').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'demo', cta_position: 'hero' });
   showDemo();
 });
 
