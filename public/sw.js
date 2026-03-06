@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sentimind-v2';
+const CACHE_VERSION = 'sentimind-v3';
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
 // Install: cache static assets
@@ -85,6 +85,11 @@ async function syncOfflineEntries() {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
+  // Auth & migrate requests: always network-only, never intercept
+  if (request.url.includes('/api/auth/') || request.url.includes('/api/migrate/')) {
+    return;
+  }
+
   // API POST requests: network-first with offline queue for entries
   if (request.url.includes('/api/') && request.method === 'POST') {
     event.respondWith(
@@ -92,7 +97,7 @@ self.addEventListener('fetch', (event) => {
         if (request.url.includes('/api/entries')) {
           return queueOfflineEntry(request);
         }
-        return new Response(JSON.stringify({ error: '오프라인 상태입니다.' }), {
+        return new Response(JSON.stringify({ error: '인터넷 연결을 확인해주세요.' }), {
           headers: { 'Content-Type': 'application/json' }, status: 503,
         });
       })
@@ -103,7 +108,7 @@ self.addEventListener('fetch', (event) => {
   // API GET requests: network-first
   if (request.url.includes('/api/')) {
     event.respondWith(
-      fetch(request).catch(() => new Response(JSON.stringify({ error: '오프라인 상태입니다.' }), {
+      fetch(request).catch(() => new Response(JSON.stringify({ error: '인터넷 연결을 확인해주세요.' }), {
         headers: { 'Content-Type': 'application/json' }, status: 503,
       }))
     );
