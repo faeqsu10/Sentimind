@@ -650,7 +650,13 @@ app.use('/api', require('./routes/entries')(routeDeps));
 app.use('/api', require('./routes/stats')(routeDeps));
 app.use('/api', require('./routes/report')(routeDeps));
 app.use('/api', require('./routes/migrate')(routeDeps));
-app.use('/api/analytics', require('./routes/analytics')(routeDeps));
+const analyticsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: ipKeyGenerator,
+  message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' },
+});
+app.use('/api/analytics', analyticsLimiter, require('./routes/analytics')(routeDeps));
 
 // 404 Handler (API routes only)
 // ---------------------------------------------------------------------------

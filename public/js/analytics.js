@@ -44,9 +44,20 @@ function flush() {
 
   const batch = eventQueue.splice(0, MAX_BATCH_SIZE);
   const body = JSON.stringify({ events: batch });
+  const token = localStorage.getItem('sb-access-token');
 
-  // Use sendBeacon for reliability (page unload safe)
-  if (navigator.sendBeacon) {
+  if (token) {
+    // Authenticated user: fetch with auth header for user_id extraction
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } else if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/analytics', new Blob([body], { type: 'application/json' }));
   } else {
     fetch('/api/analytics', {
@@ -55,6 +66,11 @@ function flush() {
       body,
       keepalive: true,
     }).catch(() => {});
+  }
+
+  // Flush remaining events if queue isn't empty
+  if (eventQueue.length > 0) {
+    flushTimer = setTimeout(flush, BATCH_INTERVAL_MS);
   }
 }
 

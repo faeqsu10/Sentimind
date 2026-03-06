@@ -65,7 +65,9 @@ function sanitizeProperties(evt) {
     if (exclude.has(key)) continue;
     if (typeof value === 'string') props[key] = value.slice(0, 500);
     else if (typeof value === 'number' || typeof value === 'boolean') props[key] = value;
-    else if (Array.isArray(value)) props[key] = value.slice(0, 20);
+    else if (Array.isArray(value)) props[key] = value.slice(0, 20).filter(
+      v => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+    );
   }
   return props;
 }
