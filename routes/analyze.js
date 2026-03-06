@@ -9,7 +9,7 @@ module.exports = function (deps) {
 
   const {
     logger, requestId,
-    authMiddleware,
+    optionalAuth,
     config, GEMINI_API_KEY,
     ontologyEngine, SYSTEM_PROMPT,
     callGeminiAPI, GeminiAPIError,
@@ -18,8 +18,8 @@ module.exports = function (deps) {
     analyzeLimiter,
   } = deps;
 
-  // POST /analyze - 감정 분석
-  router.post('/analyze', authMiddleware, analyzeLimiter, async (req, res) => {
+  // POST /analyze - 감정 분석 (인증 선택 — 게스트 모드 지원)
+  router.post('/analyze', optionalAuth, analyzeLimiter, async (req, res) => {
     const rid = requestId();
     const startTime = Date.now();
 
