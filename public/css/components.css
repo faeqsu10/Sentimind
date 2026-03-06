@@ -268,7 +268,7 @@
   border-color: var(--color-primary);
 }
 .onboarding-time-btn[aria-pressed="true"] {
-  background: rgba(232, 168, 124, 0.2);
+  background: rgba(196, 139, 108, 0.2);
   border-color: var(--color-primary);
   font-weight: 500;
 }
@@ -998,8 +998,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(232, 168, 124, 0.15);
-  border: 1px solid rgba(232, 168, 124, 0.3);
+  background: rgba(196, 139, 108, 0.15);
+  border: 1px solid rgba(196, 139, 108, 0.3);
   border-radius: var(--radius-xl);
   padding: 0.4rem 0.85rem;
   font-size: 0.8rem;
@@ -1040,7 +1040,7 @@
   margin-bottom: 0.75rem;
 }
 .hierarchy-level {
-  background: rgba(232, 168, 124, 0.1);
+  background: rgba(196, 139, 108, 0.1);
   color: var(--color-text);
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -1049,11 +1049,11 @@
   position: relative;
 }
 .hierarchy-level:first-child {
-  background: rgba(232, 168, 124, 0.22);
+  background: rgba(196, 139, 108, 0.22);
   font-weight: 700;
 }
 .hierarchy-level:last-child {
-  background: rgba(232, 168, 124, 0.35);
+  background: rgba(196, 139, 108, 0.35);
 }
 .hierarchy-arrow {
   display: flex;
@@ -1267,7 +1267,7 @@
   border-color: var(--color-primary);
 }
 .filter-chip[aria-pressed="true"] {
-  background: rgba(232, 168, 124, 0.15);
+  background: rgba(196, 139, 108, 0.15);
   border-color: var(--color-primary);
   color: var(--color-text);
   font-weight: 500;
@@ -2391,13 +2391,13 @@ kbd {
 .feedback-btn:hover {
   transform: scale(1.15);
   border-color: var(--color-primary);
-  background: rgba(232, 168, 124, 0.1);
+  background: rgba(196, 139, 108, 0.1);
 }
 .feedback-btn:active { transform: scale(0.95); }
 .feedback-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 .feedback-btn.active {
   border-color: var(--color-primary);
-  background: rgba(232, 168, 124, 0.2);
+  background: rgba(196, 139, 108, 0.2);
   transform: scale(1.1);
 }
 .feedback-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
@@ -2448,10 +2448,10 @@ kbd {
   border-color: var(--color-border);
 }
 [data-theme="dark"] .feedback-btn:hover {
-  background: rgba(232, 168, 124, 0.15);
+  background: rgba(212, 160, 122, 0.15);
 }
 [data-theme="dark"] .feedback-btn.active {
-  background: rgba(232, 168, 124, 0.25);
+  background: rgba(212, 160, 122, 0.25);
 }
 [data-theme="dark"] .retention-card {
   background: var(--gradient-response);
@@ -2482,8 +2482,8 @@ kbd {
 
 /* ===== AI Relationship Anniversary Card ===== */
 .anniversary-card {
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(232, 168, 124, 0.08) 100%);
-  border: 1px solid rgba(232, 168, 124, 0.25);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(196, 139, 108, 0.08) 100%);
+  border: 1px solid rgba(196, 139, 108, 0.25);
   overflow: hidden;
   position: relative;
 }
@@ -2528,8 +2528,8 @@ kbd {
 }
 
 [data-theme="dark"] .anniversary-card {
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(232, 168, 124, 0.05) 100%);
-  border-color: rgba(232, 168, 124, 0.15);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(212, 160, 122, 0.05) 100%);
+  border-color: rgba(212, 160, 122, 0.15);
 }
 
 /* ===== Emotion Vocabulary Growth Card ===== */
