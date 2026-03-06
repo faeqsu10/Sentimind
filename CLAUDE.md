@@ -14,13 +14,17 @@ AI 공감 다이어리 — 사용자가 한 줄 일기를 쓰면 AI(Google Gemin
 ## Architecture
 
 ```
-public/index.html  ──fetch──▸  server.js (Express :3000)  ──fetch──▸  Google Gemini API
-                                    │
-                               data/entries.json (파일 기반 DB)
+public/              ──fetch──▸  server.js (Express :3000)  ──fetch──▸  Google Gemini API
+├── index.html (HTML only)                │
+├── css/ (4 files)                   data/entries.json
+├── js/ (12 ES modules)
+└── sw.js
 ```
 
 - **server.js**: Express 백엔드. Gemini API 프록시(`POST /api/analyze`), 일기 CRUD(`/api/entries`), 정적 파일 서빙(`public/`). API 키는 `.env`에서 로드하여 서버에서만 사용.
-- **public/index.html**: 단일 HTML 파일 (CSS/JS 인라인). 서버 API를 호출하여 감정 분석 및 일기 저장. localStorage 미사용, 모든 데이터는 서버에 저장.
+- **public/index.html**: HTML 마크업만 (~900줄). CSS/JS는 외부 파일로 분리.
+- **public/css/**: base.css (변수/리셋), layout.css (그리드/탭), components.css (UI 컴포넌트+다크모드), landing.css (랜딩 페이지)
+- **public/js/**: ES Module로 분리된 12개 파일. `app.js`가 진입점, `state.js`가 공유 상태, 나머지는 기능별 모듈 (auth, guest, diary, history, calendar, stats, profile, sidebar, api, utils)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
 
 ## Key Technical Decisions

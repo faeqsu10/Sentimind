@@ -1,0 +1,283 @@
+import { state } from './state.js';
+import { showError, showToast, getPasswordStrength } from './utils.js';
+import { fetchWithAuth, loadProfile, exportData } from './api.js';
+
+// Dependencies injected from app.js
+let deps = {};
+export function setupProfile(d) { deps = d; }
+
+export function renderProfileScreen() {
+  const avatarEl = document.getElementById('profileAvatar');
+  const nicknameDisplay = document.getElementById('profileDisplayNickname');
+  const emailDisplay = document.getElementById('profileDisplayEmail');
+  const totalEntries = document.getElementById('profileTotalEntries');
+  const profileStreakEl = document.getElementById('profileStreak');
+  const joinDate = document.getElementById('profileJoinDate');
+  const nicknameInput = document.getElementById('profile-nickname');
+  const bioInput = document.getElementById('profile-bio');
+  const bioCounter = document.getElementById('bioCharCount');
+
+  if (state.userProfile) {
+    const nickname = state.userProfile.nickname || (state.currentUser && state.currentUser.email) || '--';
+    nicknameDisplay.textContent = nickname;
+    emailDisplay.textContent = (state.currentUser && state.currentUser.email) || '';
+    totalEntries.textContent = state.userProfile.total_entries || 0;
+    avatarEl.textContent = nickname.charAt(0).toUpperCase();
+
+    if (state.userProfile.created_at) {
+      joinDate.textContent = new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      }).format(new Date(state.userProfile.created_at));
+    } else {
+      joinDate.textContent = '--';
+    }
+
+    nicknameInput.value = state.userProfile.nickname || '';
+    bioInput.value = state.userProfile.bio || '';
+
+    if (bioCounter) {
+      const len = (state.userProfile.bio || '').length;
+      bioCounter.textContent = len + ' / 200';
+      bioCounter.classList.toggle('near-limit', len >= 160 && len < 200);
+      bioCounter.classList.toggle('at-limit', len >= 200);
+    }
+
+    const savedTime = state.userProfile.notification_time || '';
+    document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.time === savedTime ? 'true' : 'false');
+    });
+    const customTimeInput = document.getElementById('profile-notification-custom');
+    if (customTimeInput) {
+      const presetTimes = ['08:00', '12:00', '18:00', '21:00', '22:00'];
+      if (savedTime && !presetTimes.includes(savedTime)) {
+        customTimeInput.value = savedTime;
+      } else {
+        customTimeInput.value = '';
+      }
+    }
+  } else if (state.currentUser) {
+    nicknameDisplay.textContent = state.currentUser.email || '--';
+    emailDisplay.textContent = state.currentUser.email || '';
+    avatarEl.textContent = (state.currentUser.email || '?').charAt(0).toUpperCase();
+  }
+
+  // Streak
+  if (profileStreakEl) {
+    const entries = state.allEntries || [];
+    const dateSet = new Set();
+    entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let streak = 0;
+    let checkDate = new Date(today);
+    const todayStr = checkDate.toISOString().split('T')[0];
+    if (!dateSet.has(todayStr)) checkDate.setDate(checkDate.getDate() - 1);
+    while (true) {
+      const ds = checkDate.toISOString().split('T')[0];
+      if (dateSet.has(ds)) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+      else break;
+    }
+    profileStreakEl.textContent = streak;
+  }
+}
+
+function resetSessionAndUI() {
+  localStorage.removeItem('sb-access-token');
+  localStorage.removeItem('sb-refresh-token');
+  state.currentUser = null;
+  state.accessToken = null;
+  state.refreshToken = null;
+  state.userProfile = null;
+  state.appInitialized = false;
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('responseCard').hidden = true;
+  document.getElementById('similarEntries').hidden = true;
+  document.getElementById('historyDetail').hidden = true;
+  document.getElementById('diary-text').value = '';
+  document.getElementById('charCount').textContent = '';
+  deps.showAuthScreen();
+}
+
+export function initProfileEventListeners() {
+  // Bio character counter
+  document.getElementById('profile-bio').addEventListener('input', function() {
+    const counter = document.getElementById('bioCharCount');
+    if (!counter) return;
+    const len = this.value.length;
+    counter.textContent = len + ' / 200';
+    counter.classList.toggle('near-limit', len >= 160 && len < 200);
+    counter.classList.toggle('at-limit', len >= 200);
+  });
+
+  // Notification time preset buttons
+  document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.notification-time-btn[data-time]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      const customInput = document.getElementById('profile-notification-custom');
+      if (customInput) customInput.value = '';
+    });
+  });
+
+  const profileNotifCustom = document.getElementById('profile-notification-custom');
+  if (profileNotifCustom) {
+    profileNotifCustom.addEventListener('change', function() {
+      if (this.value) {
+        document.querySelectorAll('.notification-time-btn[data-time]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      }
+    });
+  }
+
+  // Password strength indicator
+  document.getElementById('new-password').addEventListener('input', function() {
+    const strengthEl = document.getElementById('profilePwStrength');
+    if (strengthEl) {
+      strengthEl.dataset.level = getPasswordStrength(this.value);
+    }
+  });
+
+  // Profile form
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nicknameInput = document.getElementById('profile-nickname');
+    const bioInput = document.getElementById('profile-bio');
+    const profileMessage = document.getElementById('profileMessage');
+    const saveBtn = document.getElementById('profileSaveBtn');
+
+    profileMessage.hidden = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+
+    let notificationTime = null;
+    const activePreset = document.querySelector('.notification-time-btn[data-time][aria-pressed="true"]');
+    const customTimeInput = document.getElementById('profile-notification-custom');
+    if (activePreset) {
+      notificationTime = activePreset.dataset.time;
+    } else if (customTimeInput && customTimeInput.value) {
+      notificationTime = customTimeInput.value;
+    }
+
+    const patchBody = {
+      nickname: nicknameInput.value.trim(),
+      bio: bioInput.value.trim(),
+    };
+    if (notificationTime) {
+      patchBody.notification_time = notificationTime;
+    }
+
+    try {
+      const res = await fetchWithAuth('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(patchBody),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.data) {
+          state.userProfile = { ...state.userProfile, ...result.data };
+        }
+        profileMessage.textContent = '프로필이 저장되었습니다.';
+        profileMessage.className = 'profile-message success';
+        profileMessage.hidden = false;
+        renderProfileScreen();
+        deps.updateUserMenu();
+      } else {
+        const result = await res.json();
+        profileMessage.textContent = result.error || '저장에 실패했습니다.';
+        profileMessage.className = 'profile-message error';
+        profileMessage.hidden = false;
+      }
+    } catch (err) {
+      if (err.userMessage) {
+        showError(err.userMessage);
+      } else {
+        profileMessage.textContent = '서버에 연결할 수 없습니다.';
+        profileMessage.className = 'profile-message error';
+        profileMessage.hidden = false;
+      }
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장';
+    }
+  });
+
+  // Data Export
+  document.getElementById('exportCsvBtn').addEventListener('click', () => exportData('csv').catch(() => showError('데이터 내보내기에 실패했습니다.')));
+  document.getElementById('exportJsonBtn').addEventListener('click', () => exportData('json').catch(() => showError('데이터 내보내기에 실패했습니다.')));
+
+  // Password Change
+  document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+    const btn = document.getElementById('passwordChangeBtn');
+
+    if (!currentPass) { showToast('현재 비밀번호를 입력해주세요.', 'error'); return; }
+    if (newPass.length < 8) { showToast('새 비밀번호는 8자 이상이어야 합니다.', 'error'); return; }
+    if (newPass !== confirmPass) { showToast('비밀번호가 일치하지 않습니다.', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '변경 중...';
+    try {
+      const res = await fetchWithAuth('/api/auth/password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword: currentPass, newPassword: newPass }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showToast('비밀번호가 변경되었습니다.', 'success');
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        const strengthEl = document.getElementById('profilePwStrength');
+        if (strengthEl) strengthEl.dataset.level = '';
+      } else {
+        showToast(result.error || '비밀번호 변경에 실패했습니다.', 'error');
+      }
+    } catch {
+      showToast('서버에 연결할 수 없습니다.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '비밀번호 변경';
+    }
+  });
+
+  // Account Deletion
+  document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+    const password = prompt('회원탈퇴를 위해 비밀번호를 입력해주세요.');
+    if (!password) return;
+
+    const confirmed = confirm('정말로 회원탈퇴하시겠습니까?\n모든 일기 데이터가 삭제되며 복구할 수 없습니다.');
+    if (!confirmed) return;
+
+    const btn = document.getElementById('deleteAccountBtn');
+    btn.disabled = true;
+    btn.textContent = '처리 중...';
+    try {
+      const res = await fetchWithAuth('/api/auth/account', { method: 'DELETE', body: JSON.stringify({ password }) });
+      if (res.ok) {
+        alert('회원탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+        resetSessionAndUI();
+      } else {
+        const result = await res.json();
+        showError(result.error || '회원탈퇴에 실패했습니다.');
+      }
+    } catch {
+      showError('서버에 연결할 수 없습니다.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '회원탈퇴';
+    }
+  });
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+      await fetchWithAuth('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Always proceed
+    }
+    resetSessionAndUI();
+  });
+}
