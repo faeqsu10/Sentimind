@@ -112,7 +112,7 @@ function renderTrendChart(entries) {
   }));
 
   const W = 600, H = 140;
-  const PAD = { top: 18, right: 18, bottom: 28, left: 36 };
+  const PAD = { top: 18, right: 18, bottom: 28, left: 42 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
   const startMs = cutoff.getTime();
@@ -127,7 +127,7 @@ function renderTrendChart(entries) {
   }
 
   const coords = points.map(p => `${xOf(p.date).toFixed(1)},${yOf(p.score).toFixed(1)}`).join(' ');
-  const yLabels = [{ score:1, label:'+1' }, { score:0, label:'0' }, { score:-1, label:'-1' }];
+  const yLabels = [{ score:1, label:'좋은' }, { score:0, label:'고요' }, { score:-1, label:'힘든' }];
 
   function fmtDate(d) {
     const [, m, day] = d.split('-');
@@ -161,7 +161,7 @@ function renderTrendChart(entries) {
     ${yGrid}${xTicks}
     <polyline points="${coords}" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
     ${svgDots}
-  </svg><div class="trend-tooltip" id="trendTooltip"></div>`;
+  </svg><p class="trend-chart-legend">기쁨·감사·사랑은 <strong>좋은</strong>, 평온·안도는 <strong>고요</strong>, 슬픔·불안·분노 등은 <strong>힘든</strong> 마음이에요</p><div class="trend-tooltip" id="trendTooltip"></div>`;
 
   const tooltip = document.getElementById('trendTooltip');
   container.querySelectorAll('.trend-dot').forEach(dot => {

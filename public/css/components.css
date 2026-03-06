@@ -1503,7 +1503,7 @@
   color: #6ec0d8;
 }
 [data-theme="dark"] .skeleton {
-  background: linear-gradient(90deg, #3d3530 25%, #4a413a 37%, #3d3530 63%);
+  background: linear-gradient(90deg, #2d2b35 25%, #383642 37%, #2d2b35 63%);
   background-size: 400% 100%;
 }
 @keyframes skeletonPulse {
@@ -1777,28 +1777,28 @@ kbd {
   text-align: center;
 }
 
-/* Dark mode */
+/* Dark mode — Twilight warm dark */
 [data-theme="dark"] {
-  --color-bg: #1e1a17;
-  --color-surface: #27211c;
-  --color-surface-warm: #2f2820;
-  --color-primary: #e8a87c;
-  --color-primary-hover: #d4956a;
-  --color-secondary: #d4a574;
-  --color-text: #e0d6cc;
-  --color-text-light: #b5ab9f;
-  --color-text-muted: #948a7e;
-  --color-border: #3d3530;
-  --color-divider: #332c26;
+  --color-bg: #141318;
+  --color-surface: #1c1b23;
+  --color-surface-warm: #24222e;
+  --color-primary: #d4a07a;
+  --color-primary-hover: #c49068;
+  --color-secondary: #c4986e;
+  --color-text: #e4ddd4;
+  --color-text-light: #a69e94;
+  --color-text-muted: #756d64;
+  --color-border: #2d2b35;
+  --color-divider: #242230;
   --color-error: #ef5350;
-  --color-error-bg: #3e1a1a;
+  --color-error-bg: #2e1a1e;
   --color-success: #66bb6a;
-  --color-success-bg: #1a3e1a;
-  --gradient-response: linear-gradient(135deg, #2f2820 0%, #352e26 50%, #2a2420 100%);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow: 0 0 20px rgba(232,168,124,0.15);
+  --color-success-bg: #1a2e1e;
+  --gradient-response: linear-gradient(135deg, #1c1b23 0%, #22202e 50%, #1c1b23 100%);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(212,160,122,0.12);
 }
 
 /* History detail modal */
@@ -2133,6 +2133,17 @@ kbd {
   font-size: 0.85rem;
   padding: 1.5rem 0;
 }
+.trend-chart-legend {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+.trend-chart-legend strong {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
 .trend-tooltip {
   position: fixed;
   background: var(--color-surface);
@@ -2454,13 +2465,13 @@ kbd {
 [data-emotion-theme="peace"] .response-card { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%); }
 [data-emotion-theme="love"] .response-card { background: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 50%, #F48FB1 100%); }
 [data-emotion-theme="tired"] .response-card { background: linear-gradient(135deg, #EFEBE9 0%, #D7CCC8 50%, #BCAAA4 100%); }
-[data-theme="dark"][data-emotion-theme="joy"] .response-card { background: linear-gradient(135deg, #3E2723 0%, #4E342E 50%, #5D4037 100%); }
-[data-theme="dark"][data-emotion-theme="sadness"] .response-card { background: linear-gradient(135deg, #1A237E 0%, #283593 50%, #1A237E 100%); }
-[data-theme="dark"][data-emotion-theme="anger"] .response-card { background: linear-gradient(135deg, #3E1A1A 0%, #4E2020 50%, #5D2626 100%); }
-[data-theme="dark"][data-emotion-theme="anxiety"] .response-card { background: linear-gradient(135deg, #2A1A3E 0%, #3A2050 50%, #4A2660 100%); }
-[data-theme="dark"][data-emotion-theme="peace"] .response-card { background: linear-gradient(135deg, #1A3E1A 0%, #204E20 50%, #265D26 100%); }
-[data-theme="dark"][data-emotion-theme="love"] .response-card { background: linear-gradient(135deg, #3E1A2A 0%, #4E2035 50%, #5D2640 100%); }
-[data-theme="dark"][data-emotion-theme="tired"] .response-card { background: linear-gradient(135deg, #2A2520 0%, #3A3028 50%, #4A3B30 100%); }
+[data-theme="dark"][data-emotion-theme="joy"] .response-card { background: linear-gradient(135deg, #2a2418 0%, #33291e 50%, #2a2418 100%); }
+[data-theme="dark"][data-emotion-theme="sadness"] .response-card { background: linear-gradient(135deg, #181e2e 0%, #1c2438 50%, #181e2e 100%); }
+[data-theme="dark"][data-emotion-theme="anger"] .response-card { background: linear-gradient(135deg, #2a1818 0%, #331e1e 50%, #2a1818 100%); }
+[data-theme="dark"][data-emotion-theme="anxiety"] .response-card { background: linear-gradient(135deg, #221830 0%, #281e38 50%, #221830 100%); }
+[data-theme="dark"][data-emotion-theme="peace"] .response-card { background: linear-gradient(135deg, #182a1c 0%, #1e3322 50%, #182a1c 100%); }
+[data-theme="dark"][data-emotion-theme="love"] .response-card { background: linear-gradient(135deg, #2a1822 0%, #331e28 50%, #2a1822 100%); }
+[data-theme="dark"][data-emotion-theme="tired"] .response-card { background: linear-gradient(135deg, #201e1c 0%, #282522 50%, #201e1c 100%); }
 .history-item[data-emotion-group="joy"] { border-left: 3px solid #F4A261; }
 .history-item[data-emotion-group="sadness"] { border-left: 3px solid #7EB8DA; }
 .history-item[data-emotion-group="anger"] { border-left: 3px solid #E76F51; }
