@@ -826,7 +826,7 @@
   cursor: pointer;
   transition: background 200ms ease, transform 150ms ease, box-shadow 200ms ease;
 }
-.btn-submit:hover { background: var(--color-primary-hover); box-shadow: 0 4px 12px rgba(196,139,108,0.25); }
+.btn-submit:hover { background: var(--color-primary-hover); box-shadow: 0 4px 12px rgba(194,113,79,0.25); }
 .btn-submit:active { transform: scale(0.97); }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn-submit svg { width: 16px; height: 16px; }
@@ -1555,7 +1555,7 @@
   color: #6ec0d8;
 }
 [data-theme="dark"] .skeleton {
-  background: linear-gradient(90deg, #2d2b35 25%, #383642 37%, #2d2b35 63%);
+  background: linear-gradient(90deg, #292524 25%, #3a3533 37%, #292524 63%);
   background-size: 400% 100%;
 }
 @keyframes skeletonPulse {
@@ -1832,39 +1832,39 @@ kbd {
   text-align: center;
 }
 
-/* Dark mode — Twilight warm dark */
+/* Dark mode — Stone warm dark */
 [data-theme="dark"] {
-  --color-bg: #141318;
-  --color-surface: #1c1b23;
-  --color-surface-warm: #24222e;
-  --color-primary: #d4a07a;
-  --color-primary-hover: #c49068;
-  --color-secondary: #c4986e;
-  --color-text: #e4ddd4;
-  --color-text-light: #a69e94;
-  --color-text-muted: #756d64;
-  --color-border: #2d2b35;
-  --color-divider: #242230;
-  --color-error: #ef5350;
-  --color-error-bg: #2e1a1e;
-  --color-success: #66bb6a;
-  --color-success-bg: #1a2e1e;
-  --gradient-response: linear-gradient(135deg, #1c1b23 0%, #22202e 50%, #1c1b23 100%);
+  --color-bg: #141211;
+  --color-surface: #1C1917;
+  --color-surface-warm: #292524;
+  --color-primary: #FB923C;
+  --color-primary-hover: #F97316;
+  --color-secondary: #FDBA74;
+  --color-text: #FAFAF9;
+  --color-text-light: #A8A29E;
+  --color-text-muted: #57534E;
+  --color-border: #292524;
+  --color-divider: #1C1917;
+  --color-error: #EF4444;
+  --color-error-bg: #2E1A1A;
+  --color-success: #22C55E;
+  --color-success-bg: #1A2E1E;
+  --gradient-response: linear-gradient(160deg, #1C1917 0%, #292524 100%);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
-  --shadow-glow: 0 0 20px rgba(212,160,122,0.12);
+  --shadow-glow: 0 0 20px rgba(251,146,60,0.12);
 }
 [data-theme="dark"] .history-item { background: var(--color-surface); border-color: var(--color-border); }
 [data-theme="dark"] .history-item:hover { border-color: var(--color-divider); }
-[data-theme="dark"] .history-emotion { background: rgba(212, 160, 122, 0.12); color: var(--color-primary); }
+[data-theme="dark"] .history-emotion { background: rgba(251, 146, 60, 0.12); color: var(--color-primary); }
 [data-theme="dark"] .btn-detail-delete:hover { background: var(--color-error-bg); }
 [data-theme="dark"] .summary-card { border-color: var(--color-border); }
-[data-theme="dark"] .summary-card:hover { border-color: rgba(212, 160, 122, 0.3); }
+[data-theme="dark"] .summary-card:hover { border-color: rgba(251, 146, 60, 0.3); }
 [data-theme="dark"] .dashboard-section { border-color: var(--color-border); }
 [data-theme="dark"] .trend-chart { border-color: var(--color-border); }
-[data-theme="dark"] .search-input:focus { box-shadow: 0 0 0 3px rgba(212, 160, 122, 0.1); }
-[data-theme="dark"] .diary-input:focus-within { box-shadow: 0 0 0 3px rgba(212, 160, 122, 0.1); }
+[data-theme="dark"] .search-input:focus { box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1); }
+[data-theme="dark"] .diary-input:focus-within { box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1); }
 [data-theme="dark"] .empty-state { background: var(--color-surface); border-color: var(--color-border); }
 [data-theme="dark"] .btn-load-more { background: var(--color-surface); border-color: var(--color-border); }
 [data-theme="dark"] .btn-load-more:hover { border-color: var(--color-primary); background: var(--color-surface-warm); }
@@ -2542,10 +2542,10 @@ kbd {
   border-color: var(--color-border);
 }
 [data-theme="dark"] .feedback-btn:hover {
-  background: rgba(212, 160, 122, 0.15);
+  background: rgba(251, 146, 60, 0.15);
 }
 [data-theme="dark"] .feedback-btn.active {
-  background: rgba(212, 160, 122, 0.25);
+  background: rgba(251, 146, 60, 0.25);
 }
 [data-theme="dark"] .retention-card {
   background: var(--gradient-response);
@@ -2658,8 +2658,8 @@ kbd {
 }
 
 [data-theme="dark"] .anniversary-card {
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(212, 160, 122, 0.05) 100%);
-  border-color: rgba(212, 160, 122, 0.15);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(251, 146, 60, 0.05) 100%);
+  border-color: rgba(251, 146, 60, 0.15);
 }
 
 /* ===== Emotion Vocabulary Growth Card ===== */
