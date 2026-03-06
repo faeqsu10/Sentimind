@@ -8,6 +8,7 @@ export function updateSidebar() {
   updateSidebarWeeklyChart();
   renderInsightCards();
   updateMobileStreakBanner();
+  updateAnniversaryCard();
 }
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -36,7 +37,7 @@ function updateSidebarLatest() {
     }).format(new Date(latest.date)) : '';
     container.innerHTML = renderSidebarLatestCard(latest.emoji, latest.emotion, latest.message, dateStr);
   } else {
-    container.innerHTML = '<p class="sidebar-empty">첫 일기를 쓰면 AI가 감정을 읽어드려요</p>';
+    container.innerHTML = '<p class="sidebar-empty">첫 이야기를 들려주시면 마음을 읽어드릴게요</p>';
   }
 }
 
@@ -51,7 +52,7 @@ function updateSidebarToday() {
   });
 
   if (todayEntries.length === 0) {
-    container.innerHTML = '<p class="sidebar-empty">오늘의 감정을 한 줄로 기록해볼까요?</p>';
+    container.innerHTML = '<p class="sidebar-empty">오늘의 마음을 한 줄로 꺼내볼까요?</p>';
     return;
   }
 
@@ -97,7 +98,7 @@ function updateSidebarStreak() {
   const hasTodayEntry = dateSet.has(todayStr);
   streakCountEl.textContent = streak;
   if (streakSubEl) {
-    streakSubEl.textContent = hasTodayEntry ? '오늘도 기록 완료!' : '오늘 일기를 작성해보세요';
+    streakSubEl.textContent = hasTodayEntry ? '오늘도 마음을 돌봤어요!' : '오늘의 마음을 기록해보세요';
   }
 
   if (streakDotsEl) {
@@ -163,29 +164,58 @@ export function renderProfileBadges() {
 
 export function createConfetti(emotion) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const group = getEmotionGroup(emotion);
+  const positiveGroups = ['joy', 'love', 'peace'];
+  const neutralGroups = ['default'];
+
+  // Neutral emotions: no particles, only emotion theme color applies
+  if (neutralGroups.includes(group)) return;
+
   const container = document.createElement('div');
   container.className = 'confetti-container';
   container.setAttribute('aria-hidden', 'true');
   document.body.appendChild(container);
 
   const color = emotionColor(emotion);
-  const colors = [color, '#F4A261', '#7EB8DA', '#A8DAAB', '#9C89B8'];
-  const isMobile = window.innerWidth < 768;
-  const count = isMobile ? 10 : 20;
 
-  for (let i = 0; i < count; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left = Math.random() * 100 + '%';
-    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.animationDelay = Math.random() * 0.5 + 's';
-    piece.style.animationDuration = (1 + Math.random()) + 's';
-    const size = 6 + Math.random() * 8;
-    piece.style.width = size + 'px';
-    piece.style.height = size + 'px';
-    container.appendChild(piece);
+  if (positiveGroups.includes(group)) {
+    // Positive emotions: celebratory confetti (original behavior)
+    const colors = [color, '#F4A261', '#7EB8DA', '#A8DAAB', '#9C89B8'];
+    const isMobile = window.innerWidth < 768;
+    const count = isMobile ? 10 : 20;
+
+    for (let i = 0; i < count; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDelay = Math.random() * 0.5 + 's';
+      piece.style.animationDuration = (1 + Math.random()) + 's';
+      const size = 6 + Math.random() * 8;
+      piece.style.width = size + 'px';
+      piece.style.height = size + 'px';
+      container.appendChild(piece);
+    }
+  } else {
+    // Negative emotions (sadness, anger, anxiety, tired): gentle floating particles
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'gentle-particle';
+      particle.style.left = (10 + Math.random() * 80) + '%';
+      particle.style.bottom = '-10px';
+      particle.style.background = color;
+      particle.style.animationDelay = (Math.random() * 1.5) + 's';
+      particle.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+      const size = 4 + Math.random() * 6;
+      particle.style.width = size + 'px';
+      particle.style.height = size + 'px';
+      container.appendChild(particle);
+    }
   }
-  setTimeout(() => container.remove(), 3000);
+
+  setTimeout(() => container.remove(), 4000);
 }
 
 export function generateInsights(entries) {
@@ -213,7 +243,7 @@ export function generateInsights(entries) {
       const diffText = diff > 0 ? '+' + diff : diff === 0 ? '동일' : String(diff);
       insights.push({
         icon: '📊',
-        title: '이번 주 주요 감정',
+        title: '이번 주 가장 많이 찾아온 마음',
         body: topEmotion[0] + ' (' + topEmotion[1] + '회, 지난주 대비 ' + diffText + ')'
       });
     }
@@ -233,8 +263,8 @@ export function generateInsights(entries) {
     const topDayEmotion = Object.entries(dayEmotions[busiestDay]).sort((a, b) => b[1] - a[1])[0];
     insights.push({
       icon: '📅',
-      title: '가장 활발한 요일',
-      body: dayNames[busiestDay] + ' (' + dayMap[busiestDay] + '회)' + (topDayEmotion ? ' — 주요 감정: ' + topDayEmotion[0] : '')
+      title: '마음을 가장 많이 꺼낸 요일',
+      body: dayNames[busiestDay] + ' (' + dayMap[busiestDay] + '회)' + (topDayEmotion ? ' — 주로 느낀 마음: ' + topDayEmotion[0] : '')
     });
   }
 
@@ -305,15 +335,15 @@ function updateMobileStreakBanner() {
   dotsEl.innerHTML = dots.join('');
 
   // Streak text
-  textEl.textContent = streak > 0 ? streak + '일 연속' : '시작해보세요';
+  textEl.textContent = streak > 0 ? streak + '일 연속' : '첫 기록을 남겨보세요';
 
   // Today's emotion emoji
   const hasTodayEntry = dateSet.has(todayStr);
   if (hasTodayEntry) {
     const todayEntry = entries.find(e => e.date && e.date.startsWith(todayStr));
-    todayEl.textContent = todayEntry && todayEntry.emoji ? todayEntry.emoji : '기록 완료';
+    todayEl.textContent = todayEntry && todayEntry.emoji ? todayEntry.emoji : '마음 전달 완료';
   } else {
-    todayEl.textContent = '오늘 미작성';
+    todayEl.textContent = '오늘의 이야기를 기다려요';
   }
 }
 
@@ -337,7 +367,7 @@ export function updateSidebarWeeklyChart() {
   }
 
   if (maxCount === 0) {
-    container.innerHTML = '<p class="sidebar-empty">이번 주 첫 기록을 남겨보세요</p>';
+    container.innerHTML = '<p class="sidebar-empty">이번 주 첫 이야기를 들려주세요</p>';
     return;
   }
 
@@ -350,4 +380,70 @@ export function updateSidebarWeeklyChart() {
       '<span class="mini-chart-label">' + dd.label + '</span>' +
     '</div>'
   ).join('') + '</div>';
+}
+
+// ---------------------------------------------------------------------------
+// AI Relationship Anniversary
+// ---------------------------------------------------------------------------
+
+const ANNIVERSARY_MILESTONES = [
+  { days: 7, icon: '🌱', title: '함께 한지 7일', template: '일주일 동안 {count}번의 마음을 나누었어요' },
+  { days: 30, icon: '🌿', title: '함께 한지 30일', template: '한 달 동안 {count}번의 마음을 나누었네요' },
+  { days: 100, icon: '🌳', title: '함께 한지 100일', template: '100일 동안 {count}번의 마음을 함께 했어요. 고마워요' },
+];
+
+function updateAnniversaryCard() {
+  const card = document.getElementById('sidebarAnniversary');
+  if (!card) return;
+
+  const entries = state.allEntries || [];
+  if (entries.length === 0 || state.guestMode) {
+    card.hidden = true;
+    return;
+  }
+
+  // Find the earliest entry date
+  const dates = entries
+    .map(e => e.date || e.created_at)
+    .filter(Boolean)
+    .map(d => new Date(d).getTime())
+    .filter(t => !isNaN(t));
+
+  if (dates.length === 0) {
+    card.hidden = true;
+    return;
+  }
+
+  const firstDate = new Date(Math.min(...dates));
+  const daysSinceFirst = Math.floor((Date.now() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Find the matching milestone (show the highest achieved)
+  const milestone = ANNIVERSARY_MILESTONES
+    .filter(m => daysSinceFirst >= m.days)
+    .pop();
+
+  if (!milestone) {
+    card.hidden = true;
+    return;
+  }
+
+  // Only show each milestone once per session to avoid fatigue
+  const sessionKey = 'anniversary_shown_' + milestone.days;
+  if (card.dataset.shownMilestone === String(milestone.days)) {
+    // Already showing this milestone, keep it visible
+    return;
+  }
+
+  const iconEl = document.getElementById('anniversaryIcon');
+  const titleEl = document.getElementById('anniversaryTitle');
+  const messageEl = document.getElementById('anniversaryMessage');
+
+  iconEl.textContent = milestone.icon;
+  titleEl.textContent = milestone.title;
+  messageEl.textContent = milestone.template.replace('{count}', entries.length);
+
+  card.dataset.shownMilestone = String(milestone.days);
+  card.hidden = false;
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
 }

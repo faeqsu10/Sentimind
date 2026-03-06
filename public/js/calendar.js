@@ -50,8 +50,8 @@ export function renderCalendar() {
     ].filter(Boolean).join(' ');
 
     const ariaLabel = hasEntry
-      ? `${dateStr} 일기 ${entries.length}건`
-      : `${dateStr} 일기 없음`;
+      ? `${dateStr} 이야기 ${entries.length}건`
+      : `${dateStr} 아직 이야기 없음`;
 
     html += `<div class="${classes}" data-date="${dateStr}" tabindex="0" role="button" aria-label="${ariaLabel}">
       <span>${d}</span>
@@ -93,7 +93,7 @@ function showCalDayEntries(dateStr, entries) {
   if (!entries || entries.length === 0) {
     div.innerHTML = `<div class="cal-day-entries">
       <div class="cal-day-entries-header">${dateLabel}</div>
-      <p class="cal-no-entry">이 날의 감정을 기록해보세요</p>
+      <p class="cal-no-entry">이 날의 마음을 적어보세요</p>
     </div>`;
     return;
   }
@@ -134,16 +134,16 @@ function renderMonthlySummary(entryMap, daysInMonth) {
   }
 
   if (totalEntries === 0) {
-    container.innerHTML = '<p class="sidebar-empty">이 달의 첫 감정을 기록해보세요</p>';
+    container.innerHTML = '<p class="sidebar-empty">이 달의 첫 이야기를 들려주세요</p>';
     return;
   }
 
   const topEmotion = Object.entries(emotionCount).sort((a, b) => b[1] - a[1])[0];
   container.innerHTML =
     '<div class="cal-summary-stats">' +
-      '<div class="cal-summary-stat"><span class="cal-summary-num">' + totalEntries + '</span><span class="cal-summary-label">총 기록</span></div>' +
-      '<div class="cal-summary-stat"><span class="cal-summary-num">' + daysWithEntries + '</span><span class="cal-summary-label">기록한 날</span></div>' +
-      (topEmotion ? '<div class="cal-summary-stat"><span class="cal-summary-num">' + escapeHtml(topEmotion[0]) + '</span><span class="cal-summary-label">주요 감정</span></div>' : '') +
+      '<div class="cal-summary-stat"><span class="cal-summary-num">' + totalEntries + '</span><span class="cal-summary-label">나눈 이야기</span></div>' +
+      '<div class="cal-summary-stat"><span class="cal-summary-num">' + daysWithEntries + '</span><span class="cal-summary-label">마음을 꺼낸 날</span></div>' +
+      (topEmotion ? '<div class="cal-summary-stat"><span class="cal-summary-num">' + escapeHtml(topEmotion[0]) + '</span><span class="cal-summary-label">가장 많이 찾아온 마음</span></div>' : '') +
     '</div>';
 }
 

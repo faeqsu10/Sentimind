@@ -15,7 +15,7 @@ export async function loadDashboard(period) {
     renderDashboard(stats);
   } catch {
     const summaryEl = document.getElementById('dashboardSummary');
-    if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
+    if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">마음의 흐름을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
   } finally {
     if (dashEl) dashEl.removeAttribute('aria-busy');
   }
@@ -30,7 +30,7 @@ function renderDashboard(stats) {
   if (summaryEl) {
     summaryEl.innerHTML =
       '<div class="dashboard-summary-grid">' +
-        '<div class="summary-card"><span class="summary-value">' + (stats.total_entries || 0) + '</span><span class="summary-label">전체 기록</span></div>' +
+        '<div class="summary-card"><span class="summary-value">' + (stats.total_entries || 0) + '</span><span class="summary-label">나눈 이야기</span></div>' +
         '<div class="summary-card"><span class="summary-value">' + (stats.this_week || 0) + '</span><span class="summary-label">이번 주</span></div>' +
         '<div class="summary-card"><span class="summary-value">' + (stats.today || 0) + '</span><span class="summary-label">오늘</span></div>' +
       '</div>';
@@ -93,7 +93,7 @@ function renderTrendChart(entries) {
   });
 
   if (filtered.length < 7) {
-    container.innerHTML = '<p class="trend-chart-empty">7일 이상 기록하면 감정 흐름을 볼 수 있어요</p>';
+    container.innerHTML = '<p class="trend-chart-empty">7일 이상 이야기를 나누면 마음의 흐름이 보여요</p>';
     return;
   }
 
@@ -157,7 +157,7 @@ function renderTrendChart(entries) {
     xTicks += `<text x="${x}" y="${H - PAD.bottom + 14}" text-anchor="middle" font-size="10" fill="var(--color-text-muted)">${fmtDate(points[i].date)}</text>`;
   });
 
-  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-label="감정 트렌드 차트">
+  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-label="마음의 흐름 차트">
     ${yGrid}${xTicks}
     <polyline points="${coords}" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
     ${svgDots}
@@ -199,7 +199,7 @@ export async function fetchReport(period) {
     const res = await fetchWithAuth('/api/report?period=' + period);
     const data = await res.json();
     if (!res.ok) {
-      const msg = data.error || '리포트 생성에 실패했습니다.';
+      const msg = data.error || '리포트를 만들지 못했어요.';
       resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';
       resultEl.hidden = false;
       return;
@@ -208,25 +208,25 @@ export async function fetchReport(period) {
     resultEl.innerHTML =
       '<div class="report-card">' +
         '<div class="report-card-section">' +
-          '<span class="report-card-label">' + periodLabel + ' 요약</span>' +
+          '<span class="report-card-label">' + periodLabel + ' 마음 요약</span>' +
           '<p class="report-card-text">' + escapeHtml(data.summary) + '</p>' +
         '</div>' +
         '<div class="report-card-section">' +
-          '<span class="report-card-label">감정 변화</span>' +
+          '<span class="report-card-label">마음의 변화</span>' +
           '<p class="report-card-text">' + escapeHtml(data.emotionTrend) + '</p>' +
         '</div>' +
         '<div class="report-card-section">' +
-          '<span class="report-card-label">패턴 인사이트</span>' +
+          '<span class="report-card-label">마음의 패턴</span>' +
           '<p class="report-card-text">' + escapeHtml(data.insight) + '</p>' +
         '</div>' +
         '<div class="report-card-section">' +
-          '<span class="report-card-label">응원 메시지</span>' +
+          '<span class="report-card-label">따뜻한 한마디</span>' +
           '<p class="report-card-text">' + escapeHtml(data.encouragement) + '</p>' +
         '</div>' +
       '</div>';
     resultEl.hidden = false;
   } catch (err) {
-    const msg = err.userMessage || '리포트 생성 중 오류가 발생했습니다.';
+    const msg = err.userMessage || '리포트를 만드는 중에 문제가 생겼어요.';
     resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';
     resultEl.hidden = false;
   } finally {

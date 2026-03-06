@@ -442,13 +442,13 @@ const shortcutModal = document.getElementById('shortcutModal');
 const shortcutModalClose = document.getElementById('shortcutModalClose');
 
 const shortcuts = [
-  { keys: [modLabel, 'Enter'], desc: '일기 분석 제출' },
+  { keys: [modLabel, 'Enter'], desc: '마음 전하기' },
   { keys: [modLabel, '1'], desc: '일기 탭으로 이동' },
   { keys: [modLabel, '2'], desc: '달력 탭으로 이동' },
   { keys: [modLabel, '3'], desc: '통계 탭으로 이동' },
   { keys: [modLabel, '4'], desc: '프로필 탭으로 이동' },
   { keys: [modLabel, 'D'], desc: '다크 모드 전환' },
-  { keys: [modLabel, 'N'], desc: '새 일기 작성' },
+  { keys: [modLabel, 'N'], desc: '새 이야기 쓰기' },
   { keys: ['Esc'], desc: '모달 닫기' },
 ];
 
@@ -608,7 +608,7 @@ if ('serviceWorker' in navigator) {
 
   navigator.serviceWorker.addEventListener('message', (e) => {
     if (e.data?.type === 'OFFLINE_SYNC_COMPLETE') {
-      showError(`오프라인 일기 ${e.data.count}건이 동기화되었습니다.`);
+      showError(`오프라인에서 쓴 이야기 ${e.data.count}건이 저장되었어요.`);
       loadEntries();
     }
   });

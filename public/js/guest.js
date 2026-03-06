@@ -107,7 +107,7 @@ async function analyzeDemo(text) {
       setTimeout(() => showSignupModal('nudge'), 1500);
     }
   } catch (err) {
-    showError(err.userMessage || '감정을 읽는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
+    showError(err.userMessage || '마음을 읽는 중에 문제가 생겼어요. 잠시 후 다시 이야기해주세요.');
   } finally {
     skeleton.hidden = true;
     const textarea = document.getElementById('demoTextarea');
@@ -120,11 +120,11 @@ export function showSignupModal(reason) {
   const title = document.getElementById('signupModalTitle');
   const desc = document.getElementById('signupModalDesc');
   if (reason === 'limit') {
-    title.textContent = '체험 횟수를 모두 사용했어요';
-    desc.innerHTML = '무료 회원가입을 하면 일기를 무제한으로 쓰고,<br>감정 통계와 리포트까지 받아볼 수 있어요.';
+    title.textContent = '체험으로 들려줄 수 있는 이야기를 다 나눴어요';
+    desc.innerHTML = '나만의 일기장을 만들면 이야기를 무제한으로 남기고,<br>마음의 흐름과 리포트까지 받아볼 수 있어요.';
   } else {
-    title.textContent = '체험이 마음에 드셨나요?';
-    desc.innerHTML = '회원가입하면 일기를 무제한으로 저장하고,<br>감정 통계와 리포트까지 받아볼 수 있어요.';
+    title.textContent = '마음 읽기가 도움이 되셨나요?';
+    desc.innerHTML = '나만의 일기장을 만들면 이야기를 무제한으로 간직하고,<br>마음의 흐름과 리포트까지 받아볼 수 있어요.';
   }
   overlay.hidden = false;
   document.getElementById('signupModalSignupBtn').focus();
@@ -146,7 +146,7 @@ export async function migrateGuestData() {
       const result = await res.json();
       clearGuestData();
       if (result.imported > 0) {
-        showError(`체험 일기 ${result.imported}건이 저장되었습니다.`);
+        showError(`체험에서 나눈 이야기 ${result.imported}건을 일기장에 옮겨왔어요.`);
       }
     }
   } catch {

@@ -922,11 +922,59 @@
 }
 .advice-message::before { content: '\1F4A1 '; }
 
+/* Analysis Details (collapsible) */
+.analysis-details {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-divider);
+}
+.analysis-details[hidden] { display: none; }
+.analysis-details-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: color 200ms ease;
+}
+.analysis-details-summary::-webkit-details-marker { display: none; }
+.analysis-details-summary::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+.analysis-details[open] > .analysis-details-summary::before {
+  transform: rotate(45deg);
+}
+.analysis-details-summary:hover {
+  color: var(--color-text);
+}
+.analysis-details-summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+[data-theme="dark"] .analysis-details-summary {
+  color: var(--color-text-light);
+}
+[data-theme="dark"] .analysis-details-summary:hover {
+  color: var(--color-text);
+}
+
 /* Ontology Insights */
 .ontology-section {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-divider);
+  padding-top: 0.5rem;
 }
 .ontology-label {
   font-size: 0.75rem;
@@ -937,8 +985,9 @@
   display: block;
 }
 
-/* Confidence Badge (top of response card) */
+/* Confidence Badge (inside analysis details) */
 .confidence-badge {
+  margin-top: 0.75rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -948,8 +997,8 @@
   padding: 0.4rem 0.85rem;
   font-size: 0.8rem;
   color: var(--color-text);
-  margin-bottom: 1rem;
 }
+.confidence-badge[hidden] { display: none; }
 .confidence-badge-label {
   font-weight: 500;
 }
@@ -2193,6 +2242,31 @@ kbd {
   width: 10px; height: 10px; border-radius: 2px;
   animation: confettiFall 2s ease-out forwards;
 }
+/* Gentle floating particles for negative emotions */
+@keyframes gentleFloat {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+    transform: translateY(-15vh) scale(1);
+  }
+  100% {
+    transform: translateY(-60vh) scale(0.3);
+    opacity: 0;
+  }
+}
+.gentle-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation: gentleFloat 3s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gentle-particle { animation: none; display: none; }
+}
+
 .response-card.pulse-bg {
   animation: gradientPulse 1s ease-in-out 1;
 }
@@ -2341,4 +2415,54 @@ kbd {
 .history-item[data-emotion-group="love"] { border-left: 3px solid #F2A0A0; }
 .history-item[data-emotion-group="tired"] { border-left: 3px solid #B0A89A; }
 
+/* ===== AI Relationship Anniversary Card ===== */
+.anniversary-card {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(232, 168, 124, 0.08) 100%);
+  border: 1px solid rgba(232, 168, 124, 0.25);
+  overflow: hidden;
+  position: relative;
+}
+.anniversary-card[hidden] { display: none; }
+.anniversary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), #F4A261, var(--color-primary));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.anniversary-card-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.anniversary-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.anniversary-body {
+  flex: 1;
+  min-width: 0;
+}
+.anniversary-title {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+.anniversary-message {
+  font-family: var(--font-diary);
+  font-size: 0.85rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
 
+[data-theme="dark"] .anniversary-card {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(232, 168, 124, 0.05) 100%);
+  border-color: rgba(232, 168, 124, 0.15);
+}

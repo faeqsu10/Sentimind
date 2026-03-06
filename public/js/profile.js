@@ -176,7 +176,7 @@ export function initProfileEventListeners() {
         if (result.data) {
           state.userProfile = { ...state.userProfile, ...result.data };
         }
-        profileMessage.textContent = '프로필이 저장되었습니다.';
+        profileMessage.textContent = '프로필이 저장되었어요.';
         profileMessage.className = 'profile-message success';
         profileMessage.hidden = false;
         renderProfileScreen();
@@ -202,8 +202,8 @@ export function initProfileEventListeners() {
   });
 
   // Data Export
-  document.getElementById('exportCsvBtn').addEventListener('click', () => exportData('csv').catch(() => showError('데이터 내보내기에 실패했습니다.')));
-  document.getElementById('exportJsonBtn').addEventListener('click', () => exportData('json').catch(() => showError('데이터 내보내기에 실패했습니다.')));
+  document.getElementById('exportCsvBtn').addEventListener('click', () => exportData('csv').catch(() => showError('이야기를 내보내지 못했어요.')));
+  document.getElementById('exportJsonBtn').addEventListener('click', () => exportData('json').catch(() => showError('이야기를 내보내지 못했어요.')));
 
   // Password Change
   document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
@@ -226,7 +226,7 @@ export function initProfileEventListeners() {
       });
       const result = await res.json();
       if (res.ok) {
-        showToast('비밀번호가 변경되었습니다.', 'success');
+        showToast('비밀번호가 변경되었어요.', 'success');
         document.getElementById('current-password').value = '';
         document.getElementById('new-password').value = '';
         document.getElementById('confirm-password').value = '';
@@ -248,7 +248,7 @@ export function initProfileEventListeners() {
     const password = prompt('회원탈퇴를 위해 비밀번호를 입력해주세요.');
     if (!password) return;
 
-    const confirmed = confirm('정말로 회원탈퇴하시겠습니까?\n모든 일기 데이터가 삭제되며 복구할 수 없습니다.');
+    const confirmed = confirm('정말 떠나시겠어요?\n그동안 나눈 모든 이야기가 사라지며, 되돌릴 수 없어요.');
     if (!confirmed) return;
 
     const btn = document.getElementById('deleteAccountBtn');

@@ -137,7 +137,7 @@ export function initAuthForms() {
     if (!valid) return;
 
     loginBtn.disabled = true;
-    loginBtn.textContent = '로그인 중...';
+    loginBtn.textContent = '일기장 여는 중...';
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -224,7 +224,7 @@ export function initAuthForms() {
     if (!valid) return;
 
     signupBtn.disabled = true;
-    signupBtn.textContent = '가입 중...';
+    signupBtn.textContent = '일기장 만드는 중...';
 
     try {
       const res = await fetch('/api/auth/signup', {
@@ -254,7 +254,7 @@ export function initAuthForms() {
         await deps.migrateGuestData();
         deps.showOnboarding();
       } else {
-        signupMessage.textContent = result.message || '인증 이메일이 발송되었습니다. 이메일을 확인해주세요.';
+        signupMessage.textContent = result.message || '인증 이메일을 보내드렸어요. 메일함을 확인해주세요.';
         signupMessage.className = 'auth-message success';
         signupMessage.hidden = false;
       }
@@ -264,7 +264,7 @@ export function initAuthForms() {
       signupMessage.hidden = false;
     } finally {
       signupBtn.disabled = false;
-      signupBtn.textContent = '가입하기';
+      signupBtn.textContent = '일기장 만들기';
     }
   });
 
@@ -287,7 +287,7 @@ export function initAuthForms() {
     }
 
     resetBtn.disabled = true;
-    resetBtn.textContent = '전송 중...';
+    resetBtn.textContent = '메일 보내는 중...';
 
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -296,7 +296,7 @@ export function initAuthForms() {
         body: JSON.stringify({ email: emailInput.value.trim() }),
       });
       const result = await res.json();
-      resetMessage.textContent = (result.data && result.data.message) || '해당 이메일이 존재하면 재설정 링크가 발송됩니다.';
+      resetMessage.textContent = (result.data && result.data.message) || '해당 이메일로 재설정 링크를 보내드렸어요.';
       resetMessage.className = 'auth-message success';
       resetMessage.hidden = false;
     } catch {

@@ -46,7 +46,7 @@ export async function handleSubmit(e) {
     // Show retention card
     showRetentionCard();
   } catch (err) {
-    showError(err.userMessage || '지금 감정을 분석하기 어려운 상황이에요. 잠시 후 다시 시도해주세요.');
+    showError(err.userMessage || '지금 마음을 읽기 어려운 상황이에요. 잠시 후 다시 이야기해주세요.');
   } finally {
     hideSkeleton('analyze');
     if (aiSection) aiSection.removeAttribute('aria-busy');
@@ -60,17 +60,16 @@ export function showResponse(result) {
   const responseEmotion = document.getElementById('responseEmotion');
   const responseMessage = document.getElementById('responseMessage');
   const responseAdvice = document.getElementById('responseAdvice');
-  const ontologySection = document.getElementById('ontologySection');
+  const analysisDetails = document.getElementById('analysisDetails');
   const confidenceBadge = document.getElementById('confidenceBadge');
 
   responseEmoji.textContent = result.emoji;
-  responseEmotion.textContent = '감정: ' + result.emotion;
+  responseEmotion.textContent = '지금 느끼고 있는 ' + result.emotion;
   responseMessage.textContent = result.message;
   responseAdvice.textContent = result.advice;
 
   if (result.ontology) {
     renderOntologyInsights(result.ontology);
-    ontologySection.hidden = false;
 
     if (result.ontology.confidence !== undefined) {
       renderConfidenceBadge(result.ontology.confidence);
@@ -78,9 +77,11 @@ export function showResponse(result) {
     } else {
       confidenceBadge.hidden = true;
     }
+
+    analysisDetails.hidden = false;
+    analysisDetails.removeAttribute('open');
   } else {
-    ontologySection.hidden = true;
-    confidenceBadge.hidden = true;
+    analysisDetails.hidden = true;
   }
 
   responseCard.hidden = false;
@@ -107,12 +108,37 @@ export function showResponse(result) {
   // Similar entries
   const similarSection = document.getElementById('similarEntries');
   const similarList = document.getElementById('similarEntriesList');
+  const similarTitle = document.getElementById('similarEntriesTitle');
   const emotion = result.emotion;
   const matches = (state.allEntries || [])
     .filter(e => e.emotion === emotion)
     .slice(0, 3);
 
   if (matches.length >= 1) {
+    // AI "remembering" framing — contextual title
+    if (similarTitle) {
+      const oldestMatch = matches.reduce((oldest, e) => {
+        if (!e.date) return oldest;
+        if (!oldest) return e;
+        return new Date(e.date) < new Date(oldest.date) ? e : oldest;
+      }, null);
+
+      if (oldestMatch && oldestMatch.date) {
+        const daysDiff = Math.floor((Date.now() - new Date(oldestMatch.date).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff >= 30) {
+          similarTitle.textContent = '지난 기록을 살펴보니, ' + daysDiff + '일 전에도 비슷한 마음이 있었어요';
+        } else if (daysDiff >= 7) {
+          similarTitle.textContent = daysDiff + '일 전에도 같은 마음이었어요';
+        } else if (matches.length > 1) {
+          similarTitle.textContent = '당신의 이 마음, 기억하고 있어요';
+        } else {
+          similarTitle.textContent = '비슷한 마음의 기록이 있어요';
+        }
+      } else {
+        similarTitle.textContent = '비슷한 마음의 기록이 있어요';
+      }
+    }
+
     similarList.innerHTML = matches.map(e => {
       const dateStr = e.date
         ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(e.date))
@@ -260,7 +286,7 @@ async function handleFeedbackClick(rating) {
     feedbackButtons.hidden = true;
     feedbackThanks.hidden = false;
   } catch (err) {
-    showToast(err.userMessage || '피드백 저장에 실패했습니다.', 'error');
+    showToast(err.userMessage || '의견을 전달하지 못했어요. 다시 시도해주세요.', 'error');
     buttons.forEach(btn => { btn.disabled = false; });
     if (selected) selected.classList.remove('active');
   }
@@ -289,13 +315,14 @@ function showRetentionCard() {
 }
 
 function getRetentionMessage() {
-  const totalEntries = (state.allEntries || []).length;
+  const entries = state.allEntries || [];
+  const totalEntries = entries.length;
 
   // Guest mode: encourage signup
   if (state.guestMode) {
     return {
       icon: '🔒',
-      text: '회원가입하면 모든 기록이 영구 보관돼요',
+      text: '나의 이야기를 영원히 간직하고 싶다면, 일기장을 만들어보세요',
     };
   }
 
@@ -304,7 +331,16 @@ function getRetentionMessage() {
   if (milestones.includes(totalEntries)) {
     return {
       icon: '🎉',
-      text: '총 ' + totalEntries + '번째 일기를 기록했어요!',
+      text: totalEntries + '번째 이야기를 들려주셨네요!',
+    };
+  }
+
+  // Emotion diversity message (5+ unique emotions)
+  const uniqueEmotions = new Set(entries.map(e => e.emotion).filter(Boolean));
+  if (uniqueEmotions.size >= 5) {
+    return {
+      icon: '🌈',
+      text: uniqueEmotions.size + '가지 마음을 나눠주셨어요. 마음의 스펙트럼이 넓어지고 있어요',
     };
   }
 
@@ -313,7 +349,7 @@ function getRetentionMessage() {
   if (streak >= 2) {
     return {
       icon: '🔥',
-      text: '연속 ' + streak + '일째 기록 중이에요. 내일도 기록하면 ' + (streak + 1) + '일!',
+      text: streak + '일째 매일 마음을 돌보고 있어요. 내일이면 ' + (streak + 1) + '일!',
     };
   }
 
@@ -322,7 +358,7 @@ function getRetentionMessage() {
     const remaining = 7 - totalEntries;
     return {
       icon: '📊',
-      text: '일기가 ' + remaining + '개 더 쌓이면 주간 AI 리포트를 받을 수 있어요',
+      text: '이야기가 ' + remaining + '개 더 모이면 주간 마음 리포트를 받아볼 수 있어요',
     };
   }
 
@@ -330,7 +366,23 @@ function getRetentionMessage() {
   if (totalEntries >= 7) {
     return {
       icon: '📈',
-      text: '이번 주 감정 흐름이 궁금하다면? <a href="#" class="retention-link" onclick="document.getElementById(\'tab-stats\')?.click(); return false;">통계 보기</a>',
+      text: '이번 주 마음의 흐름이 궁금하다면? <a href="#" class="retention-link" onclick="document.getElementById(\'tab-stats\')?.click(); return false;">마음 돌아보기</a>',
+    };
+  }
+
+  // Warm encouragement messages (shown between milestones)
+  const warmMessages = [
+    '오늘도 마음을 돌본 당신, 대단해요',
+    '기록하는 것만으로 이미 큰 한 걸음이에요',
+    '오늘의 마음을 잘 담아주셨어요',
+    '꾸준히 마음을 들여다보는 당신이 멋져요',
+    '이 한 줄이 내일의 당신에게 힘이 될 거예요',
+  ];
+  if (totalEntries > 0) {
+    const idx = totalEntries % warmMessages.length;
+    return {
+      icon: '💛',
+      text: warmMessages[idx],
     };
   }
 

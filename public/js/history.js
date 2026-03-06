@@ -62,7 +62,7 @@ export function applyFilters() {
 
   const isFiltering = query || state.activeFilters.size > 0;
   if (isFiltering) {
-    filterResultCount.textContent = filtered.length + '건의 일기가 검색되었습니다.';
+    filterResultCount.textContent = filtered.length + '건의 이야기를 찾았어요.';
     filterResultCount.hidden = false;
   } else {
     filterResultCount.hidden = true;
@@ -198,7 +198,7 @@ export function showHistoryDetail(entry) {
   const deleteBtn = document.getElementById('detailDelete');
   if (deleteBtn) {
     deleteBtn.onclick = async () => {
-      if (!confirm('이 일기를 삭제하시겠습니까?')) return;
+      if (!confirm('이 이야기를 지울까요?')) return;
       try {
         await deleteEntryAPI(entry.id);
         const historyList = document.getElementById('historyList');
