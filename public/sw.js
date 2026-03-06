@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sentimind-v5';
+const CACHE_VERSION = 'sentimind-v6';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
@@ -92,8 +92,8 @@ async function syncOfflineEntries() {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Auth & migrate requests: always network-only, never intercept
-  if (request.url.includes('/api/auth/') || request.url.includes('/api/migrate/')) {
+  // Auth, migrate, analyze requests: always network-only, never intercept
+  if (request.url.includes('/api/auth/') || request.url.includes('/api/migrate/') || request.url.includes('/api/analyze')) {
     return;
   }
 

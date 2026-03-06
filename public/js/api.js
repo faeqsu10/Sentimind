@@ -15,8 +15,7 @@ export async function fetchWithAuth(url, options = {}) {
   try {
     response = await fetch(url, { ...options, headers });
   } catch (networkErr) {
-    showToast('네트워크 연결을 확인해주세요.', 'error');
-    throw { userMessage: '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.' };
+    throw { userMessage: '네트워크 연결을 확인해주세요.' };
   }
   if (response.status === 401) {
     const refreshed = await tryRefreshToken();
