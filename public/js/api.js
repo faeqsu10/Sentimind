@@ -98,6 +98,19 @@ export async function saveEntry(text, result) {
     const data = await response.json();
     throw { userMessage: data.error || '일기 저장에 실패했습니다.' };
   }
+  return await response.json();
+}
+
+export async function submitFeedback(entryId, rating) {
+  const response = await fetchWithAuth('/api/entries/' + entryId + '/feedback', {
+    method: 'PATCH',
+    body: JSON.stringify({ rating }),
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw { userMessage: data.error || '피드백 저장에 실패했습니다.' };
+  }
+  return await response.json();
 }
 
 export async function fetchEntries() {

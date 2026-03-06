@@ -554,6 +554,7 @@ document.addEventListener('keydown', (e) => {
 // ===== Landing: Button handlers =====
 document.getElementById('landingStartBtn').addEventListener('click', () => {
   showAuthScreen();
+  showAuthCard('signup');
 });
 document.getElementById('landingSignupBtn').addEventListener('click', () => {
   showAuthScreen();

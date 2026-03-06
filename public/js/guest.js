@@ -107,7 +107,7 @@ async function analyzeDemo(text) {
       setTimeout(() => showSignupModal('nudge'), 1500);
     }
   } catch (err) {
-    showError(err.userMessage || '분석 중 오류가 발생했습니다.');
+    showError(err.userMessage || '감정을 읽는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
   } finally {
     skeleton.hidden = true;
     const textarea = document.getElementById('demoTextarea');

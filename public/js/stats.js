@@ -15,7 +15,7 @@ export async function loadDashboard(period) {
     renderDashboard(stats);
   } catch {
     const summaryEl = document.getElementById('dashboardSummary');
-    if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러올 수 없습니다.</p>';
+    if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">통계를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
   } finally {
     if (dashEl) dashEl.removeAttribute('aria-busy');
   }
@@ -93,7 +93,7 @@ function renderTrendChart(entries) {
   });
 
   if (filtered.length < 7) {
-    container.innerHTML = '<p class="trend-chart-empty">데이터가 더 필요합니다 (최소 7일)</p>';
+    container.innerHTML = '<p class="trend-chart-empty">7일 이상 기록하면 감정 흐름을 볼 수 있어요</p>';
     return;
   }
 

@@ -2218,6 +2218,106 @@ kbd {
   padding: 1rem 0; font-family: var(--font-diary);
 }
 
+/* ===== AI Feedback Section ===== */
+.feedback-section {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-divider);
+  text-align: center;
+}
+.feedback-section[hidden] { display: none; }
+.feedback-question {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+.feedback-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+.feedback-buttons[hidden] { display: none; }
+.feedback-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 200ms ease;
+}
+.feedback-btn:hover {
+  transform: scale(1.15);
+  border-color: var(--color-primary);
+  background: rgba(232, 168, 124, 0.1);
+}
+.feedback-btn:active { transform: scale(0.95); }
+.feedback-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.feedback-btn.active {
+  border-color: var(--color-primary);
+  background: rgba(232, 168, 124, 0.2);
+  transform: scale(1.1);
+}
+.feedback-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.feedback-icon { font-size: 1.2rem; line-height: 1; }
+.feedback-thanks {
+  font-size: 0.8rem;
+  color: var(--color-success);
+  animation: fadeInUp 300ms ease both;
+}
+.feedback-thanks[hidden] { display: none; }
+
+/* ===== Retention Card ===== */
+.retention-card {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--gradient-response);
+  border-radius: var(--radius-md);
+  animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+.retention-card[hidden] { display: none; }
+.retention-card-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.retention-card-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.retention-card-text {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  line-height: 1.5;
+  font-family: var(--font-diary);
+}
+.retention-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+}
+.retention-link:hover { color: var(--color-primary-hover); }
+
+/* Dark mode overrides */
+[data-theme="dark"] .feedback-btn {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+[data-theme="dark"] .feedback-btn:hover {
+  background: rgba(232, 168, 124, 0.15);
+}
+[data-theme="dark"] .feedback-btn.active {
+  background: rgba(232, 168, 124, 0.25);
+}
+[data-theme="dark"] .retention-card {
+  background: var(--gradient-response);
+}
+
 /* === Feature 5: Emotion theme colors === */
 [data-emotion-theme="joy"] .response-card { background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 50%, #FFCC80 100%); }
 [data-emotion-theme="sadness"] .response-card { background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%); }

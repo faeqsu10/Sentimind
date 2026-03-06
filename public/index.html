@@ -503,6 +503,12 @@
       </div>
     </header>
 
+    <div class="mobile-streak-banner" id="mobileStreakBanner">
+      <div class="mobile-streak-dots" id="mobileStreakDots"></div>
+      <span class="mobile-streak-text" id="mobileStreakText"></span>
+      <span class="mobile-streak-today" id="mobileStreakToday"></span>
+    </div>
+
     <nav class="tab-nav" role="tablist" aria-label="메뉴">
       <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-diary" id="tab-diary" tabindex="0">일기</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-calendar" id="tab-calendar" tabindex="-1">달력</button>
@@ -558,6 +564,28 @@
 
             <!-- Confidence (hidden, badge is at top of card) -->
             <div class="confidence-meter" id="confidenceMeter" hidden></div>
+          </div>
+
+          <!-- AI Feedback -->
+          <div class="feedback-section" id="feedbackSection" hidden>
+            <p class="feedback-question">이 분석이 도움이 됐나요?</p>
+            <div class="feedback-buttons">
+              <button type="button" class="feedback-btn" id="feedbackHelpful" data-rating="helpful" aria-label="도움이 됐어요">
+                <span class="feedback-icon">👍</span>
+              </button>
+              <button type="button" class="feedback-btn" id="feedbackNotHelpful" data-rating="not_helpful" aria-label="아쉬워요">
+                <span class="feedback-icon">👎</span>
+              </button>
+            </div>
+            <p class="feedback-thanks" id="feedbackThanks" hidden>소중한 의견 감사합니다</p>
+          </div>
+        </div>
+
+        <!-- Retention Card -->
+        <div class="retention-card" id="retentionCard" hidden>
+          <div class="retention-card-content">
+            <span class="retention-card-icon" id="retentionIcon"></span>
+            <p class="retention-card-text" id="retentionText"></p>
           </div>
         </div>
         <div class="similar-entries" id="similarEntries" hidden>

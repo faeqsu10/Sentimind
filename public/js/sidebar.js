@@ -7,6 +7,7 @@ export function updateSidebar() {
   updateSidebarStreak();
   updateSidebarWeeklyChart();
   renderInsightCards();
+  updateMobileStreakBanner();
 }
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -35,7 +36,7 @@ function updateSidebarLatest() {
     }).format(new Date(latest.date)) : '';
     container.innerHTML = renderSidebarLatestCard(latest.emoji, latest.emotion, latest.message, dateStr);
   } else {
-    container.innerHTML = '<p class="sidebar-empty">아직 분석 결과가 없어요</p>';
+    container.innerHTML = '<p class="sidebar-empty">첫 일기를 쓰면 AI가 감정을 읽어드려요</p>';
   }
 }
 
@@ -50,7 +51,7 @@ function updateSidebarToday() {
   });
 
   if (todayEntries.length === 0) {
-    container.innerHTML = '<p class="sidebar-empty">오늘 작성한 일기가 없어요</p>';
+    container.innerHTML = '<p class="sidebar-empty">오늘의 감정을 한 줄로 기록해볼까요?</p>';
     return;
   }
 
@@ -259,6 +260,63 @@ function renderInsightCards() {
   ).join('');
 }
 
+function updateMobileStreakBanner() {
+  const banner = document.getElementById('mobileStreakBanner');
+  const dotsEl = document.getElementById('mobileStreakDots');
+  const textEl = document.getElementById('mobileStreakText');
+  const todayEl = document.getElementById('mobileStreakToday');
+  if (!banner || !dotsEl || !textEl || !todayEl) return;
+
+  const entries = state.allEntries || [];
+  const dateSet = new Set();
+  entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Calculate streak (same logic as updateSidebarStreak)
+  let streak = 0;
+  let checkDate = new Date(today);
+  if (!dateSet.has(todayStr)) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+  while (true) {
+    const ds = checkDate.toISOString().split('T')[0];
+    if (dateSet.has(ds)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Render 7-day dots
+  const dots = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const active = dateSet.has(ds);
+    const isToday = i === 0;
+    const cls = 'streak-dot' + (active ? ' active' : '') + (isToday ? ' today' : '');
+    dots.push('<div class="' + cls + '"></div>');
+  }
+  dotsEl.innerHTML = dots.join('');
+
+  // Streak text
+  textEl.textContent = streak > 0 ? streak + '일 연속' : '시작해보세요';
+
+  // Today's emotion emoji
+  const hasTodayEntry = dateSet.has(todayStr);
+  if (hasTodayEntry) {
+    const todayEntry = entries.find(e => e.date && e.date.startsWith(todayStr));
+    todayEl.textContent = todayEntry && todayEntry.emoji ? todayEntry.emoji : '기록 완료';
+  } else {
+    todayEl.textContent = '오늘 미작성';
+  }
+}
+
 export function updateSidebarWeeklyChart() {
   const container = document.getElementById('sidebarWeeklyChart');
   if (!container) return;
@@ -279,7 +337,7 @@ export function updateSidebarWeeklyChart() {
   }
 
   if (maxCount === 0) {
-    container.innerHTML = '<p class="sidebar-empty">이번 주 데이터가 없어요</p>';
+    container.innerHTML = '<p class="sidebar-empty">이번 주 첫 기록을 남겨보세요</p>';
     return;
   }
 

@@ -93,7 +93,7 @@ function showCalDayEntries(dateStr, entries) {
   if (!entries || entries.length === 0) {
     div.innerHTML = `<div class="cal-day-entries">
       <div class="cal-day-entries-header">${dateLabel}</div>
-      <p class="cal-no-entry">이 날에는 일기가 없습니다</p>
+      <p class="cal-no-entry">이 날의 감정을 기록해보세요</p>
     </div>`;
     return;
   }
@@ -134,7 +134,7 @@ function renderMonthlySummary(entryMap, daysInMonth) {
   }
 
   if (totalEntries === 0) {
-    container.innerHTML = '<p class="sidebar-empty">이 달에는 기록이 없어요</p>';
+    container.innerHTML = '<p class="sidebar-empty">이 달의 첫 감정을 기록해보세요</p>';
     return;
   }
 

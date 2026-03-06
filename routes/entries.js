@@ -262,6 +262,54 @@ module.exports = function (deps) {
     }
   });
 
+  // PATCH /entries/:id/feedback - AI 분석 피드백
+  router.patch('/entries/:id/feedback', authMiddleware, async (req, res) => {
+    const rid = requestId();
+    const { id } = req.params;
+
+    if (!USE_SUPABASE || !req.supabaseClient) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    const { rating } = req.body || {};
+    if (!rating || !['helpful', 'not_helpful'].includes(rating)) {
+      return res.status(400).json({ error: "rating은 'helpful' 또는 'not_helpful'만 가능합니다.", code: 'VALIDATION_ERROR' });
+    }
+
+    try {
+      // Verify entry exists and belongs to user
+      const { data: existing, error: fetchErr } = await req.supabaseClient
+        .from('entries')
+        .select('id')
+        .eq('id', id)
+        .eq('user_id', req.user.id)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchErr || !existing) {
+        return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      }
+
+      const { data, error } = await req.supabaseClient
+        .from('entries')
+        .update({ user_rating: rating })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('피드백 저장 실패', { requestId: rid, error: error.message });
+        return res.status(500).json({ error: '피드백 저장에 실패했습니다.', code: 'INTERNAL_ERROR' });
+      }
+
+      logger.info('피드백 저장 완료', { requestId: rid, entryId: id, rating });
+      res.json({ ...data, date: data.created_at });
+    } catch (err) {
+      logger.error('피드백 저장 오류', { requestId: rid, error: err.message });
+      res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   // DELETE /entries/:id - 일기 삭제 (소프트 삭제)
   router.delete('/entries/:id', authMiddleware, async (req, res) => {
     const rid = requestId();

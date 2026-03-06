@@ -1,6 +1,6 @@
 import { state, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton } from './utils.js';
-import { analyzeEmotion, saveEntry } from './api.js';
+import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast } from './utils.js';
+import { analyzeEmotion, saveEntry, submitFeedback } from './api.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -18,6 +18,8 @@ export async function handleSubmit(e) {
 
   submitBtn.disabled = true;
   responseCard.hidden = true;
+  document.getElementById('feedbackSection').hidden = true;
+  document.getElementById('retentionCard').hidden = true;
   document.documentElement.removeAttribute('data-emotion-theme');
   document.getElementById('similarEntries').hidden = true;
   const aiSection = responseCard.closest('.ai-response');
@@ -27,14 +29,24 @@ export async function handleSubmit(e) {
   try {
     const result = await analyzeEmotion(text);
     showResponse(result);
-    await saveEntry(text, result);
+
+    let savedEntry = null;
+    if (!state.guestMode) {
+      savedEntry = await saveEntry(text, result);
+    }
 
     diaryText.value = '';
     diaryText.style.height = 'auto';
     charCount.textContent = '';
     await deps.loadEntries();
+
+    // Show feedback section (authenticated users only)
+    showFeedbackSection(savedEntry);
+
+    // Show retention card
+    showRetentionCard();
   } catch (err) {
-    showError(err.userMessage || '알 수 없는 오류가 발생했습니다.');
+    showError(err.userMessage || '지금 감정을 분석하기 어려운 상황이에요. 잠시 후 다시 시도해주세요.');
   } finally {
     hideSkeleton('analyze');
     if (aiSection) aiSection.removeAttribute('aria-busy');
@@ -100,7 +112,7 @@ export function showResponse(result) {
     .filter(e => e.emotion === emotion)
     .slice(0, 3);
 
-  if (matches.length >= 3) {
+  if (matches.length >= 1) {
     similarList.innerHTML = matches.map(e => {
       const dateStr = e.date
         ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(e.date))
@@ -188,4 +200,139 @@ function renderOntologyInsights(ontology) {
   }
 
   confidenceMeter.innerHTML = '';
+}
+
+// ---------------------------------------------------------------------------
+// AI Feedback (Thumbs Up/Down)
+// ---------------------------------------------------------------------------
+
+function showFeedbackSection(savedEntry) {
+  const feedbackSection = document.getElementById('feedbackSection');
+  const feedbackThanks = document.getElementById('feedbackThanks');
+  const feedbackButtons = feedbackSection.querySelector('.feedback-buttons');
+  const feedbackHelpful = document.getElementById('feedbackHelpful');
+  const feedbackNotHelpful = document.getElementById('feedbackNotHelpful');
+
+  // Guest mode: hide feedback
+  if (state.guestMode || !savedEntry || !savedEntry.id) {
+    feedbackSection.hidden = true;
+    return;
+  }
+
+  // Reset state
+  feedbackThanks.hidden = true;
+  feedbackButtons.hidden = false;
+  feedbackHelpful.disabled = false;
+  feedbackNotHelpful.disabled = false;
+  feedbackHelpful.classList.remove('active');
+  feedbackNotHelpful.classList.remove('active');
+  feedbackSection.dataset.entryId = savedEntry.id;
+  feedbackSection.hidden = false;
+
+  // Clone buttons to remove old listeners
+  const newHelpful = feedbackHelpful.cloneNode(true);
+  const newNotHelpful = feedbackNotHelpful.cloneNode(true);
+  feedbackHelpful.replaceWith(newHelpful);
+  feedbackNotHelpful.replaceWith(newNotHelpful);
+
+  newHelpful.addEventListener('click', () => handleFeedbackClick('helpful'));
+  newNotHelpful.addEventListener('click', () => handleFeedbackClick('not_helpful'));
+}
+
+async function handleFeedbackClick(rating) {
+  const feedbackSection = document.getElementById('feedbackSection');
+  const feedbackThanks = document.getElementById('feedbackThanks');
+  const feedbackButtons = feedbackSection.querySelector('.feedback-buttons');
+  const entryId = feedbackSection.dataset.entryId;
+
+  if (!entryId) return;
+
+  // Disable buttons immediately
+  const buttons = feedbackButtons.querySelectorAll('.feedback-btn');
+  buttons.forEach(btn => { btn.disabled = true; });
+
+  // Highlight the selected button
+  const selected = feedbackSection.querySelector('[data-rating="' + rating + '"]');
+  if (selected) selected.classList.add('active');
+
+  try {
+    await submitFeedback(entryId, rating);
+    feedbackButtons.hidden = true;
+    feedbackThanks.hidden = false;
+  } catch (err) {
+    showToast(err.userMessage || '피드백 저장에 실패했습니다.', 'error');
+    buttons.forEach(btn => { btn.disabled = false; });
+    if (selected) selected.classList.remove('active');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Retention Card
+// ---------------------------------------------------------------------------
+
+function showRetentionCard() {
+  const retentionCard = document.getElementById('retentionCard');
+  const retentionIcon = document.getElementById('retentionIcon');
+  const retentionText = document.getElementById('retentionText');
+
+  const message = getRetentionMessage();
+  if (!message) {
+    retentionCard.hidden = true;
+    return;
+  }
+
+  retentionIcon.textContent = message.icon;
+  retentionText.innerHTML = message.text;
+  retentionCard.hidden = false;
+  retentionCard.style.animation = 'none';
+  requestAnimationFrame(() => { retentionCard.style.animation = ''; });
+}
+
+function getRetentionMessage() {
+  const totalEntries = (state.allEntries || []).length;
+
+  // Guest mode: encourage signup
+  if (state.guestMode) {
+    return {
+      icon: '🔒',
+      text: '회원가입하면 모든 기록이 영구 보관돼요',
+    };
+  }
+
+  // Milestone celebration (10, 25, 50, 100, 200, 500, 1000)
+  const milestones = [10, 25, 50, 100, 200, 500, 1000];
+  if (milestones.includes(totalEntries)) {
+    return {
+      icon: '🎉',
+      text: '총 ' + totalEntries + '번째 일기를 기록했어요!',
+    };
+  }
+
+  // Streak reinforcement
+  const streak = state.userProfile?.current_streak || 0;
+  if (streak >= 2) {
+    return {
+      icon: '🔥',
+      text: '연속 ' + streak + '일째 기록 중이에요. 내일도 기록하면 ' + (streak + 1) + '일!',
+    };
+  }
+
+  // Insight preview (less than 7 entries)
+  if (totalEntries > 0 && totalEntries < 7) {
+    const remaining = 7 - totalEntries;
+    return {
+      icon: '📊',
+      text: '일기가 ' + remaining + '개 더 쌓이면 주간 AI 리포트를 받을 수 있어요',
+    };
+  }
+
+  // Stats encouragement (7+ entries)
+  if (totalEntries >= 7) {
+    return {
+      icon: '📈',
+      text: '이번 주 감정 흐름이 궁금하다면? <a href="#" class="retention-link" onclick="document.getElementById(\'tab-stats\')?.click(); return false;">통계 보기</a>',
+    };
+  }
+
+  return null;
 }
