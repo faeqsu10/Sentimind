@@ -13,6 +13,7 @@ module.exports = function (deps) {
     authMiddleware,
     sanitizeString,
     validateEntryText,
+    generateId,
   } = deps;
 
   // POST /migrate/from-guest - 게스트 일기 → 회원 계정 마이그레이션
@@ -47,6 +48,7 @@ module.exports = function (deps) {
         }
 
         rows.push({
+          id: generateId(),
           user_id: userId,
           text: sanitizeString(entry.text),
           emotion: entry.emotion ? sanitizeString(entry.emotion) : null,

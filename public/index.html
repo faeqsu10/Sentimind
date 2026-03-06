@@ -4636,58 +4636,83 @@
     }
 
     // ===== Screen transitions =====
-    function showLanding() {
-      landingScreen.hidden = false;
+    // ===== Screen Navigation with History =====
+    function setScreen(screen) {
+      landingScreen.hidden = true;
       authScreen.hidden = true;
       onboardingScreen.hidden = true;
       appContainer.hidden = true;
       demoScreen.hidden = true;
       document.getElementById('welcomeScreen').hidden = true;
+      switch (screen) {
+        case 'landing': landingScreen.hidden = false; break;
+        case 'auth': authScreen.hidden = false; break;
+        case 'demo': demoScreen.hidden = false; break;
+        case 'onboarding': onboardingScreen.hidden = false; break;
+        case 'app': appContainer.hidden = false; break;
+      }
     }
 
-    function showAuthScreen() {
-      landingScreen.hidden = true;
-      authScreen.hidden = false;
-      onboardingScreen.hidden = true;
-      appContainer.hidden = true;
-      demoScreen.hidden = true;
-      document.getElementById('welcomeScreen').hidden = true;
-      // Show login card by default
+    let initialScreenSet = false;
+    function pushScreen(screen) {
+      const current = history.state?.screen;
+      if (current === screen) return;
+      if (!initialScreenSet) {
+        history.replaceState({ screen }, '', '');
+        initialScreenSet = true;
+      } else {
+        history.pushState({ screen }, '', '');
+      }
+    }
+
+    function showLanding(pushHistory = true) {
+      setScreen('landing');
+      if (pushHistory) pushScreen('landing');
+    }
+
+    function showAuthScreen(pushHistory = true) {
+      setScreen('auth');
+      if (pushHistory) pushScreen('auth');
       showAuthCard('login');
     }
 
-    function showDemo() {
+    function showDemo(pushHistory = true) {
       guestMode = true;
-      landingScreen.hidden = true;
-      authScreen.hidden = true;
-      onboardingScreen.hidden = true;
-      appContainer.hidden = true;
-      demoScreen.hidden = false;
-      document.getElementById('welcomeScreen').hidden = true;
+      setScreen('demo');
+      if (pushHistory) pushScreen('demo');
       initDemoScreen();
     }
 
-    function showOnboarding() {
-      landingScreen.hidden = true;
-      authScreen.hidden = true;
-      onboardingScreen.hidden = false;
-      appContainer.hidden = true;
-      demoScreen.hidden = true;
-      document.getElementById('welcomeScreen').hidden = true;
+    function showOnboarding(pushHistory = true) {
+      setScreen('onboarding');
+      if (pushHistory) pushScreen('onboarding');
       onboardingStep = 1;
       updateOnboardingUI();
     }
 
-    function showApp() {
+    function showApp(pushHistory = true) {
       guestMode = false;
-      landingScreen.hidden = true;
-      authScreen.hidden = true;
-      onboardingScreen.hidden = true;
-      appContainer.hidden = false;
-      demoScreen.hidden = true;
+      setScreen('app');
+      if (pushHistory) pushScreen('app');
       updateUserMenu();
       initApp();
     }
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', (e) => {
+      const screen = e.state?.screen;
+      if (!screen) { showLanding(false); return; }
+      switch (screen) {
+        case 'landing': showLanding(false); break;
+        case 'auth': showAuthScreen(false); break;
+        case 'demo': showDemo(false); break;
+        case 'app':
+          if (accessToken) { showApp(false); }
+          else { showLanding(false); }
+          break;
+        default: showLanding(false);
+      }
+    });
 
     function showAuthCard(which) {
       document.getElementById('authLoginCard').hidden = which !== 'login';
