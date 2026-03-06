@@ -26,16 +26,20 @@
 .sidebar-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   padding: 1.25rem;
   animation: fadeInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+  transition: border-color 200ms ease;
+}
+.sidebar-card:hover {
+  border-color: var(--color-primary);
 }
 .sidebar-card-title {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--color-divider);
@@ -148,11 +152,11 @@
 /* Tab Navigation */
 .tab-nav {
   display: flex;
-  gap: 0;
+  gap: 4px;
   margin-bottom: 1.5rem;
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  background: var(--color-surface-warm);
+  border-radius: var(--radius-lg);
+  padding: 4px;
   overflow: hidden;
   animation: fadeInUp 500ms 50ms cubic-bezier(0.25,0.46,0.45,0.94) both;
 }
@@ -160,32 +164,26 @@
   flex: 1;
   background: none;
   border: none;
-  padding: 0.7rem 1rem;
+  padding: 0.65rem 1rem;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: color 200ms ease, background 200ms ease, box-shadow 200ms ease;
   position: relative;
+  border-radius: var(--radius-md);
 }
 .tab-btn:hover {
   color: var(--color-text-light);
-  background: var(--color-surface-warm);
 }
 .tab-btn[aria-selected="true"] {
   color: var(--color-text);
-  font-weight: 500;
-  background: var(--color-surface-warm);
+  font-weight: 600;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 .tab-btn[aria-selected="true"]::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: var(--color-primary);
-  border-radius: 1px;
+  display: none;
 }
 .tab-btn:focus-visible {
   outline: 2px solid var(--color-primary);
