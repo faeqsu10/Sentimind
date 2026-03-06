@@ -98,7 +98,7 @@ export function renderHistoryList(entries) {
 
     return '<li class="history-item" data-emotion-group="' + emotionGroup + '" style="animation-delay:' + (idx * 30) + 'ms">' +
       '<button class="history-item-inner" aria-label="' + escapeHtml(entry.text) + ' 상세보기" data-idx="' + idx + '">' +
-        '<div class="history-emoji" style="background:' + color + '20" aria-hidden="true">' + escapeHtml(entry.emoji || '') + '</div>' +
+        '<div class="history-emoji" aria-hidden="true">' + escapeHtml(entry.emoji || '') + '</div>' +
         '<div class="history-content">' +
           '<p class="history-text">' + escapeHtml(entry.text) + '</p>' +
           '<div class="history-meta">' +

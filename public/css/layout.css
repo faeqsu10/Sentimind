@@ -79,9 +79,9 @@
 .streak-dot.active { background: var(--color-primary); }
 .streak-dot.today { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-primary); }
 
-/* Sidebar: Weekly Mini Chart (1024px+) */
+/* Sidebar: Weekly Mini Chart (768px+) */
 .sidebar-weekly-chart { display: none; }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .sidebar-weekly-chart { display: block; }
 }
 .mini-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding-top: 0.5rem; }

@@ -2574,6 +2574,21 @@ kbd {
 .history-item[data-emotion-group="love"] { border-left: 4px solid #F2A0A0; }
 .history-item[data-emotion-group="tired"] { border-left: 4px solid #B0A89A; }
 
+/* Emotion group — emoji background sync */
+.history-item[data-emotion-group="joy"] .history-emoji { background: rgba(244, 162, 97, 0.12); }
+.history-item[data-emotion-group="sadness"] .history-emoji { background: rgba(126, 184, 218, 0.12); }
+.history-item[data-emotion-group="anger"] .history-emoji { background: rgba(231, 111, 81, 0.12); }
+.history-item[data-emotion-group="anxiety"] .history-emoji { background: rgba(156, 137, 184, 0.12); }
+.history-item[data-emotion-group="peace"] .history-emoji { background: rgba(168, 218, 171, 0.12); }
+.history-item[data-emotion-group="love"] .history-emoji { background: rgba(242, 160, 160, 0.12); }
+.history-item[data-emotion-group="tired"] .history-emoji { background: rgba(176, 168, 154, 0.12); }
+
+/* Card active/press feedback */
+.history-item:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 50ms;
+}
+
 /* Load more button */
 .btn-load-more {
   display: block;
