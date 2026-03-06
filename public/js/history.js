@@ -106,10 +106,10 @@ export function renderHistoryList(entries) {
             '<span class="history-date">' + date + ' ' + time + '</span>' +
           '</div>' +
         '</div>' +
-        '<button class="btn-bookmark' + (bookmarked ? ' active' : '') + '" data-id="' + entry.id + '" aria-label="즐겨찾기" title="즐겨찾기">' +
-          (bookmarked ? '★' : '☆') +
-        '</button>' +
       '</button>' +
+      '<span class="btn-bookmark' + (bookmarked ? ' active' : '') + '" role="button" tabindex="0" data-id="' + entry.id + '" aria-label="즐겨찾기" title="즐겨찾기">' +
+        (bookmarked ? '★' : '☆') +
+      '</span>' +
     '</li>';
   }).join('');
 
@@ -130,8 +130,7 @@ export function renderHistoryList(entries) {
 
   // Event delegation for history items
   historyList.querySelectorAll('.history-item-inner').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-bookmark')) return;
+    btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
       showHistoryDetail(entries[idx]);
     });
