@@ -540,6 +540,7 @@
 
       <section class="ai-response" aria-label="AI 공감 응답" aria-live="polite">
         <div class="response-card" id="responseCard" hidden>
+          <p class="ai-persona-tag" aria-label="AI 마음이의 분석">마음이가 읽었어요</p>
           <span class="emotion-emoji" id="responseEmoji" aria-hidden="true"></span>
           <p class="emotion-label" id="responseEmotion"></p>
           <p class="empathy-message" id="responseMessage"></p>
@@ -869,6 +870,18 @@
             <p class="anniversary-title" id="anniversaryTitle"></p>
             <p class="anniversary-message" id="anniversaryMessage"></p>
           </div>
+        </div>
+      </div>
+      <!-- Emotion Vocabulary Growth -->
+      <div class="sidebar-card emotion-vocab-card" id="sidebarEmotionVocab" hidden>
+        <h2 class="sidebar-card-title">마음의 스펙트럼</h2>
+        <div class="emotion-vocab-inner">
+          <div class="emotion-vocab-count">
+            <span class="emotion-vocab-number" id="emotionVocabCount">0</span>
+            <span class="emotion-vocab-label">가지 마음을 발견했어요</span>
+          </div>
+          <div class="emotion-vocab-bar" id="emotionVocabBar"></div>
+          <p class="emotion-vocab-message" id="emotionVocabMessage"></p>
         </div>
       </div>
       <!-- Writing Streak -->

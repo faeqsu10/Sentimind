@@ -9,6 +9,7 @@ export function updateSidebar() {
   renderInsightCards();
   updateMobileStreakBanner();
   updateAnniversaryCard();
+  updateEmotionVocab();
 }
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -446,4 +447,60 @@ function updateAnniversaryCard() {
   card.hidden = false;
   card.style.animation = 'none';
   requestAnimationFrame(() => { card.style.animation = ''; });
+}
+
+// ---------------------------------------------------------------------------
+// Emotion Vocabulary Growth Tracker
+// ---------------------------------------------------------------------------
+
+const VOCAB_MESSAGES = [
+  { min: 1, max: 2, msg: '마음을 표현하기 시작했어요' },
+  { min: 3, max: 4, msg: '감정의 언어가 넓어지고 있어요' },
+  { min: 5, max: 7, msg: '다양한 마음을 인식하는 힘이 생겼어요' },
+  { min: 8, max: 12, msg: '풍부한 감정 어휘를 가진 사람이에요' },
+  { min: 13, max: 999, msg: '마음의 전문가! 섬세한 감정 인식 능력이에요' },
+];
+
+function updateEmotionVocab() {
+  const card = document.getElementById('sidebarEmotionVocab');
+  if (!card) return;
+
+  const entries = state.allEntries || [];
+  if (entries.length < 2 || state.guestMode) {
+    card.hidden = true;
+    return;
+  }
+
+  // Count unique emotions
+  const emotionMap = {};
+  entries.forEach(e => {
+    if (e.emotion) {
+      emotionMap[e.emotion] = (emotionMap[e.emotion] || 0) + 1;
+    }
+  });
+
+  const uniqueEmotions = Object.keys(emotionMap);
+  const count = uniqueEmotions.length;
+  if (count < 2) {
+    card.hidden = true;
+    return;
+  }
+
+  // Number
+  document.getElementById('emotionVocabCount').textContent = count;
+
+  // Dot visualization — sorted by frequency
+  const bar = document.getElementById('emotionVocabBar');
+  const sorted = Object.entries(emotionMap).sort((a, b) => b[1] - a[1]);
+  bar.innerHTML = sorted.map(([emotion, freq]) => {
+    const color = emotionColor(emotion);
+    return '<div class="emotion-vocab-dot" style="background:' + color + '" title="' +
+      escapeHtml(emotion) + ' (' + freq + '회)"></div>';
+  }).join('');
+
+  // Message
+  const msgObj = VOCAB_MESSAGES.find(m => count >= m.min && count <= m.max);
+  document.getElementById('emotionVocabMessage').textContent = msgObj ? msgObj.msg : '';
+
+  card.hidden = false;
 }
