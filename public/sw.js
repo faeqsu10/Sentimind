@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sentimind-v11';
+const CACHE_VERSION = 'sentimind-v12';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
@@ -60,30 +60,41 @@ async function syncOfflineEntries() {
     const db = await openOfflineDB();
     const tx = db.transaction('queue', 'readonly');
     const store = tx.objectStore('queue');
-    const entries = await new Promise((r) => {
-      const req = store.getAll();
-      req.onsuccess = () => r(req.result);
-    });
+
+    const [keys, entries] = await Promise.all([
+      new Promise((r) => { const req = store.getAllKeys(); req.onsuccess = () => r(req.result); }),
+      new Promise((r) => { const req = store.getAll();    req.onsuccess = () => r(req.result); }),
+    ]);
 
     if (!entries.length) return;
 
-    for (const entry of entries) {
-      const headers = { 'Content-Type': 'application/json' };
-      if (entry.authHeader) headers['Authorization'] = entry.authHeader;
-      await fetch(entry.url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(entry.body),
-      });
+    let syncedCount = 0;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const key   = keys[i];
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (entry.authHeader) headers['Authorization'] = entry.authHeader;
+        await fetch(entry.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(entry.body),
+        });
+        // 성공한 항목만 개별 삭제
+        const delTx = db.transaction('queue', 'readwrite');
+        delTx.objectStore('queue').delete(key);
+        await new Promise((r, j) => { delTx.oncomplete = r; delTx.onerror = j; });
+        syncedCount++;
+      } catch {
+        // 이 항목 실패 — 다음 항목은 계속 시도
+      }
     }
 
-    // Clear queue after successful sync
-    const clearTx = db.transaction('queue', 'readwrite');
-    clearTx.objectStore('queue').clear();
-
-    // Notify client
-    const clients = await self.clients.matchAll();
-    clients.forEach(c => c.postMessage({ type: 'OFFLINE_SYNC_COMPLETE', count: entries.length }));
+    if (syncedCount > 0) {
+      // Notify client
+      const clients = await self.clients.matchAll();
+      clients.forEach(c => c.postMessage({ type: 'OFFLINE_SYNC_COMPLETE', count: syncedCount }));
+    }
   } catch {
     // Will retry on next online event
   }

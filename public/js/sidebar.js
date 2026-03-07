@@ -1,5 +1,5 @@
 import { state, STREAK_MILESTONES } from './state.js';
-import { escapeHtml, emotionColor, getEmotionGroup, showToast } from './utils.js';
+import { escapeHtml, emotionColor, getEmotionGroup, showToast, calculateStreak } from './utils.js';
 
 export function updateSidebar() {
   updateSidebarLatest();
@@ -78,24 +78,9 @@ function updateSidebarStreak() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  let streak = 0;
-  let checkDate = new Date(today);
+  const todayStr = today.toISOString().split('T')[0];
 
-  const todayStr = checkDate.toISOString().split('T')[0];
-  if (!dateSet.has(todayStr)) {
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
-
-  while (true) {
-    const ds = checkDate.toISOString().split('T')[0];
-    if (dateSet.has(ds)) {
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
+  const streak = calculateStreak(entries);
   const hasTodayEntry = dateSet.has(todayStr);
   streakCountEl.textContent = streak;
   if (streakSubEl) {
@@ -306,21 +291,8 @@ function updateMobileStreakBanner() {
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split('T')[0];
 
-  // Calculate streak (same logic as updateSidebarStreak)
-  let streak = 0;
-  let checkDate = new Date(today);
-  if (!dateSet.has(todayStr)) {
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
-  while (true) {
-    const ds = checkDate.toISOString().split('T')[0];
-    if (dateSet.has(ds)) {
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
+  // Calculate streak
+  const streak = calculateStreak(entries);
 
   // Render 7-day dots
   const dots = [];

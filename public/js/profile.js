@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { showError, showToast, getPasswordStrength } from './utils.js';
+import { showError, showToast, getPasswordStrength, calculateStreak } from './utils.js';
 import { fetchWithAuth, loadProfile, exportData } from './api.js';
 
 // Dependencies injected from app.js
@@ -63,21 +63,7 @@ export function renderProfileScreen() {
 
   // Streak
   if (profileStreakEl) {
-    const entries = state.allEntries || [];
-    const dateSet = new Set();
-    entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let streak = 0;
-    let checkDate = new Date(today);
-    const todayStr = checkDate.toISOString().split('T')[0];
-    if (!dateSet.has(todayStr)) checkDate.setDate(checkDate.getDate() - 1);
-    while (true) {
-      const ds = checkDate.toISOString().split('T')[0];
-      if (dateSet.has(ds)) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
-      else break;
-    }
-    profileStreakEl.textContent = streak;
+    profileStreakEl.textContent = calculateStreak(state.allEntries);
   }
 }
 

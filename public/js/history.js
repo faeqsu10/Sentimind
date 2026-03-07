@@ -6,6 +6,48 @@ import { toggleBookmarkAPI, deleteEntryAPI } from './api.js';
 let deps = {};
 export function setupHistory(d) { deps = d; }
 
+// 이벤트 위임: historyList에 한 번만 리스너 등록 (renderHistoryList 호출 시마다 등록 방지)
+let _historyListenerAttached = false;
+function ensureHistoryListListener() {
+  if (_historyListenerAttached) return;
+  const historyList = document.getElementById('historyList');
+  if (!historyList) return;
+
+  historyList.addEventListener('click', async (e) => {
+    // 북마크 버튼
+    const bookmarkBtn = e.target.closest('.btn-bookmark');
+    if (bookmarkBtn) {
+      e.stopPropagation();
+      const id = bookmarkBtn.dataset.id;
+      const entry = state.filteredEntries.find(en => en.id === id);
+      if (!entry) return;
+      try {
+        const newState = !entry.is_bookmarked;
+        await toggleBookmarkAPI(entry.id, newState);
+        entry.is_bookmarked = newState;
+        // state.allEntries의 원본도 동기화
+        const original = state.allEntries.find(en => en.id === id);
+        if (original) original.is_bookmarked = newState;
+        bookmarkBtn.classList.toggle('active', newState);
+        bookmarkBtn.textContent = newState ? '★' : '☆';
+      } catch {
+        const { showError } = await import('./utils.js');
+        showError('즐겨찾기 변경에 실패했습니다.');
+      }
+      return;
+    }
+
+    // 히스토리 항목 내부 버튼
+    const itemInner = e.target.closest('.history-item-inner');
+    if (itemInner) {
+      const idx = parseInt(itemInner.dataset.idx);
+      showHistoryDetail(state.filteredEntries[idx]);
+    }
+  });
+
+  _historyListenerAttached = true;
+}
+
 export function renderHistory(entries) {
   state.allEntries = entries;
   state.currentPage = 1;
@@ -128,33 +170,8 @@ export function renderHistoryList(entries) {
     renderHistoryList(state.filteredEntries);
   };
 
-  // Event delegation for history items
-  historyList.querySelectorAll('.history-item-inner').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      showHistoryDetail(entries[idx]);
-    });
-  });
-
-  // Bookmark click handlers
-  historyList.querySelectorAll('.btn-bookmark').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      const entry = entries.find(en => en.id === id);
-      if (!entry) return;
-      try {
-        const newState = !entry.is_bookmarked;
-        await toggleBookmarkAPI(entry.id, newState);
-        entry.is_bookmarked = newState;
-        btn.classList.toggle('active', newState);
-        btn.textContent = newState ? '★' : '☆';
-      } catch {
-        const { showError } = await import('./utils.js');
-        showError('즐겨찾기 변경에 실패했습니다.');
-      }
-    });
-  });
+  // 이벤트 위임 리스너 (최초 1회만 등록)
+  ensureHistoryListListener();
 }
 
 export function showHistoryDetail(entry) {

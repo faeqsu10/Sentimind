@@ -2730,3 +2730,78 @@ kbd {
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
+
+/* ===== Inline Style Extractions ===== */
+
+/* Auth switch spacing variants */
+.auth-switch--sm { margin-top: 0.5rem; }
+.auth-switch--md { margin-top: 1rem; }
+
+/* Welcome / Signup complete screen */
+.welcome-card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+.welcome-emoji {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.welcome-title {
+  font-family: var(--font-diary);
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.welcome-desc {
+  color: var(--color-text-light);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+.welcome-start-btn { width: 100%; }
+
+/* Ontology label spacing */
+.ontology-label--context { margin-top: 0.75rem; }
+
+/* Response / report loading indicators */
+.response-loading-text {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
+.report-loading-indicator {
+  justify-content: center;
+  margin: 1rem 0;
+}
+.report-loading-text {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Export button wrapper */
+.export-btn-group {
+  display: flex;
+  gap: 0.4rem;
+}
+.export-btn { font-size: 0.78rem; }
+
+/* Notification time custom input */
+.notification-time-custom {
+  width: 5.5rem;
+  text-align: center;
+}
+
+/* Profile section resets */
+.profile-section--no-top { margin-top: 0; border: none; }
+.profile-section-title--reset { background: none; padding-left: 0; }
+.profile-form--top-pad { padding: 0.75rem 0 0; }
+.profile-section--danger-gap { margin-top: 0.75rem; }
+.danger-warning--reset { padding-left: 0; }
+.btn-danger--reset { margin-left: 0; }
+
+/* Footer legal links */
+.footer-legal {
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  opacity: 0.6;
+}
+.footer-legal a { color: inherit; }

@@ -32,22 +32,20 @@ module.exports = function (deps) {
     logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id, period: periodParam });
 
     try {
-      // Supabase path: direct queries with date filter (replaces RPC for period support)
+      // Supabase path: RPC 집계 + 최신 항목/프로필 병렬 조회
       if (USE_SUPABASE && req.supabaseClient) {
-        // Build filtered entries query
-        let entriesQuery = req.supabaseClient
-          .from('entries')
-          .select('id, text, emotion, emoji, confidence_score, situation_context, created_at')
-          .eq('user_id', req.user.id)
-          .is('deleted_at', null);
-        if (periodCutoff) {
-          entriesQuery = entriesQuery.gte('created_at', periodCutoff);
-        }
-        entriesQuery = entriesQuery.order('created_at', { ascending: false });
-
-        // Profile query (always unfiltered - streak is global)
-        const [entriesResult, profileResult] = await Promise.all([
-          entriesQuery,
+        const [rpcResult, latestResult, profileResult] = await Promise.all([
+          req.supabaseClient.rpc('get_user_stats_by_period', {
+            p_user_id: req.user.id,
+            p_days: periodDays > 0 ? periodDays : null,
+          }),
+          req.supabaseClient
+            .from('entries')
+            .select('id, emotion, emoji, text, created_at')
+            .eq('user_id', req.user.id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false })
+            .limit(5),
           req.supabaseClient
             .from('user_profiles')
             .select('current_streak, max_streak, last_entry_date')
@@ -55,59 +53,43 @@ module.exports = function (deps) {
             .single(),
         ]);
 
-        if (entriesResult.error) {
-          logger.error('통계 조회 실패', { requestId: rid, error: entriesResult.error.message });
+        if (rpcResult.error) {
+          logger.error('통계 RPC 조회 실패', { requestId: rid, error: rpcResult.error.message });
           return res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
         }
 
-        const allEntries = entriesResult.data || [];
+        const rpcData = rpcResult.data || {};
         const profile = profileResult.data;
+        const latestEntries = (latestResult.data || []).map(e => ({ ...e, date: e.created_at }));
 
-        // Aggregate stats from filtered entries
-        const emotionFreq = {};
-        const situationFreq = {};
-        let totalConfidence = 0;
+        // RPC 결과에서 emotion_distribution 및 top 항목 구성
+        const emotionDist = {};
+        const topEmotions = [];
+        if (Array.isArray(rpcData.emotion_distribution)) {
+          rpcData.emotion_distribution.forEach(item => {
+            emotionDist[item.emotion] = item.count;
+            if (topEmotions.length < 5) topEmotions.push(item);
+          });
+        }
 
-        allEntries.forEach(entry => {
-          const emotion = entry.emotion || '알 수 없음';
-          emotionFreq[emotion] = (emotionFreq[emotion] || 0) + 1;
+        const topSituations = [];
+        if (Array.isArray(rpcData.situation_counts)) {
+          rpcData.situation_counts.slice(0, 5).forEach(item => {
+            topSituations.push({ situation: item.situation, count: item.count });
+          });
+        }
 
-          if (entry.situation_context && Array.isArray(entry.situation_context)) {
-            entry.situation_context.forEach(ctx => {
-              const key = ctx.situation || ctx.domain || '기타';
-              situationFreq[key] = (situationFreq[key] || 0) + 1;
-            });
-          }
-
-          totalConfidence += (entry.confidence_score || 0);
-        });
-
-        const topEmotions = Object.entries(emotionFreq)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([emotion, count]) => ({ emotion, count }));
-
-        const topSituations = Object.entries(situationFreq)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([situation, count]) => ({ situation, count }));
-
-        const avgConfidence = allEntries.length > 0
-          ? Math.round(totalConfidence / allEntries.length)
-          : 0;
-
-        // Determine if user wrote today
         const today = new Date().toISOString().split('T')[0];
         const todayCompleted = profile?.last_entry_date === today;
 
         const stats = {
-          total_entries: allEntries.length,
-          avg_confidence: avgConfidence,
-          emotion_distribution: emotionFreq,
+          total_entries: rpcData.total_entries || 0,
+          avg_confidence: rpcData.avg_confidence || 0,
+          emotion_distribution: emotionDist,
           top_emotions: topEmotions,
           top_situations: topSituations,
           hourly_distribution: {},
-          latest_entries: allEntries.slice(0, 5).map(e => ({ ...e, date: e.created_at })),
+          latest_entries: latestEntries,
           streak: {
             current: profile?.current_streak || 0,
             max: profile?.max_streak || 0,
@@ -117,7 +99,7 @@ module.exports = function (deps) {
         };
 
         const duration = Date.now() - startTime;
-        logger.info('통계 조회 성공', { requestId: rid, totalEntries: stats.total_entries, period: periodParam, duration: `${duration}ms` });
+        logger.info('통계 조회 성공 (RPC)', { requestId: rid, totalEntries: stats.total_entries, period: periodParam, duration: `${duration}ms` });
 
         res.set('Cache-Control', 'private, max-age=60');
         return res.json(stats);

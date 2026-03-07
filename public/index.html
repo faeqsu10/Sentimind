@@ -355,7 +355,7 @@
         아직 일기장이 없으신가요?
         <button type="button" class="auth-switch-link" id="showSignupBtn">일기장 만들기</button>
       </p>
-      <p class="auth-switch" style="margin-top: 0.5rem;">
+      <p class="auth-switch auth-switch--sm">
         <button type="button" class="auth-switch-link" id="showResetBtn">비밀번호를 잊으셨나요?</button>
       </p>
     </div>
@@ -392,7 +392,7 @@
         <button type="submit" class="btn-auth" id="signupBtn">일기장 만들기</button>
       </form>
       <div class="auth-message" id="signupMessage" hidden></div>
-      <p class="auth-switch" style="margin-top: 1rem;">
+      <p class="auth-switch auth-switch--md">
         이미 일기장이 있으신가요?
         <button type="button" class="auth-switch-link" id="showLoginFromSignupBtn">로그인</button>
       </p>
@@ -410,7 +410,7 @@
         <button type="submit" class="btn-auth" id="resetBtn">재설정 링크 보내기</button>
       </form>
       <div class="auth-message" id="resetMessage" hidden></div>
-      <p class="auth-switch" style="margin-top: 1rem;">
+      <p class="auth-switch auth-switch--md">
         <button type="button" class="auth-switch-link" id="showLoginFromResetBtn">로그인으로 돌아가기</button>
       </p>
     </div>
@@ -418,14 +418,14 @@
 
   <!-- ===== Welcome (Signup Complete) Screen ===== -->
   <div class="onboarding-screen" id="welcomeScreen" hidden>
-    <div class="onboarding-card" style="text-align: center; padding: 3rem 2rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
-      <h2 style="font-family: var(--font-diary); font-size: 1.5rem; margin-bottom: 0.75rem;">나만의 일기장이 만들어졌어요!</h2>
-      <p style="color: var(--color-text-light); margin-bottom: 2rem; line-height: 1.6;">
+    <div class="onboarding-card welcome-card">
+      <div class="welcome-emoji">🎉</div>
+      <h2 class="welcome-title">나만의 일기장이 만들어졌어요!</h2>
+      <p class="welcome-desc">
         이메일 인증이 확인되었어요.<br>
         이제 첫 번째 이야기를 들려주실래요?
       </p>
-      <button type="button" class="btn-onboarding-next" id="welcomeStartBtn" style="width: 100%;">시작하기</button>
+      <button type="button" class="btn-onboarding-next welcome-start-btn" id="welcomeStartBtn">시작하기</button>
     </div>
   </div>
 
@@ -557,7 +557,7 @@
               <div class="emotion-hierarchy" id="emotionHierarchy"></div>
 
               <!-- Situation Context -->
-              <span class="ontology-label" style="margin-top: 0.75rem;">상황 맥락</span>
+              <span class="ontology-label ontology-label--context">상황 맥락</span>
               <div class="situation-tags" id="situationTags"></div>
 
               <!-- Confidence (legacy placeholder) -->
@@ -616,7 +616,7 @@
           <div class="typing-indicator">
             <span></span><span></span><span></span>
           </div>
-          <p style="font-size:0.8rem; color:var(--color-text-muted); margin-top:0.5rem;">마음을 읽고 있어요...</p>
+          <p class="response-loading-text">마음을 읽고 있어요...</p>
         </div>
       </section>
 
@@ -681,10 +681,10 @@
               <button class="btn-report" id="btnMonthlyReport" data-period="monthly">월간 리포트</button>
             </div>
             <div id="reportLoading" hidden>
-              <div class="typing-indicator" style="justify-content:center;margin:1rem 0;">
+              <div class="typing-indicator report-loading-indicator">
                 <span></span><span></span><span></span>
               </div>
-              <p style="text-align:center;font-size:0.8rem;color:var(--color-text-muted);">마음의 흐름을 정리하고 있어요...</p>
+              <p class="report-loading-text">마음의 흐름을 정리하고 있어요...</p>
             </div>
             <div id="reportResult" hidden></div>
           </div>
@@ -752,7 +752,7 @@
                     <button type="button" class="notification-time-btn" data-time="18:00" aria-pressed="false" role="radio">18:00</button>
                     <button type="button" class="notification-time-btn" data-time="21:00" aria-pressed="false" role="radio">21:00</button>
                     <button type="button" class="notification-time-btn" data-time="22:00" aria-pressed="false" role="radio">22:00</button>
-                    <input type="time" id="profile-notification-custom" class="notification-time-btn" style="width: 5.5rem; text-align: center;" aria-label="직접 시간 선택">
+                    <input type="time" id="profile-notification-custom" class="notification-time-btn notification-time-custom" aria-label="직접 시간 선택">
                   </div>
                 </div>
                 <div class="profile-actions">
@@ -786,9 +786,9 @@
                   <div class="setting-row-label">데이터 내보내기</div>
                   <div class="setting-row-desc">나의 이야기들을 파일로 간직해요</div>
                 </div>
-                <div style="display: flex; gap: 0.4rem;">
-                  <button type="button" class="notification-time-btn" id="exportCsvBtn" style="font-size: 0.78rem;">CSV</button>
-                  <button type="button" class="notification-time-btn" id="exportJsonBtn" style="font-size: 0.78rem;">JSON</button>
+                <div class="export-btn-group">
+                  <button type="button" class="notification-time-btn export-btn" id="exportCsvBtn">CSV</button>
+                  <button type="button" class="notification-time-btn export-btn" id="exportJsonBtn">JSON</button>
                 </div>
               </div>
             </div>
@@ -802,9 +802,9 @@
             </div>
             <div class="profile-section-card-body">
               <!-- 비밀번호 변경 -->
-              <details class="profile-section" style="margin-top:0; border:none;">
-                <summary class="profile-section-title" style="background:none; padding-left:0;">비밀번호 변경</summary>
-                <form class="profile-form" id="passwordChangeForm" style="padding: 0.75rem 0 0;">
+              <details class="profile-section profile-section--no-top">
+                <summary class="profile-section-title profile-section-title--reset">비밀번호 변경</summary>
+                <form class="profile-form profile-form--top-pad" id="passwordChangeForm">
                   <div class="profile-field">
                     <label for="current-password">현재 비밀번호</label>
                     <input type="password" id="current-password" placeholder="현재 비밀번호 입력" autocomplete="current-password" required>
@@ -830,10 +830,10 @@
               </details>
 
               <!-- 회원탈퇴 -->
-              <details class="profile-section profile-section-danger" style="margin-top:0.75rem;">
-                <summary class="profile-section-title" style="padding-left:0;">회원탈퇴</summary>
-                <p class="danger-warning" style="padding-left:0;">탈퇴하면 그동안 쌓아온 모든 이야기가 사라지며, 되돌릴 수 없어요.</p>
-                <button type="button" class="btn-danger" id="deleteAccountBtn" style="margin-left:0;">회원탈퇴</button>
+              <details class="profile-section profile-section-danger profile-section--danger-gap">
+                <summary class="profile-section-title profile-section-title--reset">회원탈퇴</summary>
+                <p class="danger-warning danger-warning--reset">탈퇴하면 그동안 쌓아온 모든 이야기가 사라지며, 되돌릴 수 없어요.</p>
+                <button type="button" class="btn-danger btn-danger--reset" id="deleteAccountBtn">회원탈퇴</button>
               </details>
             </div>
           </div>
@@ -914,8 +914,8 @@
 
     <footer class="app-footer">
       <p>오늘도 당신의 마음을 응원해요</p>
-      <p style="font-size:0.7rem; margin-top:0.3rem; opacity:0.6;">
-        <a href="#" id="privacyLink" style="color:inherit;">개인정보처리방침</a> · <a href="#" id="termsLink" style="color:inherit;">이용약관</a>
+      <p class="footer-legal">
+        <a href="#" id="privacyLink">개인정보처리방침</a> · <a href="#" id="termsLink">이용약관</a>
       </p>
     </footer>
   </div>

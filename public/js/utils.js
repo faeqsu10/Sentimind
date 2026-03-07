@@ -10,7 +10,7 @@ export function escapeHtml(str) {
 export function emotionColor(emotion) {
   const e = (emotion || '').trim();
   const map = {
-    '기쁨':'#F4A261','감사':'#E9C46A','설렘':'#F4A261','행복':'#F4A261',
+    '기쁨':'#F4A261','감사':'#E9C46A','설렘':'#FFB347','행복':'#F4A261',
     '만족감':'#E9C46A','만족':'#E9C46A','유쾌함':'#FFB347','유쾌':'#FFB347',
     '슬픔':'#7EB8DA','외로움':'#7EB8DA','그리움':'#7EB8DA','우울':'#7EB8DA',
     '분노':'#E76F51','짜증':'#E76F51','억울함':'#E76F51','화남':'#E76F51',
@@ -21,7 +21,7 @@ export function emotionColor(emotion) {
     '피로감':'#B0A89A','무기력함':'#B0A89A',
     '놀라움':'#70C1B3','신기함':'#70C1B3','당황':'#DDA0DD',
     '후회':'#8B9DC3','죄책감':'#8B9DC3','부끄러움':'#DDA0DD',
-    '희망':'#87CEEB','기대':'#87CEEB','설렘':'#FFB347',
+    '희망':'#87CEEB','기대':'#87CEEB',
   };
   return map[e] || 'var(--color-primary)';
 }
@@ -230,6 +230,40 @@ export function showSkeleton(type) {
       ).join('');
     }
   }
+}
+
+// ===== Streak Calculator =====
+/**
+ * 주어진 entries 배열로 현재 연속 기록(스트릭) 일수를 계산한다.
+ * 오늘 기록이 없으면 어제부터 거슬러 올라간다.
+ * @param {Array} entries - { date: string } 형태의 항목 배열
+ * @returns {number} 연속 기록 일수
+ */
+export function calculateStreak(entries) {
+  const dateSet = new Set();
+  (entries || []).forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let streak = 0;
+  let checkDate = new Date(today);
+
+  const todayStr = checkDate.toISOString().split('T')[0];
+  if (!dateSet.has(todayStr)) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (true) {
+    const ds = checkDate.toISOString().split('T')[0];
+    if (dateSet.has(ds)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return streak;
 }
 
 export function hideSkeleton(type) {
