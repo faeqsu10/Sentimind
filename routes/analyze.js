@@ -37,8 +37,36 @@ module.exports = function (deps) {
       return res.status(500).json({ error: '서버에 API 키가 설정되지 않았습니다.', code: 'INTERNAL_ERROR' });
     }
 
+    // 인증된 사용자의 최근 3개 일기를 조회하여 연속적 공감 맥락 생성
+    let contextSection = '';
+    if (req.user && req.supabaseClient) {
+      try {
+        const { data: recentEntries } = await req.supabaseClient
+          .from('entries')
+          .select('emotion, text, created_at')
+          .eq('user_id', req.user.id)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (recentEntries && recentEntries.length > 0) {
+          const summary = recentEntries.map(e => {
+            const date = new Date(e.created_at);
+            const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+            const snippet = (e.text || '').slice(0, 50);
+            return `${dateStr}: ${e.emotion} '${snippet}'`;
+          }).join(', ');
+          contextSection = `\n\n참고: 사용자의 최근 감정 기록 - ${summary}`;
+        }
+      } catch {
+        // 맥락 조회 실패 시 기존대로 분석 (비차단)
+      }
+    }
+
+    const userPrompt = contextSection ? `${textV.value}${contextSection}` : textV.value;
+
     const requestBody = {
-      contents: [{ role: 'user', parts: [{ text: textV.value }] }],
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       generationConfig: {
         maxOutputTokens: config.gemini.maxOutputTokens,

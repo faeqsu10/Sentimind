@@ -27,13 +27,32 @@ function renderDashboard(stats) {
   const situationsChart = document.getElementById('topSituationsChart');
   const recentList = document.getElementById('recentEntriesList');
 
+  const total = stats.total_entries || 0;
+
   if (summaryEl) {
-    summaryEl.innerHTML =
-      '<div class="dashboard-summary-grid">' +
-        '<div class="summary-card"><span class="summary-value">' + (stats.total_entries || 0) + '</span><span class="summary-label">나눈 이야기</span></div>' +
-        '<div class="summary-card"><span class="summary-value">' + (stats.this_week || 0) + '</span><span class="summary-label">이번 주</span></div>' +
-        '<div class="summary-card"><span class="summary-value">' + (stats.today || 0) + '</span><span class="summary-label">오늘</span></div>' +
-      '</div>';
+    if (total === 0) {
+      summaryEl.innerHTML = '<p class="dashboard-empty">첫 이야기를 들려주세요</p>';
+    } else if (total < 7) {
+      const remaining = 7 - total;
+      const pct = Math.round((total / 7) * 100);
+      summaryEl.innerHTML =
+        '<div class="dashboard-summary-grid">' +
+          '<div class="summary-card"><span class="summary-value">' + total + '</span><span class="summary-label">나눈 이야기</span></div>' +
+          '<div class="summary-card"><span class="summary-value">' + (stats.this_week || 0) + '</span><span class="summary-label">이번 주</span></div>' +
+          '<div class="summary-card"><span class="summary-value">' + (stats.today || 0) + '</span><span class="summary-label">오늘</span></div>' +
+        '</div>' +
+        '<div class="dashboard-progress-nudge">' +
+          '<p class="dashboard-progress-text">' + remaining + '개 더 나누면 주간 통계가 열려요</p>' +
+          '<div class="dashboard-progress-bar"><div class="dashboard-progress-fill" style="width:' + pct + '%"></div></div>' +
+        '</div>';
+    } else {
+      summaryEl.innerHTML =
+        '<div class="dashboard-summary-grid">' +
+          '<div class="summary-card"><span class="summary-value">' + total + '</span><span class="summary-label">나눈 이야기</span></div>' +
+          '<div class="summary-card"><span class="summary-value">' + (stats.this_week || 0) + '</span><span class="summary-label">이번 주</span></div>' +
+          '<div class="summary-card"><span class="summary-value">' + (stats.today || 0) + '</span><span class="summary-label">오늘</span></div>' +
+        '</div>';
+    }
   }
 
   if (emotionsChart && stats.top_emotions) {

@@ -10,9 +10,16 @@
     "migrate": "node scripts/migrate-entries.js",
     "migrate:legacy": "node scripts/migrate-to-supabase.js",
     "health": "curl -s http://localhost:3000/api/health | node -e \"process.stdin.on('data',d=>console.log(JSON.parse(d)))\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "keywords": ["diary", "emotion", "ai", "gemini", "supabase"],
+  "keywords": [
+    "diary",
+    "emotion",
+    "ai",
+    "gemini",
+    "supabase"
+  ],
   "author": "Sentimind Team",
   "license": "ISC",
   "dependencies": {
@@ -24,6 +31,7 @@
     "helmet": "^8.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "vitest": "^4.0.18"
   }
 }

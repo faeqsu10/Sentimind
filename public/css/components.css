@@ -2206,6 +2206,31 @@ kbd {
   padding: 2rem 0;
   font-size: 0.9rem;
 }
+.dashboard-progress-nudge {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-warm, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.dashboard-progress-text {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.dashboard-progress-bar {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dashboard-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
 /* Trend Chart */
 .trend-chart {
   background: var(--color-surface);
@@ -2729,6 +2754,54 @@ kbd {
   font-size: 0.85rem;
   color: var(--color-text-secondary);
   line-height: 1.5;
+}
+
+/* ===== 1개월 전 오늘의 마음 회고 카드 ===== */
+.memory-card[hidden] { display: none; }
+.memory-card {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(196, 139, 108, 0.06) 100%);
+  border: 1px solid var(--color-border);
+  position: relative;
+  overflow: hidden;
+}
+.memory-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary-light, #D4A574), var(--color-primary));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.memory-card-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+.memory-card-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.memory-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.memory-card-emotion {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.25rem;
+}
+.memory-card-text {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  font-family: var(--font-diary);
+  word-break: break-word;
+}
+[data-theme="dark"] .memory-card {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(251, 146, 60, 0.04) 100%);
 }
 
 /* ===== Inline Style Extractions ===== */

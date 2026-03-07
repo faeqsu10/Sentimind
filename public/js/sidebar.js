@@ -10,6 +10,7 @@ export function updateSidebar() {
   updateMobileStreakBanner();
   updateAnniversaryCard();
   updateEmotionVocab();
+  updateMemoryCard();
 }
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -474,5 +475,51 @@ function updateEmotionVocab() {
   const msgObj = VOCAB_MESSAGES.find(m => count >= m.min && count <= m.max);
   document.getElementById('emotionVocabMessage').textContent = msgObj ? msgObj.msg : '';
 
+  card.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
+// 1개월 전 오늘의 마음 회고 카드
+// ---------------------------------------------------------------------------
+
+function updateMemoryCard() {
+  const card = document.getElementById('sidebarMemory');
+  const container = document.getElementById('sidebarMemoryContent');
+  if (!card || !container) return;
+
+  const entries = state.allEntries || [];
+  if (entries.length === 0) {
+    card.hidden = true;
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(today);
+  target.setDate(target.getDate() - 30);
+
+  // Find an entry within ±1 day of 30 days ago
+  const match = entries.find(e => {
+    if (!e.date) return false;
+    const d = new Date(e.date.slice(0, 10));
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.abs(d.getTime() - target.getTime());
+    return diff <= 24 * 60 * 60 * 1000;
+  });
+
+  if (!match) {
+    card.hidden = true;
+    return;
+  }
+
+  const excerpt = (match.text || '').slice(0, 50) + ((match.text || '').length > 50 ? '…' : '');
+  container.innerHTML =
+    '<div class="memory-card-inner">' +
+      '<span class="memory-card-emoji" aria-hidden="true">' + escapeHtml(match.emoji || '') + '</span>' +
+      '<div class="memory-card-body">' +
+        '<p class="memory-card-emotion">' + escapeHtml(match.emotion || '') + '</p>' +
+        '<p class="memory-card-text">' + escapeHtml(excerpt) + '</p>' +
+      '</div>' +
+    '</div>';
   card.hidden = false;
 }

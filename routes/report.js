@@ -4,6 +4,35 @@
 
 const express = require('express');
 
+// 메모리 캐시: 키 = `${userId}_${period}_${dateKey}`, 값 = { data, expiresAt }
+const reportCache = new Map();
+const CACHE_TTL = 3600000; // 1시간 (ms)
+const CACHE_MAX_SIZE = 100;
+
+function getCacheKey(userId, period) {
+  const now = new Date();
+  let dateKey;
+  if (period === 'weekly') {
+    // 이번 주 월요일 (YYYY-MM-DD)
+    const day = now.getDay(); // 0=일, 1=월 ... 6=토
+    const diff = (day === 0 ? -6 : 1 - day); // 월요일까지의 오프셋
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    dateKey = monday.toISOString().slice(0, 10);
+  } else {
+    // 이번 달 1일 (YYYY-MM-01)
+    dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  }
+  return `${userId}_${period}_${dateKey}`;
+}
+
+function pruneCache() {
+  if (reportCache.size <= CACHE_MAX_SIZE) return;
+  // 가장 오래된 항목 삭제 (삽입 순서 기준)
+  const firstKey = reportCache.keys().next().value;
+  reportCache.delete(firstKey);
+}
+
 module.exports = function (deps) {
   const router = express.Router();
 
@@ -32,6 +61,16 @@ module.exports = function (deps) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     logger.info(`GET /api/report (${period})`, { requestId: rid, userId: req.user?.id });
+
+    // 캐시 조회
+    const cacheKey = getCacheKey(req.user.id, period);
+    const cached = reportCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      logger.info('리포트 캐시 HIT', { requestId: rid, cacheKey });
+      res.set('Cache-Control', 'private, max-age=3600');
+      res.set('X-Cache', 'HIT');
+      return res.json(cached.data);
+    }
 
     if (!GEMINI_API_KEY) {
       return res.status(500).json({ error: '서버에 API 키가 설정되지 않았습니다.', code: 'INTERNAL_ERROR' });
@@ -114,7 +153,12 @@ module.exports = function (deps) {
         }),
       });
 
+      // 캐시 저장
+      reportCache.set(cacheKey, { data: report, expiresAt: Date.now() + CACHE_TTL });
+      pruneCache();
+
       res.set('Cache-Control', 'private, max-age=3600');
+      res.set('X-Cache', 'MISS');
       return res.json(report);
 
     } catch (err) {
