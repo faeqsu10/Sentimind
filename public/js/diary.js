@@ -1,6 +1,6 @@
 import { state, DOMAIN_EMOJI } from './state.js';
 import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast } from './utils.js';
-import { analyzeEmotion, saveEntry, submitFeedback } from './api.js';
+import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup } from './api.js';
 import { track } from './analytics.js';
 
 // Dependencies injected from app.js
@@ -170,6 +170,7 @@ export async function handleSubmit(e) {
       });
     }
 
+    state._lastDiaryText = text;
     diaryText.value = '';
     diaryText.style.height = 'auto';
     charCount.textContent = '';
@@ -314,6 +315,9 @@ export function showResponse(result) {
   } else {
     similarSection.hidden = true;
   }
+
+  // Initialize follow-up conversation (use the original text stored before clearing)
+  initFollowupConversation(result.emotion, state._lastDiaryText || '');
 }
 
 function renderConfidenceBadge(confidence) {
@@ -543,4 +547,162 @@ function getRetentionMessage() {
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// AI Follow-up Conversation (탐색→통찰→행동 3단계)
+// ---------------------------------------------------------------------------
+
+const FOLLOWUP_STAGE_ORDER = ['explore', 'insight', 'action'];
+const FOLLOWUP_STAGE_LABELS = { explore: '탐색', insight: '통찰', action: '행동' };
+
+let _followupState = null;
+
+function initFollowupConversation(emotion, originalText) {
+  const section = document.getElementById('followupSection');
+  const messages = document.getElementById('followupMessages');
+  const input = document.getElementById('followupInput');
+  const sendBtn = document.getElementById('followupSend');
+
+  if (!section || !messages) return;
+
+  // Reset
+  _followupState = {
+    emotion,
+    originalText,
+    currentStageIdx: 0,
+    context: [],
+    completed: false,
+  };
+
+  messages.innerHTML = '';
+  input.value = '';
+  sendBtn.disabled = true;
+  section.hidden = false;
+
+  updateFollowupStageUI();
+
+  // Start with explore stage
+  requestFollowup();
+}
+
+function updateFollowupStageUI() {
+  if (!_followupState) return;
+  const stage = FOLLOWUP_STAGE_ORDER[_followupState.currentStageIdx];
+  const label = document.getElementById('followupStageLabel');
+  if (label) label.textContent = FOLLOWUP_STAGE_LABELS[stage] || '';
+
+  document.querySelectorAll('.followup-stage-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i <= _followupState.currentStageIdx);
+    dot.classList.toggle('completed', i < _followupState.currentStageIdx);
+  });
+}
+
+async function requestFollowup(userReply) {
+  if (!_followupState || _followupState.completed) return;
+
+  const stage = FOLLOWUP_STAGE_ORDER[_followupState.currentStageIdx];
+  const messages = document.getElementById('followupMessages');
+  const inputRow = document.getElementById('followupInputRow');
+
+  // Show loading
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'followup-msg followup-msg--ai followup-msg--loading';
+  loadingEl.innerHTML = '<span class="followup-typing"><span></span><span></span><span></span></span>';
+  messages.appendChild(loadingEl);
+  messages.scrollTop = messages.scrollHeight;
+
+  try {
+    const data = await fetchFollowup(
+      stage,
+      _followupState.emotion,
+      _followupState.originalText,
+      userReply || null,
+      _followupState.context
+    );
+
+    // Remove loading
+    loadingEl.remove();
+
+    // Build AI message text
+    let aiText = '';
+    if (data.empathy) aiText += data.empathy + '\n';
+    if (data.question) aiText += data.question;
+    if (data.insight) aiText += data.insight + '\n';
+    if (data.action) aiText += data.action + '\n';
+    if (data.closing) aiText += data.closing;
+    aiText = aiText.trim();
+
+    // Append AI message
+    appendFollowupMessage('ai', aiText);
+    _followupState.context.push({ role: 'ai', text: aiText });
+
+    track('followup_received', { stage, emotion: _followupState.emotion });
+
+    // If action stage, complete the conversation
+    if (stage === 'action') {
+      _followupState.completed = true;
+      inputRow.hidden = true;
+
+      const doneEl = document.createElement('p');
+      doneEl.className = 'followup-done';
+      doneEl.textContent = '마음 돌봄 대화가 끝났어요';
+      messages.appendChild(doneEl);
+      messages.scrollTop = messages.scrollHeight;
+    }
+  } catch (err) {
+    loadingEl.remove();
+    appendFollowupMessage('ai', err.userMessage || '질문을 만들지 못했어요. 다시 시도해주세요.');
+  }
+}
+
+function appendFollowupMessage(role, text) {
+  const messages = document.getElementById('followupMessages');
+  const el = document.createElement('div');
+  el.className = 'followup-msg followup-msg--' + role;
+  el.textContent = text;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// Wire up follow-up input
+const _followupInput = document.getElementById('followupInput');
+const _followupSend = document.getElementById('followupSend');
+
+if (_followupInput && _followupSend) {
+  _followupInput.addEventListener('input', () => {
+    _followupSend.disabled = _followupInput.value.trim().length === 0;
+  });
+
+  async function sendFollowupReply() {
+    if (!_followupState || _followupState.completed) return;
+    const reply = _followupInput.value.trim();
+    if (!reply) return;
+
+    appendFollowupMessage('user', reply);
+    _followupState.context.push({ role: 'user', text: reply });
+    _followupInput.value = '';
+    _followupSend.disabled = true;
+
+    track('followup_replied', {
+      stage: FOLLOWUP_STAGE_ORDER[_followupState.currentStageIdx],
+      text_length: reply.length,
+    });
+
+    // Advance stage
+    if (_followupState.currentStageIdx < FOLLOWUP_STAGE_ORDER.length - 1) {
+      _followupState.currentStageIdx++;
+      updateFollowupStageUI();
+    }
+
+    await requestFollowup(reply);
+  }
+
+  _followupSend.addEventListener('click', sendFollowupReply);
+  _followupInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendFollowupReply();
+    }
+  });
 }

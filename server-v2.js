@@ -663,6 +663,7 @@ app.use('/api', require('./routes/entries')(routeDeps));
 app.use('/api', require('./routes/stats')(routeDeps));
 app.use('/api', require('./routes/report')(routeDeps));
 app.use('/api', require('./routes/migrate')(routeDeps));
+app.use('/api', require('./routes/followup')(routeDeps));
 const analyticsLimiter = rateLimit({
   windowMs: config.rateLimits.analytics.windowMs,
   max: config.rateLimits.analytics.max,

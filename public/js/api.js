@@ -132,6 +132,18 @@ export async function saveEntry(text, result) {
   return await response.json();
 }
 
+export async function fetchFollowup(stage, emotion, originalText, userReply, context) {
+  const response = await fetchWithAuth('/api/followup', {
+    method: 'POST',
+    body: JSON.stringify({ stage, emotion, originalText, userReply, context }),
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw { userMessage: data.error || '후속 질문을 불러오지 못했어요.' };
+  }
+  return await response.json();
+}
+
 export async function submitFeedback(entryId, rating) {
   const response = await fetchWithAuth('/api/entries/' + entryId + '/feedback', {
     method: 'PATCH',
