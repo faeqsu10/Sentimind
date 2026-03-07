@@ -1,11 +1,11 @@
-const CACHE_VERSION = 'sentimind-v13';
+const CACHE_VERSION = 'sentimind-v14';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
   '/js/app.js', '/js/state.js', '/js/utils.js', '/js/api.js',
   '/js/auth.js', '/js/guest.js', '/js/diary.js', '/js/history.js',
   '/js/calendar.js', '/js/stats.js', '/js/profile.js', '/js/sidebar.js',
-  '/js/analytics.js',
+  '/js/analytics.js', '/js/reminder.js',
 ];
 
 // Install: cache static assets

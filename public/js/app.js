@@ -11,6 +11,7 @@ import { loadDashboard, setupStats } from './stats.js';
 import { updateSidebar, createConfetti, renderProfileBadges } from './sidebar.js';
 import { setupProfile, renderProfileScreen, initProfileEventListeners } from './profile.js';
 import { track } from './analytics.js';
+import { initReminder, requestNotificationPermission, scheduleReminder } from './reminder.js';
 
 // ===== DOM Elements =====
 const landingScreen = document.getElementById('landingScreen');
@@ -195,6 +196,8 @@ async function completeOnboarding() {
     if (state.selectedNotificationTime) {
       updateData.notification_time = state.selectedNotificationTime;
       updateData.notification_enabled = true;
+      // Request browser notification permission
+      await requestNotificationPermission();
     }
     await fetchWithAuth('/api/profile', {
       method: 'PATCH',
@@ -235,6 +238,7 @@ function initApp() {
   loadEntries();
   renderProfileScreen();
   updateSidebar();
+  initReminder();
 
   if (!diaryText._listenerAttached) {
     diaryText.addEventListener('input', () => {
@@ -383,6 +387,7 @@ darkToggle.addEventListener('change', async () => {
     try { await fetchWithAuth('/api/profile', { method: 'PATCH', body: JSON.stringify({ theme }) }); } catch {}
   }
 });
+
 
 // ===== Legal Modals =====
 const legalContents = {
