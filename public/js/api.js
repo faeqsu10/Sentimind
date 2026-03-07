@@ -22,7 +22,6 @@ export async function fetchWithAuth(url, options = {}) {
   try {
     response = await fetch(url, { ...options, headers, signal: controller.signal });
   } catch (err) {
-    clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
       throw { userMessage: '요청 시간이 초과되었습니다. 다시 시도해주세요.' };
     }
