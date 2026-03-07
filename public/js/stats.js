@@ -326,7 +326,7 @@ function renderEmotionFlower(entries) {
   const tooltip = document.getElementById(tooltipId);
   container.querySelectorAll('.flower-petal').forEach(petal => {
     function showTip(x, y) {
-      tooltip.textContent = escapeHtml(petal.dataset.emotion) + ' · ' + petal.dataset.count + '회';
+      tooltip.textContent = petal.dataset.emotion + ' · ' + petal.dataset.count + '회';
       tooltip.style.display = 'block';
       tooltip.style.left = (x + 14) + 'px';
       tooltip.style.top  = (y - 32) + 'px';
@@ -445,7 +445,7 @@ function renderTrendChart(entries) {
       e.preventDefault();
       const touch = e.touches[0];
       showTip(touch.clientX, touch.clientY);
-    });
+    }, { passive: false });
   });
 }
 
@@ -538,7 +538,8 @@ function renderEmotionSituationHeatmap(entries) {
   valid.forEach(e => {
     const emo = e.emotion;
     emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
-    e.situation_context.forEach(sit => {
+    e.situation_context.forEach(ctx => {
+      const sit = typeof ctx === 'string' ? ctx : (ctx.domain || '기타');
       situationCounts[sit] = (situationCounts[sit] || 0) + 1;
       const key = emo + '|' + sit;
       crossTab[key] = (crossTab[key] || 0) + 1;
@@ -622,6 +623,6 @@ function renderEmotionSituationHeatmap(entries) {
       e.preventDefault();
       const t = e.touches[0];
       showTip(t.clientX, t.clientY);
-    });
+    }, { passive: false });
   });
 }
