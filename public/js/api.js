@@ -5,33 +5,65 @@ import { showToast } from './utils.js';
 let onAuthExpired = null;
 export function setAuthExpiredHandler(handler) { onAuthExpired = handler; }
 
+const DEFAULT_TIMEOUT = 30000; // 30초
+
 export async function fetchWithAuth(url, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
     ...(state.accessToken && { 'Authorization': 'Bearer ' + state.accessToken }),
     ...options.headers,
   };
+
+  const timeout = options.timeout || DEFAULT_TIMEOUT;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
   let response;
   try {
-    response = await fetch(url, { ...options, headers });
-  } catch (networkErr) {
+    response = await fetch(url, { ...options, headers, signal: controller.signal });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw { userMessage: '요청 시간이 초과되었습니다. 다시 시도해주세요.' };
+    }
     throw { userMessage: '네트워크 연결을 확인해주세요.' };
+  } finally {
+    clearTimeout(timeoutId);
   }
+
   if (response.status === 401) {
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       headers['Authorization'] = 'Bearer ' + state.accessToken;
-      return fetch(url, { ...options, headers });
+      const retryController = new AbortController();
+      const retryTimeoutId = setTimeout(() => retryController.abort(), timeout);
+      try {
+        const retryResponse = await fetch(url, { ...options, headers, signal: retryController.signal });
+        clearTimeout(retryTimeoutId);
+        if (retryResponse.status === 401) {
+          clearAuthState();
+          throw { userMessage: '세션이 만료되었습니다. 다시 로그인해주세요.' };
+        }
+        return retryResponse;
+      } catch (err) {
+        clearTimeout(retryTimeoutId);
+        if (err.userMessage) throw err;
+        throw { userMessage: '네트워크 연결을 확인해주세요.' };
+      }
     }
-    localStorage.removeItem('sb-access-token');
-    localStorage.removeItem('sb-refresh-token');
-    state.currentUser = null;
-    state.accessToken = null;
-    state.refreshToken = null;
-    if (onAuthExpired) onAuthExpired();
+    clearAuthState();
     throw { userMessage: '세션이 만료되었습니다. 다시 로그인해주세요.' };
   }
   return response;
+}
+
+function clearAuthState() {
+  localStorage.removeItem('sb-access-token');
+  localStorage.removeItem('sb-refresh-token');
+  state.currentUser = null;
+  state.accessToken = null;
+  state.refreshToken = null;
+  if (onAuthExpired) onAuthExpired();
 }
 
 export async function tryRefreshToken() {

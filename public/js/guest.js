@@ -122,10 +122,10 @@ export function showSignupModal(reason) {
   const desc = document.getElementById('signupModalDesc');
   if (reason === 'limit') {
     title.textContent = '체험으로 들려줄 수 있는 이야기를 다 나눴어요';
-    desc.innerHTML = '나만의 일기장을 만들면 이야기를 무제한으로 남기고,<br>마음의 흐름과 리포트까지 받아볼 수 있어요.';
+    desc.textContent = '나만의 일기장을 만들면 이야기를 무제한으로 남기고, 마음의 흐름과 리포트까지 받아볼 수 있어요.';
   } else {
     title.textContent = '마음 읽기가 도움이 되셨나요?';
-    desc.innerHTML = '나만의 일기장을 만들면 이야기를 무제한으로 간직하고,<br>마음의 흐름과 리포트까지 받아볼 수 있어요.';
+    desc.textContent = '나만의 일기장을 만들면 이야기를 무제한으로 간직하고, 마음의 흐름과 리포트까지 받아볼 수 있어요.';
   }
   overlay.hidden = false;
   document.getElementById('signupModalSignupBtn').focus();

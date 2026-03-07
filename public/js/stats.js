@@ -287,7 +287,7 @@ function renderTrendChart(entries) {
     const cx = xOf(p.date).toFixed(1);
     const cy = yOf(p.score).toFixed(1);
     const col = emotionColor(p.emotion);
-    const emo = p.emotion.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const emo = p.emotion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     svgDots += `<circle class="trend-dot" cx="${cx}" cy="${cy}" r="5" fill="${col}" stroke="var(--color-surface)" stroke-width="2" data-date="${p.date}" data-emotion="${emo}" data-score="${p.score.toFixed(2)}" style="cursor:pointer"/>`;
   });
 
