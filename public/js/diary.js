@@ -351,7 +351,7 @@ function showRetentionCard() {
   }
 
   retentionIcon.textContent = message.icon;
-  retentionText.innerHTML = message.text;
+  retentionText.textContent = message.text;
   retentionCard.hidden = false;
   retentionCard.style.animation = 'none';
   requestAnimationFrame(() => { retentionCard.style.animation = ''; });
@@ -409,7 +409,7 @@ function getRetentionMessage() {
   if (totalEntries >= 7) {
     return {
       icon: '📈',
-      text: '이번 주 마음의 흐름이 궁금하다면? <a href="#" class="retention-link" onclick="document.getElementById(\'tab-stats\')?.click(); return false;">마음 돌아보기</a>',
+      text: '이번 주 마음의 흐름이 궁금하다면? 통계 탭에서 마음 돌아보기',
     };
   }
 

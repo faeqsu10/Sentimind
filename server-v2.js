@@ -376,7 +376,9 @@ function sanitizeString(str, maxLength = 500) {
   return str.slice(0, maxLength)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Validate that a value is a plain object (not array, not null)

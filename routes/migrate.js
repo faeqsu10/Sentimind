@@ -50,11 +50,11 @@ module.exports = function (deps) {
         rows.push({
           id: generateId(),
           user_id: userId,
-          text: sanitizeString(entry.text),
-          emotion: entry.emotion ? sanitizeString(entry.emotion) : null,
-          emoji: entry.emoji ? sanitizeString(entry.emoji) : null,
-          message: entry.message ? sanitizeString(entry.message) : null,
-          advice: entry.advice ? sanitizeString(entry.advice) : null,
+          text: sanitizeString(entry.text, 2000),
+          emotion: entry.emotion ? sanitizeString(entry.emotion, 50) : null,
+          emoji: entry.emoji ? sanitizeString(entry.emoji, 10) : null,
+          message: entry.message ? sanitizeString(entry.message, 1000) : null,
+          advice: entry.advice ? sanitizeString(entry.advice, 500) : null,
           created_at: entry.date ? new Date(entry.date).toISOString() : new Date().toISOString(),
         });
       }

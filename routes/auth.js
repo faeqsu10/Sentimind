@@ -345,6 +345,16 @@ module.exports = function (deps) {
         return res.status(400).json({ error: '비밀번호 변경에 실패했습니다. 다시 시도해주세요.', code: 'PASSWORD_CHANGE_ERROR' });
       }
 
+      // 비밀번호 변경 후 다른 세션 무효화
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin.auth.admin.signOut(req.user.id, 'others');
+          logger.info('기존 세션 무효화 완료', { requestId: rid, userId: req.user?.id });
+        } catch (signOutErr) {
+          logger.warn('기존 세션 무효화 실패 (비밀번호는 변경됨)', { requestId: rid, error: signOutErr.message });
+        }
+      }
+
       logSecurityEvent('PASSWORD_CHANGED', { requestId: rid, userId: req.user?.id, ip: req.ip });
       logger.info('비밀번호 변경 완료', { requestId: rid, userId: req.user?.id });
       res.json({ data: { success: true }, message: '비밀번호가 변경되었습니다.' });
