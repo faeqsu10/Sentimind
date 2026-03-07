@@ -114,6 +114,9 @@ function renderDashboard(stats) {
   // Emotion × Situation heatmap
   renderEmotionSituationHeatmap(state.allEntries);
 
+  // Year in Pixels heatmap
+  renderYearPixels(state.allEntries);
+
   // Emotion pattern insights
   renderInsights(state.allEntries);
 }
@@ -514,6 +517,152 @@ export function setupStats() {
 
   document.getElementById('btnWeeklyReport').addEventListener('click', () => fetchReport('weekly'));
   document.getElementById('btnMonthlyReport').addEventListener('click', () => fetchReport('monthly'));
+
+  // Year in Pixels navigation
+  document.getElementById('pixelsPrevYear').addEventListener('click', () => {
+    _pixelsYear--;
+    renderYearPixels(state.allEntries);
+  });
+  document.getElementById('pixelsNextYear').addEventListener('click', () => {
+    if (_pixelsYear < new Date().getFullYear()) {
+      _pixelsYear++;
+      renderYearPixels(state.allEntries);
+    }
+  });
+}
+
+// Year in Pixels state
+let _pixelsYear = new Date().getFullYear();
+
+function renderYearPixels(entries) {
+  const container = document.getElementById('yearPixelsChart');
+  const yearLabel = document.getElementById('pixelsYearLabel');
+  if (!container || !yearLabel) return;
+
+  yearLabel.textContent = _pixelsYear + '년';
+
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<p class="pixels-empty">이야기를 나누면 한 해의 마음이 색으로 피어나요</p>';
+    return;
+  }
+
+  // Build date→emotion map for the selected year
+  const dateMap = {};
+  entries.forEach(e => {
+    const raw = (e.date || e.created_at || '').slice(0, 10);
+    if (!raw) return;
+    const d = new Date(raw);
+    if (d.getFullYear() !== _pixelsYear) return;
+    // Keep the last entry per day
+    dateMap[raw] = e.emotion;
+  });
+
+  // Generate all days of the year grouped by week (Sunday-start columns like GitHub)
+  const jan1 = new Date(_pixelsYear, 0, 1);
+  const dec31 = new Date(_pixelsYear, 11, 31);
+  const startDay = jan1.getDay(); // 0=Sun
+  const totalDays = Math.floor((dec31 - jan1) / 86400000) + 1;
+
+  const CELL = 13, GAP = 2, ROWS = 7;
+  const step = CELL + GAP;
+  const weeks = Math.ceil((totalDays + startDay) / 7);
+  const LABEL_LEFT = 28;
+  const LABEL_TOP = 22;
+  const W = LABEL_LEFT + weeks * step + 4;
+  const H = LABEL_TOP + ROWS * step + 4;
+
+  const MONTH_NAMES = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const DAY_LABELS = ['일','','화','','목','','토'];
+
+  let svg = '';
+
+  // Day-of-week labels
+  DAY_LABELS.forEach((label, i) => {
+    if (!label) return;
+    const y = LABEL_TOP + i * step + CELL / 2;
+    svg += '<text x="' + (LABEL_LEFT - 6) + '" y="' + y + '" dy="0.35em" text-anchor="end" font-size="9" fill="var(--color-text-muted)">' + label + '</text>';
+  });
+
+  // Month labels
+  let lastMonth = -1;
+  for (let d = 0; d < totalDays; d++) {
+    const date = new Date(_pixelsYear, 0, 1 + d);
+    const month = date.getMonth();
+    const weekIdx = Math.floor((d + startDay) / 7);
+    if (month !== lastMonth) {
+      lastMonth = month;
+      const x = LABEL_LEFT + weekIdx * step;
+      svg += '<text x="' + x + '" y="' + (LABEL_TOP - 6) + '" text-anchor="start" font-size="9" fill="var(--color-text-muted)">' + MONTH_NAMES[month] + '</text>';
+    }
+  }
+
+  // Cells
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let d = 0; d < totalDays; d++) {
+    const date = new Date(_pixelsYear, 0, 1 + d);
+    const dateStr = date.toISOString().slice(0, 10);
+    const dayOfWeek = (d + startDay) % 7;
+    const weekIdx = Math.floor((d + startDay) / 7);
+    const x = LABEL_LEFT + weekIdx * step;
+    const y = LABEL_TOP + dayOfWeek * step;
+
+    const emotion = dateMap[dateStr];
+    let fill, opacity;
+
+    if (emotion) {
+      fill = emotionColor(emotion);
+      opacity = '1';
+    } else if (date <= today) {
+      fill = 'var(--color-border)';
+      opacity = '0.4';
+    } else {
+      fill = 'var(--color-border)';
+      opacity = '0.15';
+    }
+
+    const safeEmotion = emotion ? emotion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+    const fmtDate = (date.getMonth() + 1) + '월 ' + date.getDate() + '일';
+
+    svg += '<rect class="pixel-cell" x="' + x + '" y="' + y + '" width="' + CELL + '" height="' + CELL + '" rx="2" fill="' + fill + '" opacity="' + opacity + '" data-date="' + dateStr + '" data-emotion="' + safeEmotion + '" data-label="' + fmtDate + '"/>';
+  }
+
+  container.innerHTML =
+    '<svg class="year-pixels-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + _pixelsYear + '년 감정 히트맵">' +
+    svg + '</svg>' +
+    '<div class="pixels-tooltip" id="pixelsTooltip"></div>' +
+    '<div class="pixels-legend">' +
+      '<span class="pixels-legend-label">기록 없음</span>' +
+      '<span class="pixels-legend-box" style="background:var(--color-border);opacity:0.4"></span>' +
+      '<span class="pixels-legend-box" style="background:#E8B4B8"></span>' +
+      '<span class="pixels-legend-box" style="background:#F4D03F"></span>' +
+      '<span class="pixels-legend-box" style="background:#82E0AA"></span>' +
+      '<span class="pixels-legend-box" style="background:#85C1E9"></span>' +
+      '<span class="pixels-legend-label">감정별 색상</span>' +
+    '</div>';
+
+  // Tooltip events
+  const tooltip = document.getElementById('pixelsTooltip');
+  container.querySelectorAll('.pixel-cell').forEach(cell => {
+    function showTip(x, y) {
+      const emo = cell.dataset.emotion;
+      const label = cell.dataset.label;
+      tooltip.textContent = label + (emo ? ' · ' + emo : '');
+      tooltip.style.display = 'block';
+      tooltip.style.left = (x + 12) + 'px';
+      tooltip.style.top = (y - 28) + 'px';
+    }
+    cell.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
+    cell.addEventListener('mousemove', e => showTip(e.clientX, e.clientY));
+    cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    cell.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      showTip(t.clientX, t.clientY);
+    }, { passive: false });
+    cell.addEventListener('touchend', () => { tooltip.style.display = 'none'; });
+  });
 }
 
 function renderEmotionSituationHeatmap(entries) {

@@ -2383,6 +2383,70 @@ kbd {
   padding: 1.5rem 0;
 }
 
+/* ===== Year in Pixels ===== */
+.year-pixels-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.year-pixels-year {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 4rem;
+  text-align: center;
+}
+.year-pixels-svg {
+  width: 100%;
+  max-width: 800px;
+  display: block;
+  margin: 0 auto;
+}
+.pixel-cell {
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+.pixel-cell:hover {
+  opacity: 1 !important;
+  stroke: var(--color-text);
+  stroke-width: 1;
+}
+.pixels-tooltip {
+  display: none;
+  position: fixed;
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+}
+.pixels-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
+}
+.pixels-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.pixels-legend-box {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
 /* Footer */
 .app-footer {
   text-align: center;
