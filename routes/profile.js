@@ -23,29 +23,29 @@ module.exports = function (deps) {
     }
 
     try {
-      const { data: profile, error } = await req.supabaseClient
-        .from('user_profiles')
-        .select('*')
-        .eq('id', req.user.id)
-        .single();
+      const [profileResult, countResult] = await Promise.all([
+        req.supabaseClient
+          .from('user_profiles')
+          .select('*')
+          .eq('id', req.user.id)
+          .single(),
+        req.supabaseClient
+          .from('entries')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', req.user.id)
+          .is('deleted_at', null),
+      ]);
 
-      if (error) {
-        logger.warn('프로필 조회 실패', { requestId: rid, error: error.message });
+      if (profileResult.error) {
+        logger.warn('프로필 조회 실패', { requestId: rid, error: profileResult.error.message });
         return res.status(404).json({ error: '프로필을 찾을 수 없습니다.', code: 'NOT_FOUND' });
       }
 
-      // Get total entries count (exclude soft-deleted)
-      const { count } = await req.supabaseClient
-        .from('entries')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', req.user.id)
-        .is('deleted_at', null);
-
       res.json({
         data: {
-          ...profile,
+          ...profileResult.data,
           email: req.user.email,
-          total_entries: count || 0,
+          total_entries: countResult.count || 0,
         },
       });
     } catch (err) {

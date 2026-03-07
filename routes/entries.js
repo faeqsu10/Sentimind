@@ -180,6 +180,7 @@ module.exports = function (deps) {
         .select('*')
         .eq('id', id)
         .eq('user_id', req.user.id)
+        .is('deleted_at', null)
         .single();
 
       if (fetchErr || !existing) {

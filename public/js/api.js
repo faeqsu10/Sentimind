@@ -146,7 +146,10 @@ export async function submitFeedback(entryId, rating) {
 
 export async function fetchEntries() {
   const response = await fetchWithAuth('/api/entries');
-  if (!response.ok) throw new Error();
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw { userMessage: data.error || '일기 목록을 불러오지 못했습니다.' };
+  }
   return await response.json();
 }
 
@@ -155,12 +158,18 @@ export async function toggleBookmarkAPI(entryId, newState) {
     method: 'PATCH',
     body: JSON.stringify({ is_bookmarked: newState }),
   });
-  if (!response.ok) throw new Error();
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw { userMessage: data.error || '즐겨찾기 변경에 실패했습니다.' };
+  }
 }
 
 export async function deleteEntryAPI(id) {
   const response = await fetchWithAuth('/api/entries/' + id, { method: 'DELETE' });
-  if (!response.ok) throw new Error();
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw { userMessage: data.error || '삭제에 실패했습니다.' };
+  }
 }
 
 export async function loadProfile() {

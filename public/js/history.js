@@ -229,7 +229,7 @@ export function showHistoryDetail(entry) {
       try {
         await deleteEntryAPI(entry.id);
         const historyList = document.getElementById('historyList');
-        const item = historyList.querySelector(`[data-id="${entry.id}"]`)?.closest('.history-item');
+        const item = historyList.querySelector(`[data-id="${CSS.escape(entry.id)}"]`)?.closest('.history-item');
         if (item) {
           item.classList.add('deleting');
           await new Promise(r => setTimeout(r, 300));

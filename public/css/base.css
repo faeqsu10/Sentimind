@@ -21,6 +21,7 @@
   --shadow-glow: 0 0 20px rgba(194,113,79,0.15);
   --font-body: 'Gowun Dodum', sans-serif;
   --font-diary: 'Gowun Batang', serif;
+  --font-ui: var(--font-body);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;

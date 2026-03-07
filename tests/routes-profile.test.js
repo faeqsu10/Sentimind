@@ -127,13 +127,24 @@ describe('Profile Routes', () => {
 
     it('returns 404 when profile not found', async () => {
       const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
+        from: vi.fn((table) => {
+          if (table === 'user_profiles') {
+            return {
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockResolvedValue({ count: 0 }),
+              }),
             }),
-          }),
-        })),
+          };
+        }),
       };
 
       const deps = createMockDeps({
