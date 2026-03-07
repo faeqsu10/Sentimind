@@ -522,6 +522,13 @@
       <section class="diary-input" aria-label="일기 작성">
         <form class="diary-form" id="diaryForm">
           <label for="diary-text" class="sr-only">오늘의 일기</label>
+          <div class="prompt-chips" id="promptChips" role="group" aria-label="글쓰기 프롬프트">
+            <button type="button" class="prompt-chip active" data-prompt="오늘 하루, 어떤 마음이었나요?">자유 글쓰기</button>
+            <button type="button" class="prompt-chip" data-prompt="오늘 감사했던 한 가지를 떠올려 적어보세요">감사 일기</button>
+            <button type="button" class="prompt-chip" data-prompt="오늘 있었던 작은 기쁨을 적어보세요">작은 기쁨</button>
+            <button type="button" class="prompt-chip" data-prompt="지금 나에게 해주고 싶은 말을 적어보세요">셀프 토크</button>
+            <button type="button" class="prompt-chip" data-prompt="이번 주 가장 인상 깊었던 순간을 적어보세요">주간 회고</button>
+          </div>
           <textarea id="diary-text" placeholder="오늘 하루, 어떤 마음이었나요?" rows="3" maxlength="2000"></textarea>
           <div class="form-actions">
             <button type="button" class="btn-expand" id="expandBtn">확장</button>
@@ -668,9 +675,19 @@
             <h3 class="dashboard-section-title">자주 마음이 움직인 상황 (Top 5)</h3>
             <div class="bar-chart" id="topSituationsChart" role="img" aria-label="자주 나타난 상황 상위 5개 막대 차트"></div>
           </div>
+          <div class="dashboard-section" id="emotionSituationSection">
+            <h3 class="dashboard-section-title">감정 × 상황 패턴</h3>
+            <div id="emotionSituationHeatmap"></div>
+          </div>
           <div class="dashboard-section" id="recentEntriesSection">
             <h3 class="dashboard-section-title">최근 이야기</h3>
             <div id="recentEntriesList"></div>
+          </div>
+
+          <!-- 감정 꽃잎 차트 섹션 -->
+          <div class="dashboard-section" id="emotionFlowerSection">
+            <h3 class="dashboard-section-title">마음의 꽃잎</h3>
+            <div id="emotionFlowerChart"></div>
           </div>
 
           <!-- 감정 패턴 인사이트 섹션 -->

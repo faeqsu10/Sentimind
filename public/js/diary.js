@@ -7,6 +7,21 @@ import { track } from './analytics.js';
 let deps = {};
 export function setupDiary(d) { deps = d; }
 
+// Prompt chip event handling
+const promptChips = document.getElementById('promptChips');
+if (promptChips) {
+  promptChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('.prompt-chip');
+    if (!chip) return;
+    promptChips.querySelectorAll('.prompt-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const input = document.getElementById('diary-text');
+    input.placeholder = chip.dataset.prompt;
+    input.focus();
+    track('prompt_select', { prompt_type: chip.textContent.trim() });
+  });
+}
+
 export async function handleSubmit(e) {
   e.preventDefault();
   const diaryText = document.getElementById('diary-text');

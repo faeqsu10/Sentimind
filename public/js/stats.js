@@ -108,6 +108,12 @@ function renderDashboard(stats) {
   // Trend chart
   renderTrendChart(state.allEntries);
 
+  // Emotion flower chart
+  renderEmotionFlower(state.allEntries);
+
+  // Emotion × Situation heatmap
+  renderEmotionSituationHeatmap(state.allEntries);
+
   // Emotion pattern insights
   renderInsights(state.allEntries);
 }
@@ -232,6 +238,109 @@ function renderInsights(entries) {
       '<span class="insight-label">' + escapeHtml(ins.label) + '</span>' +
     '</div>'
   ).join('');
+}
+
+function renderEmotionFlower(entries) {
+  const container = document.getElementById('emotionFlowerChart');
+  if (!container) return;
+
+  if (!entries || entries.length < 5) {
+    container.innerHTML = '<p class="flower-empty">5개 이상 이야기를 나누면 마음의 꽃잎이 피어나요</p>';
+    return;
+  }
+
+  // Aggregate emotion counts
+  const counts = {};
+  entries.forEach(e => {
+    if (e.emotion) counts[e.emotion] = (counts[e.emotion] || 0) + 1;
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 0) {
+    container.innerHTML = '<p class="flower-empty">아직 감정 데이터가 없어요</p>';
+    return;
+  }
+
+  const maxCount = sorted[0][1];
+  const total = entries.length;
+  const CX = 150, CY = 150;
+  const MAX_R = 100;   // max petal length (tip distance from center)
+  const MIN_R = 20;    // min petal length when count > 0
+  const CENTER_R = 28; // central circle radius
+  const PETAL_W = 0.38; // half-angle for petal width in radians (~22 degrees)
+
+  const n = sorted.length;
+  const angleStep = (2 * Math.PI) / n;
+
+  let petals = '';
+  let labels = '';
+
+  sorted.forEach(([emotion, count], i) => {
+    const angle = -Math.PI / 2 + i * angleStep; // start from top
+    const r = MIN_R + (count / maxCount) * (MAX_R - MIN_R);
+    const color = emotionColor(emotion);
+    const emoji = EMOTION_EMOJI_MAP[emotion] || '💭';
+
+    // Petal: ellipse-like path using bezier curves
+    // Base at center+CENTER_R, tip at center+r along angle
+    const baseAngleL = angle - PETAL_W;
+    const baseAngleR = angle + PETAL_W;
+
+    const bx1 = CX + CENTER_R * Math.cos(baseAngleL);
+    const by1 = CY + CENTER_R * Math.sin(baseAngleL);
+    const bx2 = CX + CENTER_R * Math.cos(baseAngleR);
+    const by2 = CY + CENTER_R * Math.sin(baseAngleR);
+
+    const tipX = CX + r * Math.cos(angle);
+    const tipY = CY + r * Math.sin(angle);
+
+    // Control points for bezier — bulge the petal outward
+    const midR = r * 0.65;
+    const cp1x = CX + midR * Math.cos(baseAngleL);
+    const cp1y = CY + midR * Math.sin(baseAngleL);
+    const cp2x = CX + midR * Math.cos(baseAngleR);
+    const cp2y = CY + midR * Math.sin(baseAngleR);
+
+    const safeEmotion = emotion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+    petals += `<path class="flower-petal" d="M ${bx1.toFixed(1)},${by1.toFixed(1)} Q ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} Q ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} Z" fill="${color}" fill-opacity="0.85" data-emotion="${safeEmotion}" data-count="${count}" aria-label="${safeEmotion} ${count}회"/>`;
+
+    // Emoji at petal tip
+    const emojiR = r + 14;
+    const ex = CX + emojiR * Math.cos(angle);
+    const ey = CY + emojiR * Math.sin(angle);
+    labels += `<text x="${ex.toFixed(1)}" y="${ey.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="13" style="pointer-events:none;user-select:none">${emoji}</text>`;
+  });
+
+  // Tooltip element id
+  const tooltipId = 'flowerTooltip';
+
+  container.innerHTML = `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-label="감정 꽃잎 차트">
+    ${petals}
+    <circle cx="${CX}" cy="${CY}" r="${CENTER_R}" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
+    <text x="${CX}" y="${CY - 7}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" class="flower-center-label">${total}</text>
+    <text x="${CX}" y="${CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="9" class="flower-center-label" opacity="0.7">이야기</text>
+    ${labels}
+  </svg><div class="flower-tooltip" id="${tooltipId}"></div>`;
+
+  const tooltip = document.getElementById(tooltipId);
+  container.querySelectorAll('.flower-petal').forEach(petal => {
+    function showTip(x, y) {
+      tooltip.textContent = escapeHtml(petal.dataset.emotion) + ' · ' + petal.dataset.count + '회';
+      tooltip.style.display = 'block';
+      tooltip.style.left = (x + 14) + 'px';
+      tooltip.style.top  = (y - 32) + 'px';
+    }
+    petal.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
+    petal.addEventListener('mousemove',  e => showTip(e.clientX, e.clientY));
+    petal.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    petal.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      showTip(t.clientX, t.clientY);
+    }, { passive: false });
+    petal.addEventListener('touchend', () => { tooltip.style.display = 'none'; });
+  });
 }
 
 function renderTrendChart(entries) {
@@ -405,4 +514,114 @@ export function setupStats() {
 
   document.getElementById('btnWeeklyReport').addEventListener('click', () => fetchReport('weekly'));
   document.getElementById('btnMonthlyReport').addEventListener('click', () => fetchReport('monthly'));
+}
+
+function renderEmotionSituationHeatmap(entries) {
+  const container = document.getElementById('emotionSituationHeatmap');
+  if (!container) return;
+
+  // Filter entries with both emotion and situation_context
+  const valid = (entries || []).filter(e =>
+    e.emotion && Array.isArray(e.situation_context) && e.situation_context.length > 0
+  );
+
+  if (valid.length < 10) {
+    container.innerHTML = '<p class="heatmap-empty">감정과 상황 데이터가 10개 이상 쌓이면 패턴이 보여요</p>';
+    return;
+  }
+
+  // Cross-tabulate emotion × situation
+  const crossTab = {};
+  const emotionCounts = {};
+  const situationCounts = {};
+
+  valid.forEach(e => {
+    const emo = e.emotion;
+    emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
+    e.situation_context.forEach(sit => {
+      situationCounts[sit] = (situationCounts[sit] || 0) + 1;
+      const key = emo + '|' + sit;
+      crossTab[key] = (crossTab[key] || 0) + 1;
+    });
+  });
+
+  // Top 5 emotions and situations by frequency
+  const topEmotions = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+  const topSituations = Object.entries(situationCounts)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+
+  if (topEmotions.length < 2 || topSituations.length < 2) {
+    container.innerHTML = '<p class="heatmap-empty">다양한 감정과 상황이 기록되면 패턴이 보여요</p>';
+    return;
+  }
+
+  // Find max count for color scaling
+  let maxCount = 0;
+  topEmotions.forEach(emo => {
+    topSituations.forEach(sit => {
+      const c = crossTab[emo + '|' + sit] || 0;
+      if (c > maxCount) maxCount = c;
+    });
+  });
+  if (maxCount === 0) maxCount = 1;
+
+  // SVG dimensions
+  const CELL_W = 56, CELL_H = 40;
+  const LABEL_LEFT = 70, LABEL_TOP = 50;
+  const W = LABEL_LEFT + topSituations.length * CELL_W + 10;
+  const H = LABEL_TOP + topEmotions.length * CELL_H + 10;
+
+  // Build SVG
+  let cells = '';
+  let labels = '';
+
+  // Situation labels (top, rotated)
+  topSituations.forEach((sit, ci) => {
+    const x = LABEL_LEFT + ci * CELL_W + CELL_W / 2;
+    labels += '<text x="' + x + '" y="' + (LABEL_TOP - 8) + '" text-anchor="middle" font-size="11" fill="var(--color-text-light)">' + escapeHtml(sit) + '</text>';
+  });
+
+  // Emotion labels (left) and cells
+  topEmotions.forEach((emo, ri) => {
+    const y = LABEL_TOP + ri * CELL_H;
+    labels += '<text x="' + (LABEL_LEFT - 8) + '" y="' + (y + CELL_H / 2) + '" dy="0.35em" text-anchor="end" font-size="11" fill="var(--color-text-light)">' + escapeHtml(emo) + '</text>';
+
+    topSituations.forEach((sit, ci) => {
+      const x = LABEL_LEFT + ci * CELL_W;
+      const count = crossTab[emo + '|' + sit] || 0;
+      const opacity = count > 0 ? (0.15 + 0.85 * (count / maxCount)).toFixed(2) : '0.05';
+      const emoEsc = escapeHtml(emo);
+      const sitEsc = escapeHtml(sit);
+      cells += '<rect class="heatmap-cell" x="' + x + '" y="' + y + '" width="' + (CELL_W - 2) + '" height="' + (CELL_H - 2) + '" rx="4" fill="var(--color-primary)" opacity="' + opacity + '" data-emotion="' + emoEsc + '" data-situation="' + sitEsc + '" data-count="' + count + '"/>';
+      if (count > 0) {
+        cells += '<text x="' + (x + CELL_W / 2 - 1) + '" y="' + (y + CELL_H / 2) + '" dy="0.35em" text-anchor="middle" font-size="11" fill="var(--color-text)" pointer-events="none">' + count + '</text>';
+      }
+    });
+  });
+
+  container.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="감정 상황 히트맵">' +
+      labels + cells +
+    '</svg>' +
+    '<div class="heatmap-tooltip" id="heatmapTooltip"></div>';
+
+  // Tooltip events
+  const tooltip = document.getElementById('heatmapTooltip');
+  container.querySelectorAll('.heatmap-cell').forEach(cell => {
+    function showTip(x, y) {
+      tooltip.textContent = cell.dataset.emotion + ' × ' + cell.dataset.situation + ': ' + cell.dataset.count + '회';
+      tooltip.style.display = 'block';
+      tooltip.style.left = (x + 12) + 'px';
+      tooltip.style.top = (y - 28) + 'px';
+    }
+    cell.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
+    cell.addEventListener('mousemove', e => showTip(e.clientX, e.clientY));
+    cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    cell.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      showTip(t.clientX, t.clientY);
+    });
+  });
 }

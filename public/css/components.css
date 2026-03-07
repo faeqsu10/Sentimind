@@ -1296,6 +1296,39 @@
 .search-input::placeholder {
   color: var(--color-text-muted);
 }
+/* Prompt chips (diary input) */
+.prompt-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.prompt-chips::-webkit-scrollbar { display: none; }
+.prompt-chip {
+  flex-shrink: 0;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.prompt-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.prompt-chip.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
@@ -2281,6 +2314,73 @@ kbd {
   white-space: nowrap;
   z-index: 9999;
   display: none;
+}
+
+/* Emotion Flower Chart */
+#emotionFlowerChart {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+#emotionFlowerChart svg {
+  max-width: 320px;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.flower-petal {
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+.flower-petal:hover { opacity: 0.75; }
+.flower-tooltip {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 9999;
+  display: none;
+}
+.flower-center-label {
+  font-family: var(--font-ui, sans-serif);
+  fill: var(--color-text);
+}
+.flower-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
+}
+
+/* Emotion × Situation Heatmap */
+#emotionSituationHeatmap { overflow-x: auto; }
+#emotionSituationHeatmap svg { min-width: 300px; display: block; max-width: 100%; }
+.heatmap-cell { transition: opacity 0.2s; cursor: pointer; }
+.heatmap-cell:hover { stroke: var(--color-text); stroke-width: 2; }
+.heatmap-tooltip {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 9999;
+  display: none;
+}
+.heatmap-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
 }
 
 /* Footer */
