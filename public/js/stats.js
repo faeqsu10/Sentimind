@@ -114,6 +114,9 @@ function renderDashboard(stats) {
   // Emotion × Situation heatmap
   renderEmotionSituationHeatmap(state.allEntries);
 
+  // Emotion growth graph
+  renderEmotionGrowth(state.allEntries);
+
   // Emotion-Activity correlation
   renderActivityCorrelation(state.allEntries);
 
@@ -532,6 +535,108 @@ export function setupStats() {
       renderYearPixels(state.allEntries);
     }
   });
+}
+
+// Emotion Growth Graph — weekly metrics over time
+function renderEmotionGrowth(entries) {
+  const container = document.getElementById('emotionGrowthChart');
+  if (!container) return;
+
+  if (!entries || entries.length < 14) {
+    container.innerHTML = '<p class="growth-empty">2주 이상 기록하면 마음 돌봄 성장 그래프가 나타나요</p>';
+    return;
+  }
+
+  // Group entries by ISO week
+  const weekMap = {};
+  entries.forEach(e => {
+    const d = new Date((e.date || e.created_at || '').slice(0, 10));
+    if (isNaN(d.getTime())) return;
+    // Week key: start of week (Monday)
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    const weekKey = monday.toISOString().slice(0, 10);
+    if (!weekMap[weekKey]) weekMap[weekKey] = [];
+    weekMap[weekKey].push(e);
+  });
+
+  const weeks = Object.keys(weekMap).sort();
+  if (weeks.length < 2) {
+    container.innerHTML = '<p class="growth-empty">2주 이상 기록하면 성장 그래프가 나타나요</p>';
+    return;
+  }
+
+  // Calculate metrics per week
+  const metrics = weeks.map(w => {
+    const es = weekMap[w];
+    const uniqueEmotions = new Set(es.map(e => e.emotion).filter(Boolean)).size;
+    const positiveCount = es.filter(e => emotionScore(e.emotion) > 0).length;
+    const positiveRatio = es.length > 0 ? positiveCount / es.length : 0;
+    return {
+      week: w,
+      count: es.length,
+      diversity: uniqueEmotions,
+      positiveRatio,
+    };
+  });
+
+  // SVG multi-line chart
+  const W = 600, H = 180;
+  const PAD = { top: 24, right: 20, bottom: 32, left: 42 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  const maxCount = Math.max(...metrics.map(m => m.count), 1);
+  const maxDiv = Math.max(...metrics.map(m => m.diversity), 1);
+  const n = metrics.length;
+
+  function x(i) { return PAD.left + (i / Math.max(n - 1, 1)) * innerW; }
+  function yCount(v) { return PAD.top + innerH * (1 - v / maxCount); }
+  function yDiv(v) { return PAD.top + innerH * (1 - v / maxDiv); }
+  function yRatio(v) { return PAD.top + innerH * (1 - v); }
+
+  // Grid lines
+  let svg = '';
+  [0, 0.5, 1].forEach(frac => {
+    const yy = (PAD.top + innerH * (1 - frac)).toFixed(1);
+    svg += '<line x1="' + PAD.left + '" y1="' + yy + '" x2="' + (W - PAD.right) + '" y2="' + yy + '" stroke="var(--color-divider)" stroke-dasharray="4,3"/>';
+  });
+
+  // Lines
+  const lines = [
+    { data: metrics.map(m => m.count), yFn: yCount, color: 'var(--color-primary)', label: '기록 수' },
+    { data: metrics.map(m => m.diversity), yFn: yDiv, color: '#82E0AA', label: '감정 다양성' },
+    { data: metrics.map(m => m.positiveRatio), yFn: yRatio, color: '#F4D03F', label: '긍정 비율' },
+  ];
+
+  lines.forEach(line => {
+    const points = line.data.map((v, i) => x(i).toFixed(1) + ',' + line.yFn(v).toFixed(1)).join(' ');
+    svg += '<polyline points="' + points + '" fill="none" stroke="' + line.color + '" stroke-width="2" stroke-linejoin="round" opacity="0.8"/>';
+    // Dots
+    line.data.forEach((v, i) => {
+      svg += '<circle cx="' + x(i).toFixed(1) + '" cy="' + line.yFn(v).toFixed(1) + '" r="3" fill="' + line.color + '"/>';
+    });
+  });
+
+  // X-axis labels (first, mid, last)
+  function fmtWeek(w) {
+    const [, m, d] = w.split('-');
+    return parseInt(m) + '/' + parseInt(d);
+  }
+  const xIdxs = [0, Math.floor(n / 2), n - 1];
+  xIdxs.forEach(i => {
+    svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PAD.bottom + 16) + '" text-anchor="middle" font-size="10" fill="var(--color-text-muted)">' + fmtWeek(metrics[i].week) + '</text>';
+  });
+
+  container.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="마음 돌봄 성장 그래프">' + svg + '</svg>' +
+    '<div class="growth-legend">' +
+      '<span class="growth-legend-item"><span class="growth-legend-dot" style="background:var(--color-primary)"></span>기록 수</span>' +
+      '<span class="growth-legend-item"><span class="growth-legend-dot" style="background:#82E0AA"></span>감정 다양성</span>' +
+      '<span class="growth-legend-item"><span class="growth-legend-dot" style="background:#F4D03F"></span>긍정 비율</span>' +
+    '</div>';
 }
 
 // Emotion-Activity correlation chart

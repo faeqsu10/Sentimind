@@ -2533,6 +2533,33 @@ kbd {
   border-color: var(--color-primary);
 }
 
+/* ===== Emotion Growth Graph ===== */
+.growth-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
+}
+.growth-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.growth-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.growth-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 /* ===== Activity Correlation Chart ===== */
 .correlation-empty {
   text-align: center;
