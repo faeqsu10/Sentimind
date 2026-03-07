@@ -2497,6 +2497,88 @@ kbd {
   padding: 1.5rem 0;
 }
 
+/* ===== Activity Tags ===== */
+.activity-tags {
+  margin-top: 0.5rem;
+}
+.activity-tags-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+.activity-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.activity-tag {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+.activity-tag:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.activity-tag.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* ===== Activity Correlation Chart ===== */
+.correlation-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0;
+}
+.correlation-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.correlation-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.correlation-label {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  min-width: 3rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+.correlation-track {
+  flex: 1;
+  height: 20px;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.correlation-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 400ms ease;
+}
+.correlation-fill--positive { background: var(--color-success); }
+.correlation-fill--negative { background: var(--color-error); }
+.correlation-fill--neutral { background: var(--color-primary); opacity: 0.6; }
+.correlation-meta {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  min-width: 5rem;
+  flex-shrink: 0;
+}
+
 /* ===== AI Follow-up Conversation ===== */
 .followup-section {
   background: var(--color-surface);

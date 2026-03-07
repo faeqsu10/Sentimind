@@ -110,7 +110,7 @@ export async function analyzeEmotion(text) {
   return data;
 }
 
-export async function saveEntry(text, result) {
+export async function saveEntry(text, result, activityTags = []) {
   const response = await fetchWithAuth('/api/entries', {
     method: 'POST',
     body: JSON.stringify({
@@ -123,6 +123,7 @@ export async function saveEntry(text, result) {
       situation_context: result.ontology?.situation_context || [],
       confidence_score: result.ontology?.confidence || 0,
       related_emotions: result.ontology?.related_emotions || [],
+      activity_tags: activityTags,
     }),
   });
   if (!response.ok) {

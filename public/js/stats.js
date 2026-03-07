@@ -114,6 +114,9 @@ function renderDashboard(stats) {
   // Emotion × Situation heatmap
   renderEmotionSituationHeatmap(state.allEntries);
 
+  // Emotion-Activity correlation
+  renderActivityCorrelation(state.allEntries);
+
   // Year in Pixels heatmap
   renderYearPixels(state.allEntries);
 
@@ -529,6 +532,69 @@ export function setupStats() {
       renderYearPixels(state.allEntries);
     }
   });
+}
+
+// Emotion-Activity correlation chart
+function renderActivityCorrelation(entries) {
+  const container = document.getElementById('activityCorrelationChart');
+  if (!container) return;
+
+  const valid = (entries || []).filter(e =>
+    e.emotion && Array.isArray(e.activity_tags) && e.activity_tags.length > 0
+  );
+
+  if (valid.length < 5) {
+    container.innerHTML = '<p class="correlation-empty">활동 태그가 5개 이상 쌓이면 감정-활동 패턴이 보여요</p>';
+    return;
+  }
+
+  // Build activity → emotion score map
+  const activityData = {};
+  valid.forEach(e => {
+    const score = emotionScore(e.emotion);
+    e.activity_tags.forEach(tag => {
+      if (!activityData[tag]) activityData[tag] = { total: 0, sum: 0, positive: 0, negative: 0 };
+      activityData[tag].total++;
+      activityData[tag].sum += score;
+      if (score > 0) activityData[tag].positive++;
+      else if (score < 0) activityData[tag].negative++;
+    });
+  });
+
+  // Sort by frequency, take top 8
+  const sorted = Object.entries(activityData)
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, 8);
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<p class="correlation-empty">활동 태그 데이터가 아직 없어요</p>';
+    return;
+  }
+
+  const maxTotal = Math.max(...sorted.map(([, d]) => d.total), 1);
+
+  let html = '<div class="correlation-bars">';
+  sorted.forEach(([tag, data]) => {
+    const avg = data.sum / data.total;
+    const pct = data.total / maxTotal * 100;
+    let mood;
+    if (avg > 0.3) mood = 'positive';
+    else if (avg < -0.3) mood = 'negative';
+    else mood = 'neutral';
+
+    const moodLabel = mood === 'positive' ? '긍정적' : mood === 'negative' ? '부정적' : '보통';
+
+    html += '<div class="correlation-row">' +
+      '<span class="correlation-label">' + escapeHtml(tag) + '</span>' +
+      '<div class="correlation-track">' +
+        '<div class="correlation-fill correlation-fill--' + mood + '" style="width:' + pct + '%"></div>' +
+      '</div>' +
+      '<span class="correlation-meta">' + data.total + '회 · ' + moodLabel + '</span>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
 }
 
 // Year in Pixels state

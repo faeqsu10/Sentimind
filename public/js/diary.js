@@ -120,6 +120,32 @@ function initPromptLibrary() {
 
 initPromptLibrary();
 
+// Activity tag selection
+const activityTagsEl = document.getElementById('activityTags');
+if (activityTagsEl) {
+  activityTagsEl.addEventListener('click', (e) => {
+    const tag = e.target.closest('.activity-tag');
+    if (!tag) return;
+    tag.classList.toggle('active');
+  });
+}
+
+function getSelectedActivityTags() {
+  const tags = [];
+  if (activityTagsEl) {
+    activityTagsEl.querySelectorAll('.activity-tag.active').forEach(t => {
+      tags.push(t.dataset.tag);
+    });
+  }
+  return tags;
+}
+
+function clearActivityTags() {
+  if (activityTagsEl) {
+    activityTagsEl.querySelectorAll('.activity-tag.active').forEach(t => t.classList.remove('active'));
+  }
+}
+
 export async function handleSubmit(e) {
   e.preventDefault();
   const diaryText = document.getElementById('diary-text');
@@ -157,8 +183,9 @@ export async function handleSubmit(e) {
     showResponse(result);
 
     let savedEntry = null;
+    const activityTags = getSelectedActivityTags();
     if (!state.guestMode) {
-      savedEntry = await saveEntry(text, result);
+      savedEntry = await saveEntry(text, result, activityTags);
     }
 
     // E-10: first_diary_submitted
@@ -174,6 +201,7 @@ export async function handleSubmit(e) {
     diaryText.value = '';
     diaryText.style.height = 'auto';
     charCount.textContent = '';
+    clearActivityTags();
     await deps.loadEntries();
 
     // Show feedback section (authenticated users only)

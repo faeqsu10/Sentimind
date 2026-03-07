@@ -117,6 +117,7 @@ module.exports = function (deps) {
           situation_context: Array.isArray(req.body.situation_context) ? req.body.situation_context : [],
           confidence_score: confV.value,
           related_emotions: Array.isArray(req.body.related_emotions) ? req.body.related_emotions : [],
+          activity_tags: Array.isArray(req.body.activity_tags) ? req.body.activity_tags.slice(0, 10) : [],
         };
 
         const { data, error } = await req.supabaseClient
