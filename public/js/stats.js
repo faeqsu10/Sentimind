@@ -58,19 +58,23 @@ function renderDashboard(stats) {
     ).join('');
   }
 
-  if (recentList && stats.recent_entries) {
-    recentList.innerHTML = stats.recent_entries.map(e => {
-      const dateStr = e.date
-        ? new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(e.date))
-        : '';
-      return '<div class="recent-entry">' +
-        '<span class="recent-entry-emoji">' + escapeHtml(e.emoji || '') + '</span>' +
-        '<div class="recent-entry-body">' +
-          '<p class="recent-entry-text">' + escapeHtml(e.text || '') + '</p>' +
-          '<span class="recent-entry-date">' + dateStr + '</span>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+  if (recentList) {
+    if (stats.recent_entries && stats.recent_entries.length > 0) {
+      recentList.innerHTML = stats.recent_entries.map(e => {
+        const dateStr = e.date
+          ? new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(e.date))
+          : '';
+        return '<div class="recent-entry">' +
+          '<span class="recent-entry-emoji">' + escapeHtml(e.emoji || '') + '</span>' +
+          '<div class="recent-entry-body">' +
+            '<p class="recent-entry-text">' + escapeHtml(e.text || '') + '</p>' +
+            '<span class="recent-entry-date">' + dateStr + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } else {
+      recentList.innerHTML = '<p class="dashboard-empty">아직 나눈 이야기가 없어요.</p>';
+    }
   }
 
   // Trend chart
