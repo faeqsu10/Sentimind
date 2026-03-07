@@ -584,11 +584,22 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
+  permissionsPolicy: {
+    features: {
+      camera: [],
+      microphone: [],
+      geolocation: [],
+      payment: [],
+    },
+  },
 }));
 app.use(cors({ origin: corsOrigins }));
 
 app.use(express.json({ limit: '10kb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: IS_PRODUCTION ? '1d' : 0,
+  etag: true,
+}));
 
 // ---------------------------------------------------------------------------
 // Health Check

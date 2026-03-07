@@ -13,6 +13,17 @@ function ensureHistoryListListener() {
   const historyList = document.getElementById('historyList');
   if (!historyList) return;
 
+  // 키보드 접근성: role="button" 요소에 Enter/Space 지원
+  historyList.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const btn = e.target.closest('.btn-bookmark, .history-item-inner');
+      if (btn) {
+        e.preventDefault();
+        btn.click();
+      }
+    }
+  });
+
   historyList.addEventListener('click', async (e) => {
     // 북마크 버튼
     const bookmarkBtn = e.target.closest('.btn-bookmark');
