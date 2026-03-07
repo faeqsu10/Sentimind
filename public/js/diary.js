@@ -22,6 +22,104 @@ if (promptChips) {
   });
 }
 
+// Structured Reflection Prompt Library
+const PROMPT_LIBRARY = {
+  gratitude: [
+    { label: '오늘의 감사', prompt: '오늘 감사했던 세 가지를 적어보세요' },
+    { label: '사람에게 감사', prompt: '최근 고마웠던 사람과 그 이유를 적어보세요' },
+    { label: '작은 것의 감사', prompt: '당연하게 여겼지만 사실 감사한 것을 적어보세요' },
+    { label: '과거의 감사', prompt: '지나고 보니 감사했던 경험을 적어보세요' },
+    { label: '나에게 감사', prompt: '오늘 나 자신에게 감사한 점을 적어보세요' },
+  ],
+  cbt: [
+    { label: '생각 기록', prompt: '지금 떠오르는 부정적 생각과 그 근거를 적어보세요' },
+    { label: '균형 잡기', prompt: '걱정되는 상황의 최악, 최선, 가장 현실적인 결과를 적어보세요' },
+    { label: '인지 왜곡 찾기', prompt: '오늘 나를 힘들게 한 생각이 혹시 과장되지 않았나 살펴보세요' },
+    { label: '다른 관점', prompt: '같은 상황을 친한 친구가 겪었다면 뭐라고 말해줄까요?' },
+    { label: '증거 점검', prompt: '지금 걱정이 실제로 일어난 적이 있었나요? 반대 증거도 있나요?' },
+  ],
+  mindfulness: [
+    { label: '지금 이 순간', prompt: '지금 보이는 것, 들리는 것, 느껴지는 것을 적어보세요' },
+    { label: '몸의 신호', prompt: '지금 몸에서 느껴지는 감각과 긴장을 적어보세요' },
+    { label: '감정 관찰', prompt: '지금 느끼는 감정을 판단 없이 있는 그대로 적어보세요' },
+    { label: '호흡 일기', prompt: '깊은 숨을 세 번 쉬고, 마음의 변화를 적어보세요' },
+    { label: '흘려보내기', prompt: '오늘 놓아주고 싶은 것을 적어보세요' },
+  ],
+  growth: [
+    { label: '배운 점', prompt: '오늘 새로 배운 것이나 깨달은 것을 적어보세요' },
+    { label: '도전 기록', prompt: '최근 용기를 낸 일이나 도전한 경험을 적어보세요' },
+    { label: '강점 발견', prompt: '오늘 발휘한 나의 강점을 적어보세요' },
+    { label: '미래의 나', prompt: '한 달 뒤의 나에게 하고 싶은 말을 적어보세요' },
+    { label: '실패에서 성장', prompt: '최근 실패에서 얻은 교훈을 적어보세요' },
+  ],
+  relationship: [
+    { label: '소중한 사람', prompt: '오늘 만난 사람 중 마음이 따뜻해진 순간을 적어보세요' },
+    { label: '표현 못한 말', prompt: '누군가에게 하고 싶었지만 못한 말을 적어보세요' },
+    { label: '갈등 돌아보기', prompt: '최근 갈등에서 상대의 입장을 상상해보세요' },
+    { label: '함께한 기억', prompt: '소중한 사람과의 좋은 기억을 적어보세요' },
+    { label: '내 관계 패턴', prompt: '관계에서 반복되는 나의 패턴을 발견했나요?' },
+  ],
+};
+
+let _activeLibTab = 'gratitude';
+
+function initPromptLibrary() {
+  const libraryBtn = document.getElementById('promptLibraryBtn');
+  const overlay = document.getElementById('promptLibrary');
+  const closeBtn = document.getElementById('promptLibraryClose');
+  const tabs = document.getElementById('promptLibraryTabs');
+  const list = document.getElementById('promptLibraryList');
+
+  if (!libraryBtn || !overlay) return;
+
+  function renderList(category) {
+    const prompts = PROMPT_LIBRARY[category] || [];
+    list.innerHTML = prompts.map(p =>
+      '<li class="prompt-library-item" data-prompt="' + p.prompt.replace(/"/g, '&quot;') + '">' +
+        '<span class="prompt-library-item-label">' + p.label + '</span>' +
+        '<span class="prompt-library-item-text">' + p.prompt + '</span>' +
+      '</li>'
+    ).join('');
+  }
+
+  libraryBtn.addEventListener('click', () => {
+    overlay.hidden = false;
+    renderList(_activeLibTab);
+    track('prompt_library_opened', {});
+  });
+
+  closeBtn.addEventListener('click', () => { overlay.hidden = true; });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.hidden = true;
+  });
+
+  tabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.prompt-lib-tab');
+    if (!tab) return;
+    tabs.querySelectorAll('.prompt-lib-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    _activeLibTab = tab.dataset.tab;
+    renderList(_activeLibTab);
+  });
+
+  list.addEventListener('click', (e) => {
+    const item = e.target.closest('.prompt-library-item');
+    if (!item) return;
+    const input = document.getElementById('diary-text');
+    input.placeholder = item.dataset.prompt;
+    input.focus();
+    overlay.hidden = true;
+
+    // Deactivate basic chips
+    if (promptChips) {
+      promptChips.querySelectorAll('.prompt-chip').forEach(c => c.classList.remove('active'));
+    }
+    track('prompt_select', { prompt_type: item.querySelector('.prompt-library-item-label').textContent, source: 'library' });
+  });
+}
+
+initPromptLibrary();
+
 export async function handleSubmit(e) {
   e.preventDefault();
   const diaryText = document.getElementById('diary-text');

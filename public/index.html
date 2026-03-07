@@ -523,11 +523,29 @@
         <form class="diary-form" id="diaryForm">
           <label for="diary-text" class="sr-only">오늘의 일기</label>
           <div class="prompt-chips" id="promptChips" role="group" aria-label="글쓰기 프롬프트">
-            <button type="button" class="prompt-chip active" data-prompt="오늘 하루, 어떤 마음이었나요?">자유 글쓰기</button>
-            <button type="button" class="prompt-chip" data-prompt="오늘 감사했던 한 가지를 떠올려 적어보세요">감사 일기</button>
-            <button type="button" class="prompt-chip" data-prompt="오늘 있었던 작은 기쁨을 적어보세요">작은 기쁨</button>
-            <button type="button" class="prompt-chip" data-prompt="지금 나에게 해주고 싶은 말을 적어보세요">셀프 토크</button>
-            <button type="button" class="prompt-chip" data-prompt="이번 주 가장 인상 깊었던 순간을 적어보세요">주간 회고</button>
+            <button type="button" class="prompt-chip active" data-prompt="오늘 하루, 어떤 마음이었나요?" data-category="basic">자유 글쓰기</button>
+            <button type="button" class="prompt-chip" data-prompt="오늘 감사했던 한 가지를 떠올려 적어보세요" data-category="basic">감사 일기</button>
+            <button type="button" class="prompt-chip" data-prompt="오늘 있었던 작은 기쁨을 적어보세요" data-category="basic">작은 기쁨</button>
+            <button type="button" class="prompt-chip" data-prompt="지금 나에게 해주고 싶은 말을 적어보세요" data-category="basic">셀프 토크</button>
+            <button type="button" class="prompt-chip" data-prompt="이번 주 가장 인상 깊었던 순간을 적어보세요" data-category="basic">주간 회고</button>
+            <button type="button" class="prompt-chip prompt-chip--more" id="promptLibraryBtn" aria-label="더 많은 프롬프트 보기">+</button>
+          </div>
+          <!-- 성찰 프롬프트 라이브러리 모달 -->
+          <div class="prompt-library-overlay" id="promptLibrary" hidden>
+            <div class="prompt-library" role="dialog" aria-label="성찰 프롬프트 라이브러리">
+              <div class="prompt-library-header">
+                <h3 class="prompt-library-title">마음 돌봄 프롬프트</h3>
+                <button type="button" class="prompt-library-close" id="promptLibraryClose" aria-label="닫기">&times;</button>
+              </div>
+              <div class="prompt-library-tabs" id="promptLibraryTabs" role="tablist">
+                <button class="prompt-lib-tab active" data-tab="gratitude">감사</button>
+                <button class="prompt-lib-tab" data-tab="cbt">인지 재구조화</button>
+                <button class="prompt-lib-tab" data-tab="mindfulness">마음챙김</button>
+                <button class="prompt-lib-tab" data-tab="growth">성장</button>
+                <button class="prompt-lib-tab" data-tab="relationship">관계</button>
+              </div>
+              <ul class="prompt-library-list" id="promptLibraryList"></ul>
+            </div>
           </div>
           <textarea id="diary-text" placeholder="오늘 하루, 어떤 마음이었나요?" rows="3" maxlength="2000"></textarea>
           <div class="form-actions">
