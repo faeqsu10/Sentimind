@@ -1,7 +1,8 @@
 const express = require('express');
-const router = express.Router();
 
 module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger }) {
+  const router = express.Router();
+
   // POST /api/analytics — batch event ingestion
   router.post('/', async (req, res) => {
     const { events } = req.body;

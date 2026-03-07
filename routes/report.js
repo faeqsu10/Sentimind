@@ -65,6 +65,9 @@ module.exports = function (deps) {
     // 캐시 조회
     const cacheKey = getCacheKey(req.user.id, period);
     const cached = reportCache.get(cacheKey);
+    if (cached && cached.expiresAt <= Date.now()) {
+      reportCache.delete(cacheKey);
+    }
     if (cached && cached.expiresAt > Date.now()) {
       logger.info('리포트 캐시 HIT', { requestId: rid, cacheKey });
       res.set('Cache-Control', 'private, max-age=3600');
@@ -130,7 +133,13 @@ module.exports = function (deps) {
       let jsonStr = content.trim();
       const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (codeBlock) jsonStr = codeBlock[1].trim();
-      const parsed = JSON.parse(jsonStr);
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        logger.warn('리포트 JSON 파싱 실패', { requestId: rid, raw: jsonStr.slice(0, 200) });
+        return res.status(502).json({ error: 'AI 응답을 해석할 수 없습니다. 다시 시도해주세요.', code: 'AI_PARSE_ERROR' });
+      }
 
       const report = {
         period,

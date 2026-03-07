@@ -307,7 +307,7 @@ async function loadOntologies() {
   }
 }
 
-// nanoid-compatible ID generation
+// nanoid-compatible ID generation (ALPHABET must be exactly 64 chars to avoid modulo bias)
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
 function generateId(size = 21) {
   const bytes = crypto.randomBytes(size);
@@ -330,7 +330,7 @@ async function readEntriesFromFile() {
 
 // JSON fallback: write entries to file
 async function writeEntriesToFile(entries) {
-  writeLock = writeLock.then(() =>
+  writeLock = writeLock.catch(() => {}).then(() =>
     fsPromises.writeFile(ENTRIES_FILE, JSON.stringify(entries, null, 2), 'utf-8')
   );
   return writeLock;
