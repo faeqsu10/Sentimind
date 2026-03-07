@@ -6,8 +6,6 @@ const express = require('express');
 
 // 메모리 캐시: 키 = `${userId}_${period}_${dateKey}`, 값 = { data, expiresAt }
 const reportCache = new Map();
-const CACHE_TTL = 3600000; // 1시간 (ms)
-const CACHE_MAX_SIZE = 100;
 
 function getCacheKey(userId, period) {
   const now = new Date();
@@ -26,8 +24,8 @@ function getCacheKey(userId, period) {
   return `${userId}_${period}_${dateKey}`;
 }
 
-function pruneCache() {
-  if (reportCache.size <= CACHE_MAX_SIZE) return;
+function pruneCache(maxSize) {
+  if (reportCache.size <= maxSize) return;
   // 가장 오래된 항목 삭제 (삽입 순서 기준)
   const firstKey = reportCache.keys().next().value;
   reportCache.delete(firstKey);
@@ -100,9 +98,9 @@ module.exports = function (deps) {
           .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
       }
 
-      if (entries.length < 3) {
+      if (entries.length < config.report.minEntries) {
         return res.status(400).json({
-          error: '리포트 생성에 최소 3건의 일기가 필요합니다.',
+          error: `리포트 생성에 최소 ${config.report.minEntries}건의 일기가 필요합니다.`,
           code: 'INSUFFICIENT_DATA',
           count: entries.length,
         });
@@ -121,7 +119,7 @@ module.exports = function (deps) {
       const requestBody = {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 1024,
+          maxOutputTokens: config.report.maxOutputTokens,
           temperature: config.gemini.temperature,
           thinkingConfig: { thinkingBudget: config.gemini.thinkingBudget },
         },
@@ -163,8 +161,8 @@ module.exports = function (deps) {
       });
 
       // 캐시 저장
-      reportCache.set(cacheKey, { data: report, expiresAt: Date.now() + CACHE_TTL });
-      pruneCache();
+      reportCache.set(cacheKey, { data: report, expiresAt: Date.now() + config.report.cacheTtl });
+      pruneCache(config.report.cacheMaxSize);
 
       res.set('Cache-Control', 'private, max-age=3600');
       res.set('X-Cache', 'MISS');

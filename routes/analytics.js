@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger }) {
+module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger, config }) {
   const router = express.Router();
 
   // POST /api/analytics — batch event ingestion
@@ -12,7 +12,8 @@ module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, l
     }
 
     // Cap batch size
-    const batch = events.slice(0, 50);
+    const batchMaxSize = config?.analytics?.batchMaxSize || 50;
+    const batch = events.slice(0, batchMaxSize);
 
     // Extract user_id from auth header if present
     let userId = null;

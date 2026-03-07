@@ -478,7 +478,7 @@ async function updateStreak(supabaseClient, userId) {
     if (profileErr || !profile) return;
 
     // KST 기준 오늘 날짜 (ISO format)
-    const kstNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+    const kstNow = new Date(new Date().getTime() + config.timezone.utcOffsetHours * 60 * 60 * 1000);
     const today = kstNow.toISOString().split('T')[0];
     const todayDate = new Date(today + "T00:00:00Z");
 
@@ -542,8 +542,8 @@ const analyzeLimiter = rateLimit({
 });
 
 const signupLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: parseInt(process.env.SIGNUP_RATE_LIMIT || '3', 10),
+  windowMs: config.rateLimits.signup.windowMs,
+  max: config.rateLimits.signup.max,
   keyGenerator: (req) => ipKeyGenerator(req),
   message: { error: '회원가입 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' },
   standardHeaders: 'draft-6',
@@ -551,8 +551,8 @@ const signupLimiter = rateLimit({
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: parseInt(process.env.LOGIN_RATE_LIMIT || '5', 10),
+  windowMs: config.rateLimits.login.windowMs,
+  max: config.rateLimits.login.max,
   keyGenerator: (req) => ipKeyGenerator(req),
   message: { error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' },
   standardHeaders: 'draft-6',
@@ -664,8 +664,8 @@ app.use('/api', require('./routes/stats')(routeDeps));
 app.use('/api', require('./routes/report')(routeDeps));
 app.use('/api', require('./routes/migrate')(routeDeps));
 const analyticsLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
+  windowMs: config.rateLimits.analytics.windowMs,
+  max: config.rateLimits.analytics.max,
   keyGenerator: ipKeyGenerator,
   message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' },
 });

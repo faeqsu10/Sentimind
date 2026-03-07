@@ -14,6 +14,7 @@ module.exports = function (deps) {
     sanitizeString,
     validateEntryText,
     generateId,
+    config,
   } = deps;
 
   function parseSafeDate(dateStr) {
@@ -35,8 +36,9 @@ module.exports = function (deps) {
       return res.status(400).json({ error: '마이그레이션할 일기가 없습니다.', code: 'VALIDATION_ERROR' });
     }
 
-    if (entries.length > 10) {
-      return res.status(400).json({ error: '최대 10개까지 마이그레이션할 수 있습니다.', code: 'VALIDATION_ERROR' });
+    const migrationMax = config?.migration?.maxEntries || 10;
+    if (entries.length > migrationMax) {
+      return res.status(400).json({ error: `최대 ${migrationMax}개까지 마이그레이션할 수 있습니다.`, code: 'VALIDATION_ERROR' });
     }
 
     let imported = 0;

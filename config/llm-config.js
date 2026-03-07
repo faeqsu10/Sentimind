@@ -94,6 +94,62 @@ module.exports = {
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // 리포트 설정
+  // ═══════════════════════════════════════════════════════════════════
+  report: {
+    // [캐시 유효 시간] 리포트 캐시가 유지되는 시간 (밀리초)
+    cacheTtl: parseInt(process.env.REPORT_CACHE_TTL || '3600000', 10), // 1시간
+    // [캐시 최대 크기] 메모리에 보관할 최대 캐시 항목 수
+    cacheMaxSize: parseInt(process.env.REPORT_CACHE_MAX_SIZE || '100', 10),
+    // [최소 일기 수] 리포트 생성에 필요한 최소 일기 수
+    minEntries: parseInt(process.env.REPORT_MIN_ENTRIES || '3', 10),
+    // [응답 토큰 제한] 리포트 생성 시 최대 출력 토큰 수
+    maxOutputTokens: parseInt(process.env.REPORT_MAX_OUTPUT_TOKENS || '1024', 10),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Analytics 설정
+  // ═══════════════════════════════════════════════════════════════════
+  analytics: {
+    // [배치 최대 크기] 한 번에 수집 가능한 최대 이벤트 수
+    batchMaxSize: parseInt(process.env.ANALYTICS_BATCH_MAX_SIZE || '50', 10),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 마이그레이션 설정
+  // ═══════════════════════════════════════════════════════════════════
+  migration: {
+    // [최대 항목 수] 게스트→회원 마이그레이션 시 최대 항목 수
+    maxEntries: parseInt(process.env.MIGRATION_MAX_ENTRIES || '10', 10),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 타임존 설정
+  // ═══════════════════════════════════════════════════════════════════
+  timezone: {
+    // [UTC 오프셋] 시간 (KST = 9, JST = 9, EST = -5)
+    utcOffsetHours: parseInt(process.env.TIMEZONE_UTC_OFFSET || '9', 10),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Rate Limiter 설정 (엔드포인트별)
+  // ═══════════════════════════════════════════════════════════════════
+  rateLimits: {
+    signup: {
+      windowMs: parseInt(process.env.SIGNUP_RATE_WINDOW || String(15 * 60 * 1000), 10), // 15분
+      max: parseInt(process.env.SIGNUP_RATE_LIMIT || '3', 10),
+    },
+    login: {
+      windowMs: parseInt(process.env.LOGIN_RATE_WINDOW || '60000', 10), // 1분
+      max: parseInt(process.env.LOGIN_RATE_LIMIT || '5', 10),
+    },
+    analytics: {
+      windowMs: parseInt(process.env.ANALYTICS_RATE_WINDOW || '60000', 10), // 1분
+      max: parseInt(process.env.ANALYTICS_RATE_LIMIT || '30', 10),
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // Gemini API 가격 (USD per 1M tokens)
   // ═══════════════════════════════════════════════════════════════════
   // 각 가격은 .env에서 환경변수로 오버라이드 가능
