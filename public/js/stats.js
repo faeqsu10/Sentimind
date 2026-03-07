@@ -98,6 +98,131 @@ function renderDashboard(stats) {
 
   // Trend chart
   renderTrendChart(state.allEntries);
+
+  // Emotion pattern insights
+  renderInsights(state.allEntries);
+}
+
+const EMOTION_EMOJI_MAP = {
+  '기쁨': '😊', '행복': '😄', '감사': '🙏', '사랑': '❤️', '설렘': '💓',
+  '평온': '😌', '안도': '😮‍💨', '희망': '🌱', '자신감': '💪', '뿌듯함': '🌟',
+  '슬픔': '😢', '외로움': '🫂', '우울': '😞', '그리움': '💭', '허무함': '🌫️',
+  '불안': '😰', '걱정': '😟', '두려움': '😨', '긴장': '😬', '당혹': '😳',
+  '분노': '😤', '짜증': '😣', '억울함': '😡', '실망': '😔', '후회': '😩',
+  '피곤함': '😴', '지침': '🥱', '무기력': '😶',
+};
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const TIME_SLOTS = [
+  { label: '오전', start: 6, end: 12 },
+  { label: '오후', start: 12, end: 18 },
+  { label: '저녁', start: 18, end: 24 },
+  { label: '새벽', start: 0, end: 6 },
+];
+
+function emotionEmoji(emotion) {
+  return EMOTION_EMOJI_MAP[emotion] || '💭';
+}
+
+function renderInsights(entries) {
+  const container = document.getElementById('emotionInsightCards');
+  if (!container) return;
+
+  if (!entries || entries.length < 10) {
+    container.innerHTML = '<p class="insight-empty">10개 이상 이야기를 나누면 감정 패턴이 보여요</p>';
+    return;
+  }
+
+  const insights = [];
+
+  // 1. 요일 패턴: 각 요일별 가장 빈번한 감정
+  const byDay = Array.from({ length: 7 }, () => ({}));
+  entries.forEach(e => {
+    const d = new Date((e.date || e.created_at || '').slice(0, 10));
+    if (isNaN(d.getTime())) return;
+    const dow = d.getDay();
+    const emo = e.emotion;
+    if (!emo) return;
+    byDay[dow][emo] = (byDay[dow][emo] || 0) + 1;
+  });
+
+  // Find the day+emotion with the highest single-day frequency
+  let bestDayScore = 0, bestDay = -1, bestDayEmotion = '';
+  byDay.forEach((counts, dow) => {
+    Object.entries(counts).forEach(([emo, cnt]) => {
+      if (cnt > bestDayScore) {
+        bestDayScore = cnt;
+        bestDay = dow;
+        bestDayEmotion = emo;
+      }
+    });
+  });
+  if (bestDay >= 0 && bestDayScore >= 2) {
+    insights.push({
+      emoji: emotionEmoji(bestDayEmotion),
+      text: DAY_NAMES[bestDay] + '요일에 \'' + bestDayEmotion + '\'을(를) 가장 많이 느끼시네요',
+      label: '요일 패턴',
+    });
+  }
+
+  // 2. 시간대 패턴: 시간대별 가장 빈번한 감정
+  const bySlot = TIME_SLOTS.map(() => ({}));
+  entries.forEach(e => {
+    const raw = e.date || e.created_at || '';
+    const dt = new Date(raw);
+    if (isNaN(dt.getTime())) return;
+    const hour = dt.getHours();
+    const emo = e.emotion;
+    if (!emo) return;
+    const idx = TIME_SLOTS.findIndex(s => hour >= s.start && hour < s.end);
+    if (idx < 0) return;
+    bySlot[idx][emo] = (bySlot[idx][emo] || 0) + 1;
+  });
+
+  let bestSlotScore = 0, bestSlot = -1, bestSlotEmotion = '';
+  bySlot.forEach((counts, si) => {
+    Object.entries(counts).forEach(([emo, cnt]) => {
+      if (cnt > bestSlotScore) {
+        bestSlotScore = cnt;
+        bestSlot = si;
+        bestSlotEmotion = emo;
+      }
+    });
+  });
+  if (bestSlot >= 0 && bestSlotScore >= 2) {
+    insights.push({
+      emoji: emotionEmoji(bestSlotEmotion),
+      text: TIME_SLOTS[bestSlot].label + '에 \'' + bestSlotEmotion + '\'을(를) 자주 느끼시네요',
+      label: '시간대 패턴',
+    });
+  }
+
+  // 3. 전체 최다 감정 (전체 빈도 기반)
+  const totalCounts = {};
+  entries.forEach(e => {
+    if (e.emotion) totalCounts[e.emotion] = (totalCounts[e.emotion] || 0) + 1;
+  });
+  const topEmotion = Object.entries(totalCounts).sort((a, b) => b[1] - a[1])[0];
+  if (topEmotion && topEmotion[1] >= 3) {
+    insights.push({
+      emoji: emotionEmoji(topEmotion[0]),
+      text: '기록 전반에서 \'' + topEmotion[0] + '\'이(가) 가장 자주 찾아왔어요',
+      label: '전체 패턴',
+    });
+  }
+
+  const shown = insights.slice(0, 3);
+  if (shown.length === 0) {
+    container.innerHTML = '<p class="insight-empty">아직 패턴을 찾기에 데이터가 부족해요</p>';
+    return;
+  }
+
+  container.innerHTML = shown.map(ins =>
+    '<div class="insight-card">' +
+      '<div class="insight-icon">' + ins.emoji + '</div>' +
+      '<p class="insight-text">' + escapeHtml(ins.text) + '</p>' +
+      '<span class="insight-label">' + escapeHtml(ins.label) + '</span>' +
+    '</div>'
+  ).join('');
 }
 
 function renderTrendChart(entries) {
