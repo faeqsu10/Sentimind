@@ -2,8 +2,16 @@ import { state, PERIOD_MAP } from './state.js';
 import { escapeHtml, emotionColor, emotionScore, showSkeleton } from './utils.js';
 import { fetchWithAuth } from './api.js';
 
-export async function loadDashboard(period) {
+// 대시보드 캐시: 같은 기간+같은 항목 수면 API 재호출 스킵
+let _lastDashboardKey = null;
+
+export async function loadDashboard(period, forceReload = false) {
   if (period !== undefined) state.activePeriod = period;
+  const entryCount = (state.allEntries || []).length;
+  const cacheKey = `${state.activePeriod}_${entryCount}`;
+
+  if (!forceReload && _lastDashboardKey === cacheKey) return;
+
   const queryParam = state.activePeriod !== 'all' ? '?period=' + state.activePeriod : '';
   const dashEl = document.getElementById('dashboardContent');
   if (dashEl) dashEl.setAttribute('aria-busy', 'true');
@@ -13,6 +21,7 @@ export async function loadDashboard(period) {
     if (!response.ok) throw new Error();
     const stats = await response.json();
     renderDashboard(stats);
+    _lastDashboardKey = cacheKey;
   } catch {
     const summaryEl = document.getElementById('dashboardSummary');
     if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">마음의 흐름을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
@@ -391,7 +400,7 @@ export function setupStats() {
     document.querySelectorAll('#periodFilter .period-chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     const days = chip.dataset.days || '0';
-    loadDashboard(PERIOD_MAP[days] || 'all');
+    loadDashboard(PERIOD_MAP[days] || 'all', true);
   });
 
   document.getElementById('btnWeeklyReport').addEventListener('click', () => fetchReport('weekly'));

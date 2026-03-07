@@ -95,6 +95,7 @@ export async function analyzeEmotion(text) {
     response = await fetchWithAuth('/api/analyze', {
       method: 'POST',
       body: JSON.stringify({ text }),
+      timeout: 60000, // Gemini API는 응답이 느릴 수 있음
     });
   } catch (e) {
     if (e.userMessage) throw e;

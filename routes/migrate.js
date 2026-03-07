@@ -16,6 +16,12 @@ module.exports = function (deps) {
     generateId,
   } = deps;
 
+  function parseSafeDate(dateStr) {
+    if (!dateStr) return new Date().toISOString();
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  }
+
   // POST /migrate/from-guest - 게스트 일기 → 회원 계정 마이그레이션
   router.post('/migrate/from-guest', authMiddleware, async (req, res) => {
     const rid = requestId();
@@ -55,7 +61,7 @@ module.exports = function (deps) {
           emoji: entry.emoji ? sanitizeString(entry.emoji, 10) : null,
           message: entry.message ? sanitizeString(entry.message, 1000) : null,
           advice: entry.advice ? sanitizeString(entry.advice, 500) : null,
-          created_at: entry.date ? new Date(entry.date).toISOString() : new Date().toISOString(),
+          created_at: parseSafeDate(entry.date),
         });
       }
 
