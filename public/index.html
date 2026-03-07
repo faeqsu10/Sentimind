@@ -1055,6 +1055,40 @@
   <div class="error-toast" id="errorToast"></div>
   <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
 
+  <!-- Crisis Safety Modal -->
+  <div class="crisis-modal-overlay" id="crisisModal" hidden>
+    <div class="crisis-modal" role="alertdialog" aria-labelledby="crisisModalTitle" aria-modal="true">
+      <div class="crisis-modal-icon" aria-hidden="true">&#x1F49A;</div>
+      <h2 class="crisis-modal-title" id="crisisModalTitle">당신의 안전이 가장 중요해요</h2>
+      <p class="crisis-modal-text">지금 많이 힘드시군요. 혼자 감당하지 않아도 돼요. 전문 상담사가 도와줄 수 있어요.</p>
+      <div class="crisis-contacts">
+        <a href="tel:1393" class="crisis-contact-btn crisis-contact-btn--primary">
+          <span class="crisis-contact-icon">&#x260E;&#xFE0F;</span>
+          <span class="crisis-contact-info">
+            <strong>자살예방상담전화 1393</strong>
+            <span>24시간 운영</span>
+          </span>
+        </a>
+        <a href="tel:109" class="crisis-contact-btn">
+          <span class="crisis-contact-icon">&#x260E;&#xFE0F;</span>
+          <span class="crisis-contact-info">
+            <strong>정신건강위기상담 109</strong>
+            <span>24시간 운영</span>
+          </span>
+        </a>
+        <a href="tel:1588-9191" class="crisis-contact-btn">
+          <span class="crisis-contact-icon">&#x1F4AC;</span>
+          <span class="crisis-contact-info">
+            <strong>생명의전화 1588-9191</strong>
+            <span>24시간 운영</span>
+          </span>
+        </a>
+      </div>
+      <p class="crisis-modal-disclaimer">Sentimind의 AI 분석은 전문적인 심리 상담을 대체하지 않습니다.</p>
+      <button type="button" class="crisis-modal-close" id="crisisModalClose">알겠어요</button>
+    </div>
+  </div>
+
   <!-- Legal Modals -->
   <div class="legal-modal-overlay" id="legalModal" hidden>
     <div class="legal-modal" role="dialog" aria-labelledby="legalModalTitle" aria-modal="true">

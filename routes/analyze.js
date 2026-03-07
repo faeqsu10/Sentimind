@@ -103,6 +103,24 @@ module.exports = function (deps) {
         }),
       });
 
+      // Crisis detection — check for distress signals in text and emotion
+      const crisisKeywords = ['죽고 싶', '자해', '자살', '살고 싶지 않', '끝내고 싶', '사라지고 싶', '삶을 끝', '죽을', '목숨'];
+      const textLower = textV.value;
+      const isCrisis = crisisKeywords.some(kw => textLower.includes(kw));
+      const severeEmotions = ['절망', '극심한 우울', '자기혐오', '공허'];
+      const emotionCrisis = severeEmotions.includes(enrichedResult.emotion);
+
+      if (isCrisis || emotionCrisis) {
+        enrichedResult.crisis_detected = true;
+        logger.warn('위기 신호 감지', {
+          requestId: rid,
+          userId: req.user?.id || 'guest',
+          emotion: enrichedResult.emotion,
+          keywordMatch: isCrisis,
+          emotionMatch: emotionCrisis,
+        });
+      }
+
       return res.json(enrichedResult);
     } catch (err) {
       const duration = Date.now() - startTime;

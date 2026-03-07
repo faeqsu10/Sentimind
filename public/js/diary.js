@@ -282,6 +282,12 @@ export function showResponse(result) {
   state.latestAnalysisResult = Object.assign({}, result, { _time: new Date().toISOString() });
   deps.updateSidebar();
 
+  // Crisis detection — show safety modal
+  if (result.crisis_detected) {
+    showCrisisModal();
+    track('crisis_detected', { emotion: result.emotion });
+  }
+
   setTimeout(() => { responseCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
 
   // Similar entries
@@ -575,6 +581,29 @@ function getRetentionMessage() {
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Crisis Safety Modal
+// ---------------------------------------------------------------------------
+
+function showCrisisModal() {
+  const overlay = document.getElementById('crisisModal');
+  if (!overlay) return;
+  overlay.hidden = false;
+}
+
+const crisisCloseBtn = document.getElementById('crisisModalClose');
+if (crisisCloseBtn) {
+  crisisCloseBtn.addEventListener('click', () => {
+    document.getElementById('crisisModal').hidden = true;
+  });
+}
+const crisisOverlay = document.getElementById('crisisModal');
+if (crisisOverlay) {
+  crisisOverlay.addEventListener('click', (e) => {
+    if (e.target === crisisOverlay) crisisOverlay.hidden = true;
+  });
 }
 
 // ---------------------------------------------------------------------------
