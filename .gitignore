@@ -3,12 +3,12 @@ node_modules/
 package-lock.json
 npm-debug.log*
 
-# Environment variables
+# Environment variables (모든 .env 변형 차단, .env.example만 허용)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# Data (private)
+# Data (사용자 일기 데이터 — 온톨로지 JSON은 추적)
 data/entries.json
 
 # Editor
@@ -24,6 +24,15 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Security (인증서, 키 파일)
+*.pem
+*.key
+*.cert
+*.p12
+
+# Test coverage
+coverage/
 
 # Temporary files
 .claude/
