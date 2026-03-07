@@ -80,8 +80,12 @@ module.exports = function (deps) {
       return res.status(400).json({ error: '유효한 단계가 필요합니다 (explore/insight/action).', code: 'VALIDATION_ERROR' });
     }
 
-    if (!emotion || typeof emotion !== 'string') {
-      return res.status(400).json({ error: '감정 정보가 필요합니다.', code: 'VALIDATION_ERROR' });
+    if (!emotion || typeof emotion !== 'string' || emotion.length > 50) {
+      return res.status(400).json({ error: '유효한 감정 정보가 필요합니다.', code: 'VALIDATION_ERROR' });
+    }
+
+    if (userReply && (typeof userReply !== 'string' || userReply.length > 2000)) {
+      return res.status(400).json({ error: '답변이 너무 깁니다.', code: 'VALIDATION_ERROR' });
     }
 
     if (!GEMINI_API_KEY) {
@@ -90,19 +94,27 @@ module.exports = function (deps) {
 
     const stageConfig = FOLLOWUP_STAGES[stage];
 
-    // Build conversation context
-    let userPrompt = `원래 일기: "${(originalText || '').slice(0, 500)}"
-감정: ${emotion}`;
+    // Sanitize and limit context array (max 10 items)
+    const safeContext = (Array.isArray(context) ? context : [])
+      .slice(0, 10)
+      .filter(c => c && (c.role === 'ai' || c.role === 'user') && typeof c.text === 'string')
+      .map(c => ({ role: c.role, text: c.text.slice(0, 500) }));
 
-    if (context && Array.isArray(context)) {
+    // Build conversation context
+    const safeOriginal = (typeof originalText === 'string' ? originalText : '').slice(0, 500);
+    const safeEmotion = emotion.slice(0, 50);
+    let userPrompt = `원래 일기: "${safeOriginal}"
+감정: ${safeEmotion}`;
+
+    if (safeContext.length > 0) {
       userPrompt += '\n\n이전 대화:\n';
-      context.forEach(c => {
-        userPrompt += `- ${c.role === 'ai' ? '마음이' : '사용자'}: ${(c.text || '').slice(0, 300)}\n`;
+      safeContext.forEach(c => {
+        userPrompt += `- ${c.role === 'ai' ? '마음이' : '사용자'}: ${c.text}\n`;
       });
     }
 
     if (userReply) {
-      userPrompt += `\n사용자의 답변: "${(userReply || '').slice(0, 500)}"`;
+      userPrompt += `\n사용자의 답변: "${userReply.slice(0, 500)}"`;
     }
 
     const requestBody = {

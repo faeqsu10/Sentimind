@@ -350,8 +350,10 @@ export function showResponse(result) {
     similarSection.hidden = true;
   }
 
-  // Initialize follow-up conversation (use the original text stored before clearing)
-  initFollowupConversation(result.emotion, state._lastDiaryText || '');
+  // Initialize follow-up conversation (authenticated users only)
+  if (!state.guestMode) {
+    initFollowupConversation(result.emotion, state._lastDiaryText || '');
+  }
 }
 
 function renderConfidenceBadge(confidence) {
@@ -746,13 +748,20 @@ if (_followupInput && _followupSend) {
       text_length: reply.length,
     });
 
-    // Advance stage
+    // Advance stage (with rollback on failure)
+    const prevStageIdx = _followupState.currentStageIdx;
     if (_followupState.currentStageIdx < FOLLOWUP_STAGE_ORDER.length - 1) {
       _followupState.currentStageIdx++;
       updateFollowupStageUI();
     }
 
-    await requestFollowup(reply);
+    try {
+      await requestFollowup(reply);
+    } catch {
+      // Rollback stage on failure
+      _followupState.currentStageIdx = prevStageIdx;
+      updateFollowupStageUI();
+    }
   }
 
   _followupSend.addEventListener('click', sendFollowupReply);

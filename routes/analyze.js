@@ -104,9 +104,15 @@ module.exports = function (deps) {
       });
 
       // Crisis detection — check for distress signals in text and emotion
-      const crisisKeywords = ['죽고 싶', '자해', '자살', '살고 싶지 않', '끝내고 싶', '사라지고 싶', '삶을 끝', '죽을', '목숨'];
-      const textLower = textV.value;
-      const isCrisis = crisisKeywords.some(kw => textLower.includes(kw));
+      const crisisKeywords = [
+        '죽고 싶', '자해', '자살', '살고 싶지 않', '끝내고 싶', '사라지고 싶',
+        '삶을 끝', '죽을', '목숨', '세상을 떠나', '더 이상 못', '힘들어 못 살',
+      ];
+      // Normalize text: remove zero-width chars and collapse whitespace
+      const textNormalized = textV.value
+        .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF]/g, '')
+        .replace(/\s+/g, ' ');
+      const isCrisis = crisisKeywords.some(kw => textNormalized.includes(kw));
       const severeEmotions = ['절망', '극심한 우울', '자기혐오', '공허'];
       const emotionCrisis = severeEmotions.includes(enrichedResult.emotion);
 
