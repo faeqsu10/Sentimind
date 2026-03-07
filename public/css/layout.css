@@ -16,6 +16,9 @@
     gap: 1rem;
     position: sticky;
     top: 1rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 }
 @media (min-width: 1024px) {

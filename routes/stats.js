@@ -10,12 +10,12 @@ module.exports = function (deps) {
   const {
     logger, requestId,
     USE_SUPABASE,
-    authMiddleware,
+    optionalAuth,
     readEntries,
   } = deps;
 
   // GET /stats - 통계 조회
-  router.get('/stats', authMiddleware, async (req, res) => {
+  router.get('/stats', optionalAuth, async (req, res) => {
     const rid = requestId();
     const startTime = Date.now();
 
@@ -31,10 +31,31 @@ module.exports = function (deps) {
 
     logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id, period: periodParam });
 
+    // Guest mode — return empty stats (no auth required)
+    if (!req.user) {
+      return res.json({
+        total_entries: 0,
+        avg_confidence: 0,
+        emotion_distribution: {},
+        top_emotions: [],
+        top_situations: [],
+        hourly_distribution: {},
+        recent_entries: [],
+        this_week: 0,
+        today: 0,
+        streak: { current: 0, max: 0, today_completed: false },
+        period: periodParam,
+      });
+    }
+
     try {
       // Supabase path: RPC 집계 + 최신 항목/프로필 병렬 조회
       if (USE_SUPABASE && req.supabaseClient) {
-        const [rpcResult, latestResult, profileResult] = await Promise.all([
+        const nowDate = new Date();
+        const weekAgoISO = new Date(nowDate.getTime() - 7 * 86400000).toISOString();
+        const todayStart = new Date(nowDate.toISOString().split('T')[0]).toISOString();
+
+        const [rpcResult, latestResult, profileResult, weekResult, todayResult] = await Promise.all([
           req.supabaseClient.rpc('get_user_stats_by_period', {
             p_user_id: req.user.id,
             p_days: periodDays > 0 ? periodDays : null,
@@ -51,6 +72,18 @@ module.exports = function (deps) {
             .select('current_streak, max_streak, last_entry_date')
             .eq('id', req.user.id)
             .single(),
+          req.supabaseClient
+            .from('entries')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', req.user.id)
+            .is('deleted_at', null)
+            .gte('created_at', weekAgoISO),
+          req.supabaseClient
+            .from('entries')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', req.user.id)
+            .is('deleted_at', null)
+            .gte('created_at', todayStart),
         ]);
 
         if (rpcResult.error) {
@@ -79,8 +112,11 @@ module.exports = function (deps) {
           });
         }
 
-        const today = new Date().toISOString().split('T')[0];
-        const todayCompleted = profile?.last_entry_date === today;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayCompleted = profile?.last_entry_date === todayStr;
+
+        const thisWeekCount = weekResult.count || 0;
+        const todayCount = todayResult.count || 0;
 
         const stats = {
           total_entries: rpcData.total_entries || 0,
@@ -89,7 +125,9 @@ module.exports = function (deps) {
           top_emotions: topEmotions,
           top_situations: topSituations,
           hourly_distribution: {},
-          latest_entries: latestEntries,
+          recent_entries: latestEntries,
+          this_week: thisWeekCount,
+          today: todayCount,
           streak: {
             current: profile?.current_streak || 0,
             max: profile?.max_streak || 0,
@@ -136,6 +174,11 @@ module.exports = function (deps) {
 
       const avgConfidence = entries.reduce((sum, e) => sum + (e.ontology?.confidence || 0), 0) / Math.max(entries.length, 1);
 
+      const todayStr2 = new Date().toISOString().split('T')[0];
+      const weekAgo2 = new Date();
+      weekAgo2.setDate(weekAgo2.getDate() - 7);
+      weekAgo2.setHours(0, 0, 0, 0);
+
       const stats = {
         total_entries: entries.length,
         avg_confidence: Math.round(avgConfidence),
@@ -143,7 +186,9 @@ module.exports = function (deps) {
         top_emotions: Object.entries(emotionFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([emotion, count]) => ({ emotion, count })),
         top_situations: Object.entries(situationFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([situation, count]) => ({ situation, count })),
         hourly_distribution: hourlyEmotions,
-        latest_entries: entries.slice(0, 5),
+        recent_entries: entries.slice(0, 5),
+        this_week: entries.filter(e => new Date(e.date) >= weekAgo2).length,
+        today: entries.filter(e => (e.date || '').slice(0, 10) === todayStr2).length,
         period: periodParam,
       };
 
