@@ -74,6 +74,9 @@ function resetSessionAndUI() {
   state.accessToken = null;
   state.refreshToken = null;
   state.userProfile = null;
+  state.allEntries = [];
+  state.filteredEntries = [];
+  state.latestAnalysisResult = null;
   state.appInitialized = false;
   document.getElementById('historyList').innerHTML = '';
   document.getElementById('responseCard').hidden = true;
