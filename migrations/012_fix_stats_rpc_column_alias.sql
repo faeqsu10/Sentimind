@@ -1,8 +1,9 @@
 -- =============================================================
--- Sentimind: Stats RPC 함수 컬럼 별칭 수정
+-- Sentimind: Stats RPC 함수 수정
 -- Run order: 012
 -- =============================================================
--- json_agg() 결과에 AS dist 별칭 추가 (emotions.dist, situations.dist 참조 오류 수정)
+-- 1. json_agg() 결과에 AS dist 별칭 추가
+-- 2. situation_context JSONB 배열을 domain/context로 풀어서 집계
 
 CREATE OR REPLACE FUNCTION get_user_stats_by_period(
   p_user_id UUID,
@@ -40,13 +41,15 @@ BEGIN
              AND created_at >= cutoff_date
            GROUP BY emotion) e) emotions,
     (SELECT json_agg(json_build_object('situation', situation, 'count', cnt) ORDER BY cnt DESC) AS dist
-     FROM (SELECT situation_context::text as situation, COUNT(*) as cnt
-           FROM entries
+     FROM (SELECT elem->>'domain' || '/' || elem->>'context' as situation, COUNT(*) as cnt
+           FROM entries,
+                jsonb_array_elements(situation_context) AS elem
            WHERE user_id = p_user_id
              AND deleted_at IS NULL
              AND situation_context IS NOT NULL
+             AND jsonb_array_length(situation_context) > 0
              AND created_at >= cutoff_date
-           GROUP BY situation_context::text) s) situations;
+           GROUP BY elem->>'domain', elem->>'context') s) situations;
 
   RETURN result;
 END;
