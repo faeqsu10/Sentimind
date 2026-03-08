@@ -102,6 +102,57 @@
   outline-offset: 2px;
 }
 
+/* -- Landing Empathy Section -- */
+.landing-empathy {
+  padding: 1.5rem 0 2.5rem;
+  text-align: center;
+}
+.landing-empathy-title {
+  font-family: var(--font-diary);
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.2rem);
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+.landing-empathy-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.landing-empathy-card {
+  padding: 1.2rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+  opacity: 0;
+  animation: fadeInUp 500ms cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+.landing-empathy-card:hover {
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-sm);
+}
+.landing-empathy-text {
+  font-family: var(--font-diary);
+  font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem);
+  color: var(--color-text);
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+.landing-empathy-outro {
+  margin-top: 1.5rem;
+  font-family: var(--font-diary);
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.landing-empathy-card:nth-child(1) { animation-delay: 100ms; }
+.landing-empathy-card:nth-child(2) { animation-delay: 250ms; }
+.landing-empathy-card:nth-child(3) { animation-delay: 400ms; }
+
 /* -- Landing Features Grid -- */
 .landing-features {
   padding: 2rem 0;
@@ -194,6 +245,63 @@
   font-size: 0.85rem;
   color: var(--color-text-light);
   line-height: 1.6;
+}
+
+/* -- Landing Social Proof -- */
+.landing-proof {
+  padding: 2rem 0;
+  text-align: center;
+}
+.landing-proof-title {
+  font-family: var(--font-diary);
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.2rem);
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem;
+}
+.landing-proof-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+.landing-proof-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.landing-proof-number {
+  font-family: var(--font-body);
+  font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.2rem);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+.landing-proof-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.landing-proof-quotes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.landing-proof-quote {
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+.landing-proof-quote p {
+  font-family: var(--font-diary);
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+  line-height: 1.7;
+  font-style: italic;
 }
 
 /* -- Landing Demo CTA -- */
@@ -349,6 +457,25 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+    flex: 1;
+  }
+  .landing-empathy-cards {
+    flex-direction: row;
+    gap: 1rem;
+    max-width: none;
+  }
+  .landing-empathy-card {
+    flex: 1;
+  }
+  .landing-proof-stats {
+    gap: 3rem;
+  }
+  .landing-proof-quotes {
+    flex-direction: row;
+    gap: 1rem;
+    max-width: none;
+  }
+  .landing-proof-quote {
     flex: 1;
   }
   .landing-demo-cta {

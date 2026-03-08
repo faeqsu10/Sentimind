@@ -638,6 +638,37 @@ document.querySelectorAll('.landing-faq-question').forEach(btn => {
   });
 });
 
+// ===== Landing: Social Proof count-up animation =====
+(function initProofCountUp() {
+  const numbers = document.querySelectorAll('.landing-proof-number[data-count]');
+  if (!numbers.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseInt(el.dataset.count, 10);
+      if (isNaN(target) || el.dataset.counted) return;
+      el.dataset.counted = '1';
+
+      const suffix = el.dataset.suffix || '';
+      const duration = 1200;
+      const start = performance.now();
+      function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(target * eased).toLocaleString() + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.3 });
+
+  numbers.forEach(el => observer.observe(el));
+})();
+
 // ===== Global Error Handlers =====
 window.onerror = function(message, source, lineno, colno, error) {
   console.error('Global error:', { message, source, lineno, colno, error });
