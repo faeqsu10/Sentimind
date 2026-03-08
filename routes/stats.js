@@ -199,9 +199,27 @@ module.exports = function (deps) {
       } else {
         todayStr2 = new Date().toISOString().split('T')[0];
       }
-      const weekAgo2 = new Date();
-      weekAgo2.setDate(weekAgo2.getDate() - 7);
-      weekAgo2.setHours(0, 0, 0, 0);
+      // Calculate week boundary using client timezone if available
+      let weekAgo2;
+      if (hasValidTz) {
+        const localMidnight = new Date(new Date(todayStr2).getTime() + tzOffset * 60000);
+        weekAgo2 = new Date(localMidnight.getTime() - 7 * 86400000);
+      } else {
+        weekAgo2 = new Date();
+        weekAgo2.setDate(weekAgo2.getDate() - 7);
+        weekAgo2.setHours(0, 0, 0, 0);
+      }
+
+      // Helper to convert entry date to local date string using tz_offset
+      function entryLocalDate(dateStr) {
+        if (!dateStr) return '';
+        if (hasValidTz) {
+          const d = new Date(dateStr);
+          const local = new Date(d.getTime() - tzOffset * 60000);
+          return local.toISOString().split('T')[0];
+        }
+        return (dateStr || '').slice(0, 10);
+      }
 
       const stats = {
         total_entries: entries.length,
@@ -212,7 +230,7 @@ module.exports = function (deps) {
         hourly_distribution: hourlyEmotions,
         recent_entries: entries.slice(0, 5),
         this_week: entries.filter(e => new Date(e.date) >= weekAgo2).length,
-        today: entries.filter(e => (e.date || '').slice(0, 10) === todayStr2).length,
+        today: entries.filter(e => entryLocalDate(e.date) === todayStr2).length,
         period: periodParam,
       };
 

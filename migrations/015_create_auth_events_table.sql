@@ -32,11 +32,8 @@ CREATE POLICY "Users can view own auth events"
   FOR SELECT
   USING (auth.uid() = user_id);
 
--- 서버(service_role)만 INSERT 가능
-CREATE POLICY "Service role can insert auth events"
-  ON public.auth_events
-  FOR INSERT
-  WITH CHECK (true);
+-- service_role은 RLS를 우회하므로 별도 INSERT 정책 불필요.
+-- 일반 사용자의 INSERT는 차단됨 (정책 없음 = 거부).
 
 -- COMMENT
 COMMENT ON TABLE public.auth_events IS '인증 이벤트 로그 (가입, 로그인, 탈퇴 등)';

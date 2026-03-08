@@ -501,7 +501,7 @@ function updateMemoryCard() {
   // Find an entry within ±1 day of 30 days ago
   const match = entries.find(e => {
     if (!e.date) return false;
-    const d = new Date(e.date.slice(0, 10));
+    const d = new Date(toLocalDateStr(e.date));
     d.setHours(0, 0, 0, 0);
     const diff = Math.abs(d.getTime() - target.getTime());
     return diff <= 24 * 60 * 60 * 1000;
