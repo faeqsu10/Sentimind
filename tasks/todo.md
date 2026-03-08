@@ -67,12 +67,44 @@
 | tab_switched | app.js | 기능 채택율 |
 | signup_modal_shown | guest.js | 게스트 전환 넛지 |
 
+### 7. UI 스타일 개선 (2026-03-07)
+- [x] 다크모드, 프로필, 캘린더, 리포트 버튼 보완
+- [x] 카드, 탭, 모달, 차트 디자인 전면 개편
+- [x] 히스토리 카드 이모지 원형 + 메타 레이아웃 개선
+- [x] Pebble 뉴트럴 스톤 색상 체계 적용
+- 커밋: `a3de297` ~ `ad89313`
+
+### 8. Google OAuth 소셜 로그인 (2026-03-08)
+- [x] 백엔드: GET /api/auth/oauth/:provider 엔드포인트
+- [x] 프론트엔드: Google 로그인/회원가입 버튼 + handleGoogleOAuth()
+- [x] OAuth 신규 유저 닉네임 자동 반영 트리거 (migration 014)
+- 커밋: `fd1df4e`, `740ee9e`
+
+### 9. 통계 RPC JSONB 버그 수정 (2026-03-08)
+- [x] get_user_stats_by_period 함수 text→jsonb 타입 에러 수정 (migration 013)
+- 커밋: `0a7187d`
+
+### 10. 타임존 버그 수정 (2026-03-08)
+- [x] UTC .split('T')[0] → toLocalDateStr() 로컬 날짜 변환
+- [x] 프론트엔드 8개 파일 20곳+ 수정 (스트릭, 달력, 통계, 사이드바 등)
+- [x] 서버 /api/stats에 tz_offset 파라미터 추가
+- 커밋: `7466646`, `a399c40`
+
+### 11. 인증 이벤트 테이블 (2026-03-08)
+- [x] auth_events 테이블 생성 (Supabase, RLS 적용)
+- [x] 7종 이벤트 자동 기록 (signup, login, logout, oauth, password, delete)
+- [x] 아키텍트 리뷰 반영 (INSERT RLS 보안 수정)
+- 커밋: `ea02984`, `a399c40`
+
 ---
 
 ## 향후 고려사항 (미구현)
 
-- Google 소셜 로그인 (Acquisition 개선)
-- Push notification 실제 구현 (Retention)
-- AI 응답 톤 커스터마이징 (Autonomy/SDT)
-- A/B 테스트 인프라
-- 나머지 13개 이벤트 (E-03, E-07, E-09, E-15~E-22, E-25)
+- [ ] Supabase Redirect URLs에 프로덕션 URL 추가 (Google OAuth 프로덕션 동작)
+- [ ] Vercel 환경변수 SITE_URL 설정
+- [ ] Push notification 실제 구현 (Retention)
+- [ ] AI 응답 톤 커스터마이징 (Autonomy/SDT)
+- [ ] A/B 테스트 인프라
+- [ ] 나머지 13개 이벤트 (E-03, E-07, E-09, E-15~E-22, E-25)
+- [ ] 인증 이벤트 관리자 대시보드
+- [ ] 서버 측 스트릭 계산에 클라이언트 타임존 반영 (현재 KST 고정)

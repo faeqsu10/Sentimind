@@ -1,5 +1,17 @@
 const express = require('express');
 
+// JWT에서 payload를 디코딩하여 user_id 추출 (검증 불필요 — analytics용)
+function extractUserIdFromJwt(authHeader) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const token = authHeader.split(' ')[1];
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
 module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger, config }) {
   const router = express.Router();
 
@@ -16,17 +28,8 @@ module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, l
     const batchMaxSize = config?.analytics?.batchMaxSize || 50;
     const batch = events.slice(0, batchMaxSize);
 
-    // Extract user_id from auth header if present
-    let userId = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ') && USE_SUPABASE && supabaseAdmin) {
-      try {
-        const { data } = await supabaseAdmin.auth.getUser(authHeader.split(' ')[1]);
-        if (data?.user) userId = data.user.id;
-      } catch {
-        // Anonymous event — continue without user_id
-      }
-    }
+    // Extract user_id from JWT payload (no remote validation needed for analytics)
+    const userId = extractUserIdFromJwt(req.headers.authorization);
 
     const rows = batch.map(evt => ({
       event: String(evt.event || '').slice(0, 100),

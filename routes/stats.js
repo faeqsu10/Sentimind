@@ -11,7 +11,6 @@ module.exports = function (deps) {
     logger, requestId,
     USE_SUPABASE,
     optionalAuth,
-    readEntries,
   } = deps;
 
   // GET /stats - 통계 조회
@@ -26,8 +25,6 @@ module.exports = function (deps) {
     if (periodDays === undefined) {
       return res.status(400).json({ error: "period 파라미터는 '7d', '30d', '90d', 'all' 중 하나여야 합니다.", code: 'VALIDATION_ERROR' });
     }
-
-    const periodCutoff = periodDays > 0 ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString() : null;
 
     // Client timezone offset in minutes (e.g., -540 for KST/UTC+9)
     const tzOffset = parseInt(req.query.tz_offset, 10);
@@ -161,82 +158,7 @@ module.exports = function (deps) {
         return res.json(stats);
       }
 
-      // JSON fallback (with period filter)
-      let entries = await readEntries();
-      if (periodCutoff) {
-        const cutoffDate = new Date(periodCutoff);
-        entries = entries.filter(entry => new Date(entry.date) >= cutoffDate);
-      }
-
-      const emotionFreq = {};
-      const situationFreq = {};
-      const hourlyEmotions = {};
-
-      entries.forEach(entry => {
-        const emotion = entry.emotion || '알 수 없음';
-        emotionFreq[emotion] = (emotionFreq[emotion] || 0) + 1;
-
-        if (entry.ontology?.situation_context) {
-          entry.ontology.situation_context.forEach(ctx => {
-            const key = `${ctx.domain}/${ctx.context}`;
-            situationFreq[key] = (situationFreq[key] || 0) + 1;
-          });
-        }
-
-        const date = new Date(entry.date);
-        const hour = date.getHours();
-        const hourKey = `${hour}:00`;
-        if (!hourlyEmotions[hourKey]) hourlyEmotions[hourKey] = {};
-        hourlyEmotions[hourKey][emotion] = (hourlyEmotions[hourKey][emotion] || 0) + 1;
-      });
-
-      const avgConfidence = entries.reduce((sum, e) => sum + (e.ontology?.confidence || 0), 0) / Math.max(entries.length, 1);
-
-      let todayStr2;
-      if (hasValidTz) {
-        const localNow = new Date(Date.now() - tzOffset * 60000);
-        todayStr2 = localNow.toISOString().split('T')[0];
-      } else {
-        todayStr2 = new Date().toISOString().split('T')[0];
-      }
-      // Calculate week boundary using client timezone if available
-      let weekAgo2;
-      if (hasValidTz) {
-        const localMidnight = new Date(new Date(todayStr2).getTime() + tzOffset * 60000);
-        weekAgo2 = new Date(localMidnight.getTime() - 7 * 86400000);
-      } else {
-        weekAgo2 = new Date();
-        weekAgo2.setDate(weekAgo2.getDate() - 7);
-        weekAgo2.setHours(0, 0, 0, 0);
-      }
-
-      // Helper to convert entry date to local date string using tz_offset
-      function entryLocalDate(dateStr) {
-        if (!dateStr) return '';
-        if (hasValidTz) {
-          const d = new Date(dateStr);
-          const local = new Date(d.getTime() - tzOffset * 60000);
-          return local.toISOString().split('T')[0];
-        }
-        return (dateStr || '').slice(0, 10);
-      }
-
-      const stats = {
-        total_entries: entries.length,
-        avg_confidence: Math.round(avgConfidence),
-        emotion_distribution: emotionFreq,
-        top_emotions: Object.entries(emotionFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([emotion, count]) => ({ emotion, count })),
-        top_situations: Object.entries(situationFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([situation, count]) => ({ situation, count })),
-        hourly_distribution: hourlyEmotions,
-        recent_entries: entries.slice(0, 5),
-        this_week: entries.filter(e => new Date(e.date) >= weekAgo2).length,
-        today: entries.filter(e => entryLocalDate(e.date) === todayStr2).length,
-        period: periodParam,
-      };
-
-      const duration = Date.now() - startTime;
-      logger.info('통계 조회 성공 (JSON)', { requestId: rid, totalEntries: entries.length, period: periodParam, duration: `${duration}ms` });
-      res.json(stats);
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
     } catch (err) {
       logger.error('통계 조회 오류', { requestId: rid, error: err.message });
       res.status(500).json({ error: '통계 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });

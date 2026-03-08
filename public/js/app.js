@@ -703,6 +703,15 @@ window.onunhandledrejection = function(event) {
   event.preventDefault();
 };
 
+// ===== Beforeunload Guard (일기 작성 중 이탈 방지) =====
+window.addEventListener('beforeunload', (e) => {
+  const diaryText = document.getElementById('diary-text');
+  if (diaryText && diaryText.value.trim().length > 0) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

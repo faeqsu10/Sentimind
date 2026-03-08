@@ -92,22 +92,8 @@ if (IS_PRODUCTION && !USE_SUPABASE) {
   process.exit(1);
 }
 
-const DATA_DIR = IS_PRODUCTION ? '/tmp/sentimind-data' : path.join(__dirname, 'data');
-const ENTRIES_FILE = path.join(DATA_DIR, 'entries.json');
-const EMOTION_ONTOLOGY_FILE = IS_PRODUCTION
-  ? path.join(__dirname, 'data', 'emotion-ontology.json')
-  : path.join(DATA_DIR, 'emotion-ontology.json');
-const SITUATION_ONTOLOGY_FILE = IS_PRODUCTION
-  ? path.join(__dirname, 'data', 'situation-ontology.json')
-  : path.join(DATA_DIR, 'situation-ontology.json');
-
-// Data directory initialization (JSON fallback)
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-if (!fs.existsSync(ENTRIES_FILE)) {
-  fs.writeFileSync(ENTRIES_FILE, '[]', 'utf-8');
-}
+const EMOTION_ONTOLOGY_FILE = path.join(__dirname, 'data', 'emotion-ontology.json');
+const SITUATION_ONTOLOGY_FILE = path.join(__dirname, 'data', 'situation-ontology.json');
 
 // ---------------------------------------------------------------------------
 // Logger
@@ -301,7 +287,6 @@ const SYSTEM_PROMPT = `당신은 따뜻하고 공감 능력이 뛰어난 감정 
 
 const fsPromises = require('fs/promises');
 const crypto = require('crypto');
-let writeLock = Promise.resolve();
 let ontologyEngine = null;
 
 async function loadOntologies() {
@@ -326,24 +311,6 @@ function generateId(size = 21) {
     id += ALPHABET[bytes[i] % ALPHABET.length];
   }
   return id;
-}
-
-// JSON fallback: read entries from file
-async function readEntriesFromFile() {
-  try {
-    const raw = await fsPromises.readFile(ENTRIES_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-// JSON fallback: write entries to file
-async function writeEntriesToFile(entries) {
-  writeLock = writeLock.catch(() => {}).then(() =>
-    fsPromises.writeFile(ENTRIES_FILE, JSON.stringify(entries, null, 2), 'utf-8')
-  );
-  return writeLock;
 }
 
 function parseGeminiResponse(text) {
@@ -695,10 +662,8 @@ const routeDeps = {
   sanitizeString, isPlainObject,
   updateStreak,
   signupLimiter, loginLimiter, analyzeLimiter,
-  readEntries: readEntriesFromFile, writeEntries: writeEntriesToFile,
   generateId,
   logSecurityEvent,
-  ENTRIES_FILE, DATA_DIR,
 };
 
 app.use('/api/auth', require('./routes/auth')(routeDeps));

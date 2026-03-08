@@ -121,8 +121,8 @@ module.exports = function (deps) {
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       systemInstruction: { parts: [{ text: stageConfig.systemPrompt }] },
       generationConfig: {
-        maxOutputTokens: parseInt(process.env.FOLLOWUP_MAX_TOKENS || '256', 10),
-        temperature: parseFloat(process.env.FOLLOWUP_TEMPERATURE || '0.8'),
+        maxOutputTokens: config.followup.maxOutputTokens,
+        temperature: config.followup.temperature,
         thinkingConfig: { thinkingBudget: config.gemini.thinkingBudget },
       },
     };

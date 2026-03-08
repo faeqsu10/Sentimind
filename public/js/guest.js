@@ -1,5 +1,5 @@
 import { state, GUEST_STORAGE_KEY, GUEST_MAX_ENTRIES, GUEST_MAX_DAYS } from './state.js';
-import { escapeHtml, showError } from './utils.js';
+import { escapeHtml, showError, openModalFocus, closeModalFocus } from './utils.js';
 import { fetchWithAuth, analyzeEmotion } from './api.js';
 import { track } from './analytics.js';
 
@@ -128,7 +128,7 @@ export function showSignupModal(reason) {
     desc.textContent = '나만의 일기장을 만들면 이야기를 무제한으로 간직하고, 마음의 흐름과 리포트까지 받아볼 수 있어요.';
   }
   overlay.hidden = false;
-  document.getElementById('signupModalSignupBtn').focus();
+  openModalFocus(overlay, overlay.querySelector('.signup-modal-content') || overlay.firstElementChild);
   // E-04: signup_modal_shown
   track('signup_modal_shown', {
     reason,
@@ -137,7 +137,9 @@ export function showSignupModal(reason) {
 }
 
 function hideSignupModal() {
-  document.getElementById('signupModalOverlay').hidden = true;
+  const overlay = document.getElementById('signupModalOverlay');
+  overlay.hidden = true;
+  closeModalFocus(overlay, overlay.querySelector('.signup-modal-content') || overlay.firstElementChild);
 }
 
 export async function migrateGuestData() {

@@ -1,5 +1,5 @@
 import { state, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast } from './utils.js';
+import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup } from './api.js';
 import { track } from './analytics.js';
 
@@ -85,12 +85,18 @@ function initPromptLibrary() {
   libraryBtn.addEventListener('click', () => {
     overlay.hidden = false;
     renderList(_activeLibTab);
+    openModalFocus(overlay, overlay.querySelector('.prompt-library-content'));
     track('prompt_library_opened', {});
   });
 
-  closeBtn.addEventListener('click', () => { overlay.hidden = true; });
+  function closeLibrary() {
+    overlay.hidden = true;
+    closeModalFocus(overlay, overlay.querySelector('.prompt-library-content'));
+  }
+
+  closeBtn.addEventListener('click', closeLibrary);
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.hidden = true;
+    if (e.target === overlay) closeLibrary();
   });
 
   tabs.addEventListener('click', (e) => {
@@ -108,7 +114,7 @@ function initPromptLibrary() {
     const input = document.getElementById('diary-text');
     input.placeholder = item.dataset.prompt;
     input.focus();
-    overlay.hidden = true;
+    closeLibrary();
 
     // Deactivate basic chips
     if (promptChips) {
@@ -593,18 +599,24 @@ function showCrisisModal() {
   const overlay = document.getElementById('crisisModal');
   if (!overlay) return;
   overlay.hidden = false;
+  openModalFocus(overlay, overlay.querySelector('.crisis-modal-content') || overlay.firstElementChild);
+}
+
+function hideCrisisModal() {
+  const overlay = document.getElementById('crisisModal');
+  if (!overlay) return;
+  overlay.hidden = true;
+  closeModalFocus(overlay, overlay.querySelector('.crisis-modal-content') || overlay.firstElementChild);
 }
 
 const crisisCloseBtn = document.getElementById('crisisModalClose');
 if (crisisCloseBtn) {
-  crisisCloseBtn.addEventListener('click', () => {
-    document.getElementById('crisisModal').hidden = true;
-  });
+  crisisCloseBtn.addEventListener('click', hideCrisisModal);
 }
 const crisisOverlay = document.getElementById('crisisModal');
 if (crisisOverlay) {
   crisisOverlay.addEventListener('click', (e) => {
-    if (e.target === crisisOverlay) crisisOverlay.hidden = true;
+    if (e.target === crisisOverlay) hideCrisisModal();
   });
 }
 

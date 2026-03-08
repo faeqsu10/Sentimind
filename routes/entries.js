@@ -15,7 +15,6 @@ module.exports = function (deps) {
     validatePagination,
     sanitizeString, isPlainObject,
     updateStreak,
-    readEntries, writeEntries,
     generateId,
   } = deps;
 
@@ -74,11 +73,7 @@ module.exports = function (deps) {
         return res.json(entries);
       }
 
-      // JSON fallback
-      const entries = await readEntries();
-      const duration = Date.now() - startTime;
-      logger.info('일기 목록 조회 성공 (JSON)', { requestId: rid, count: entries.length, duration: `${duration}ms` });
-      res.json(entries);
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
     } catch (err) {
       logger.error('일기 목록 조회 오류', { requestId: rid, error: err.message });
       res.status(500).json({ error: '일기 목록 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
@@ -143,24 +138,7 @@ module.exports = function (deps) {
         return res.status(201).json({ ...data, date: data.created_at });
       }
 
-      // JSON fallback
-      const entry = {
-        id: generateId(),
-        date: new Date().toISOString(),
-        text: textV.value,
-        emotion: sanitizeString(req.body.emotion || '알 수 없음', 50),
-        emoji: sanitizeString(req.body.emoji || '💭', 10),
-        message: sanitizeString(req.body.message || '', 1000),
-        advice: sanitizeString(req.body.advice || '', 500),
-      };
-
-      const entries = await readEntries();
-      entries.unshift(entry);
-      await writeEntries(entries);
-
-      const duration = Date.now() - startTime;
-      logger.info('일기 저장 완료 (JSON)', { requestId: rid, entryId: entry.id, duration: `${duration}ms` });
-      res.status(201).json(entry);
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
     } catch (err) {
       logger.error('일기 저장 오류', { requestId: rid, error: err.message });
       res.status(500).json({ error: '일기 저장에 실패했습니다.', code: 'INTERNAL_ERROR' });
@@ -352,18 +330,7 @@ module.exports = function (deps) {
         return res.json({ success: true });
       }
 
-      // JSON fallback: hard delete
-      const entries = await readEntries();
-      const index = entries.findIndex(e => e.id === id);
-      if (index === -1) {
-        return res.status(404).json({ error: '해당 일기를 찾을 수 없습니다.', code: 'NOT_FOUND' });
-      }
-
-      entries.splice(index, 1);
-      await writeEntries(entries);
-
-      logger.info('일기 삭제 성공 (JSON)', { requestId: rid, id, remainCount: entries.length });
-      res.json({ success: true });
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
     } catch (err) {
       logger.error('일기 삭제 오류', { requestId: rid, error: err.message });
       res.status(500).json({ error: '일기 삭제에 실패했습니다.', code: 'INTERNAL_ERROR' });
@@ -376,19 +343,18 @@ module.exports = function (deps) {
     logger.info('GET /api/export', { requestId: rid, userId: req.user?.id });
 
     try {
-      let entries = [];
-      if (USE_SUPABASE && req.supabaseClient) {
-        const { data, error } = await req.supabaseClient
-          .from('entries')
-          .select('text, emotion, emoji, message, advice, confidence_score, created_at')
-          .eq('user_id', req.user.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        entries = data || [];
-      } else {
-        entries = await readEntries();
+      if (!USE_SUPABASE || !req.supabaseClient) {
+        return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
       }
+
+      const { data, error } = await req.supabaseClient
+        .from('entries')
+        .select('text, emotion, emoji, message, advice, confidence_score, created_at')
+        .eq('user_id', req.user.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      const entries = data || [];
 
       const format = req.query.format || 'csv';
 
