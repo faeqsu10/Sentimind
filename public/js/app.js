@@ -680,12 +680,22 @@ document.querySelectorAll('.landing-faq-question').forEach(btn => {
 // ===== Global Error Handlers =====
 window.onerror = function(message, source, lineno, colno, error) {
   console.error('Global error:', { message, source, lineno, colno, error });
+  track('client_error', {
+    message: String(message).slice(0, 200),
+    source: String(source || '').slice(0, 200),
+    lineno, colno,
+    stack: (error?.stack || '').slice(0, 500),
+  });
   showToast('예기치 않은 오류가 발생했습니다. 페이지를 새로고침해주세요.', 'error');
   return true;
 };
 
 window.onunhandledrejection = function(event) {
   console.error('Unhandled promise rejection:', event.reason);
+  track('client_unhandled_rejection', {
+    message: String(event.reason?.message || event.reason || '').slice(0, 200),
+    stack: (event.reason?.stack || '').slice(0, 500),
+  });
   const msg = (event.reason && event.reason.userMessage)
     ? event.reason.userMessage
     : '요청을 처리하는 중 오류가 발생했습니다.';

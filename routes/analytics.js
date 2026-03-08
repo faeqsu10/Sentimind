@@ -5,6 +5,7 @@ module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, l
 
   // POST /api/analytics — batch event ingestion
   router.post('/', async (req, res) => {
+    const rid = req.rid;
     const { events } = req.body;
 
     if (!Array.isArray(events) || events.length === 0) {
@@ -41,16 +42,16 @@ module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, l
       try {
         const { error } = await supabaseAdmin.from('analytics_events').insert(rows);
         if (error) {
-          logger.error('Analytics insert error', { error: error.message });
-          return res.status(500).json({ error: 'Failed to store events' });
+          logger.error('이벤트 저장 실패', { requestId: rid, error: error.message, count: rows.length });
+          return res.status(500).json({ error: '이벤트 저장에 실패했습니다.' });
         }
       } catch (err) {
-        logger.error('Analytics exception', { error: err.message });
-        return res.status(500).json({ error: 'Internal error' });
+        logger.error('이벤트 저장 예외', { requestId: rid, error: err.message });
+        return res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
       }
     } else {
       // Fallback: log to console in dev
-      logger.info('Analytics events (no Supabase)', { count: rows.length });
+      logger.info('이벤트 수신 (Supabase 미사용)', { requestId: rid, count: rows.length });
     }
 
     res.status(202).json({ accepted: rows.length });

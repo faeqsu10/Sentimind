@@ -113,16 +113,17 @@ if (!fs.existsSync(ENTRIES_FILE)) {
 // Logger
 // ---------------------------------------------------------------------------
 
-const LOGS_DIR = IS_PRODUCTION ? '/tmp/sentimind-logs' : path.join(__dirname, 'logs');
+const LOGS_DIR = IS_PRODUCTION ? null : path.join(__dirname, 'logs');
+const SLOW_REQUEST_MS = parseInt(process.env.SLOW_REQUEST_MS, 10) || 3000;
 
 class Logger {
   constructor() {
-    if (!fs.existsSync(LOGS_DIR)) {
+    if (LOGS_DIR && !fs.existsSync(LOGS_DIR)) {
       fs.mkdirSync(LOGS_DIR, { recursive: true });
     }
     this.logLevel = process.env.LOG_LEVEL || 'INFO';
     this.levels = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
-    this._cleanOldLogs();
+    if (LOGS_DIR) this._cleanOldLogs();
   }
 
   _getLogFile() {
@@ -134,6 +135,7 @@ class Logger {
   }
 
   async _cleanOldLogs() {
+    if (!LOGS_DIR) return;
     try {
       const files = await fs.promises.readdir(LOGS_DIR);
       const now = Date.now();
@@ -161,16 +163,24 @@ class Logger {
       level,
       message,
       ...(data && { data }),
-      environment: IS_PRODUCTION ? 'production' : 'development',
     };
 
-    const colors = { DEBUG: '\x1b[36m', INFO: '\x1b[32m', WARN: '\x1b[33m', ERROR: '\x1b[31m' };
-    let dataStr = '';
-    try { dataStr = data ? JSON.stringify(data) : ''; } catch { dataStr = '[circular]'; }
-    console.log(`${colors[level]}[${level}] ${message}\x1b[0m${dataStr ? ` | ${dataStr}` : ''}`);
+    if (IS_PRODUCTION) {
+      // Vercel: 구조화된 JSON만 출력 (ANSI 코드 없음)
+      console.log(JSON.stringify(logEntry));
+    } else {
+      // 로컬: 컬러 콘솔 출력
+      const colors = { DEBUG: '\x1b[36m', INFO: '\x1b[32m', WARN: '\x1b[33m', ERROR: '\x1b[31m' };
+      let dataStr = '';
+      try { dataStr = data ? JSON.stringify(data) : ''; } catch { dataStr = '[circular]'; }
+      console.log(`${colors[level]}[${level}] ${message}\x1b[0m${dataStr ? ` | ${dataStr}` : ''}`);
 
-    fs.promises.appendFile(this._getLogFile(), JSON.stringify(logEntry) + '\n', 'utf-8')
-      .catch(err => console.error(`Log write error: ${err.message}`));
+      // 로컬: 파일 로그도 기록
+      if (LOGS_DIR) {
+        fs.promises.appendFile(this._getLogFile(), JSON.stringify(logEntry) + '\n', 'utf-8')
+          .catch(err => console.error(`Log write error: ${err.message}`));
+      }
+    }
   }
 
   debug(msg, data) { this._log('DEBUG', msg, data); }
@@ -602,6 +612,41 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 // ---------------------------------------------------------------------------
+// API Request Logging Middleware
+// ---------------------------------------------------------------------------
+
+app.use('/api', (req, res, next) => {
+  const rid = requestId();
+  req.rid = rid;
+  res.set('X-Request-Id', rid);
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logData = {
+      requestId: rid,
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      userId: req.user?.id || null,
+    };
+
+    if (duration >= SLOW_REQUEST_MS) {
+      logger.warn('느린 API 요청', logData);
+    } else if (res.statusCode >= 500) {
+      logger.error('API 서버 에러', logData);
+    } else if (res.statusCode >= 400) {
+      logger.info('API 요청', logData);
+    } else {
+      logger.info('API 요청', logData);
+    }
+  });
+
+  next();
+});
+
+// ---------------------------------------------------------------------------
 // Health Check
 // ---------------------------------------------------------------------------
 
@@ -691,6 +736,10 @@ app.use((err, req, res, next) => {
     return res.status(413).json({ error: '요청 본문이 너무 큽니다.', code: 'PAYLOAD_TOO_LARGE' });
   }
   logger.error('Unhandled error', {
+    requestId: req.rid || null,
+    method: req.method,
+    path: req.originalUrl,
+    userId: req.user?.id || null,
     error: err.message,
     stack: IS_PRODUCTION ? undefined : err.stack,
   });
