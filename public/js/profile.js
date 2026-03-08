@@ -81,7 +81,7 @@ function resetSessionAndUI() {
   document.getElementById('historyDetail').hidden = true;
   document.getElementById('diary-text').value = '';
   document.getElementById('charCount').textContent = '';
-  deps.showAuthScreen();
+  deps.showLanding();
 }
 
 export function initProfileEventListeners() {
