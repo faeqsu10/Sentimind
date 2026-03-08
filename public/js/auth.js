@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { showError, isValidEmail, getPasswordStrength } from './utils.js';
-import { fetchWithAuth, loadProfile } from './api.js';
+import { fetchWithAuth, tryRefreshToken, loadProfile } from './api.js';
 import { track } from './analytics.js';
 
 // Dependencies injected from app.js
@@ -92,6 +92,29 @@ export async function checkAuth() {
             deps.showApp();
           }
           return;
+        }
+      }
+      // Access token expired — try refresh
+      if (refresh) {
+        state.refreshToken = refresh;
+        const refreshed = await tryRefreshToken();
+        if (refreshed) {
+          const retryRes = await fetch('/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + state.accessToken }
+          });
+          if (retryRes.ok) {
+            const retryResult = await retryRes.json();
+            if (retryResult.data && retryResult.data.id) {
+              state.currentUser = retryResult.data;
+              await loadProfile();
+              if (state.userProfile && !state.userProfile.onboarding_completed) {
+                deps.showOnboarding();
+              } else {
+                deps.showApp();
+              }
+              return;
+            }
+          }
         }
       }
     } catch {

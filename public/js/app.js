@@ -619,6 +619,14 @@ document.getElementById('landingDemoBtn').addEventListener('click', () => {
   track('landing_cta_clicked', { cta_type: 'demo', cta_position: 'hero' });
   showDemo();
 });
+document.getElementById('landingLoginBtn').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'login', cta_position: 'hero' });
+  showAuthScreen();
+});
+document.getElementById('landingLoginBtn2').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'login', cta_position: 'footer' });
+  showAuthScreen();
+});
 
 // ===== Landing: FAQ accordion =====
 document.querySelectorAll('.landing-faq-question').forEach(btn => {

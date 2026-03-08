@@ -102,6 +102,33 @@
   outline-offset: 2px;
 }
 
+/* -- Landing Login Link -- */
+.landing-login-link {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.landing-login-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.landing-login-btn:hover {
+  color: var(--color-primary-hover);
+}
+.landing-login-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* -- Landing Empathy Section -- */
 .landing-empathy {
   padding: 1.5rem 0 2.5rem;

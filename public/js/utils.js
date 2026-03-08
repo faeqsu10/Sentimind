@@ -271,5 +271,12 @@ export function hideSkeleton(type) {
     const el = document.getElementById('analyzeSkeleton');
     if (el) el.hidden = true;
     document.getElementById('responseLoading').hidden = true;
+  } else if (type === 'stats') {
+    // Clear skeleton placeholders from stats elements
+    const ids = ['topEmotionsChart', 'topSituationsChart', 'recentEntriesList'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.querySelector('.skeleton')) el.innerHTML = '';
+    });
   }
 }

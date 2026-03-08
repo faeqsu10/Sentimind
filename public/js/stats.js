@@ -1,5 +1,5 @@
 import { state, PERIOD_MAP } from './state.js';
-import { escapeHtml, emotionColor, emotionScore, showSkeleton } from './utils.js';
+import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton } from './utils.js';
 import { fetchWithAuth } from './api.js';
 
 // 대시보드 캐시: 같은 기간+같은 항목 수면 API 재호출 스킵
@@ -23,6 +23,7 @@ export async function loadDashboard(period, forceReload = false) {
     renderDashboard(stats);
     _lastDashboardKey = cacheKey;
   } catch {
+    hideSkeleton('stats');
     const summaryEl = document.getElementById('dashboardSummary');
     if (summaryEl) summaryEl.innerHTML = '<p class="dashboard-empty">마음의 흐름을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>';
   } finally {
