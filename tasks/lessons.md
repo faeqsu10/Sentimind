@@ -182,5 +182,76 @@ module.exports = {
 
 ---
 
-**마지막 업데이트**: 2026-03-05
-**다음 리뷰**: Phase 5 시작 전
+## 7. 로그아웃 시 클라이언트 상태 완전 초기화 (2026-03-08)
+
+### 문제
+로그아웃 → 다른 계정 로그인 시 사이드바에 이전 유저 데이터가 잠깐 보임.
+`resetSessionAndUI()`에서 인증 토큰만 지우고 `state.allEntries` 등 데이터 상태를 초기화하지 않았음.
+
+### 해결책
+로그아웃 시 모든 유저 관련 상태를 빈 값으로 리셋:
+```javascript
+state.allEntries = [];
+state.filteredEntries = [];
+state.latestAnalysisResult = null;
+```
+
+### 일반화 규칙
+- **로그아웃/계정 전환 시 모든 유저 데이터 상태를 초기화할 것**
+- 인증 토큰뿐 아니라 캐시된 API 응답, 필터 상태, 분석 결과 등 모두 포함
+- 체크리스트: token, profile, entries, filtered data, analysis results, UI state
+
+---
+
+## 8. 이메일 확인 리다이렉트 URL 설정 (2026-03-08)
+
+### 문제
+회원가입 후 이메일 확인 링크 클릭 시 에러 페이지로 이동.
+`signUp()` 호출 시 `emailRedirectTo` 미설정으로 Supabase 기본값(localhost) 사용.
+
+### 해결책
+```javascript
+const siteUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+// signUp options에 추가:
+emailRedirectTo: siteUrl,
+```
+
+### 일반화 규칙
+- **Supabase Auth 사용 시 모든 리다이렉트 URL을 명시적으로 설정**
+  - signUp → `emailRedirectTo`
+  - OAuth → `redirectTo`
+  - passwordReset → `redirectTo`
+- **Supabase 대시보드에서도 설정 필수**:
+  - Site URL: 프로덕션 URL
+  - Redirect URLs: 허용된 리다이렉트 목록
+
+---
+
+## 9. supabaseAdmin null 체크 — service_role 키 의존성 (2026-03-08)
+
+### 문제
+`auth_events` 테이블에 데이터가 기록되지 않음.
+`supabaseAdmin`이 `SUPABASE_SERVICE_ROLE_KEY` 없으면 null이 되는데, `recordAuthEvent()`가 `if (!supabaseAdmin) return;`으로 조용히 실패.
+
+### 교훈
+- **service_role 키가 필요한 기능은 키 부재 시 경고 로그를 남길 것**
+- 환경변수 누락 시 silent fail보다 startup 경고가 낫다
+- **Vercel 배포 시 필수 환경변수 체크리스트**: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SITE_URL, GOOGLE_API_KEY
+
+---
+
+## 10. TIMESTAMPTZ는 UTC 저장이 정상 (2026-03-08)
+
+### 혼동 포인트
+Supabase 대시보드에서 `created_at`이 한국 시간보다 9시간 빠르게 보임 → UTC 표시가 정상.
+
+### 규칙
+- **DB에 시간 저장은 항상 UTC** (`TIMESTAMPTZ DEFAULT now()`)
+- **프론트엔드에서 로컬 변환**: `Intl.DateTimeFormat('ko-KR', ...)` 또는 `toLocalDateStr()`
+- **DB의 UTC 값을 KST로 "수정"하면 안 됨** — 9시간 이중 오프셋 발생
+- 서버→클라이언트 API 응답도 UTC ISO 문자열 그대로 전달
+
+---
+
+**마지막 업데이트**: 2026-03-08
+**다음 리뷰**: 다음 세션

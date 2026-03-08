@@ -627,6 +627,8 @@ css/
 - CSP에 `unsafe-inline` → XSS 취약점
 - `service_role` 키를 클라이언트에 노출
 - LLM 응답을 타입 검증 없이 사용
+- DB의 UTC 시간값을 로컬 시간으로 "수정" → 이중 오프셋 발생
+- 로그아웃 시 인증 토큰만 지우고 데이터 상태(entries, profile 등) 유지
 
 ### 반드시 할 것
 - 환경변수에 기본값 제공 (`process.env.X || 'default'`)
@@ -635,3 +637,7 @@ css/
 - DB 레벨에서 데이터 무결성 보장 (CHECK 제약조건)
 - 커밋 전 서버 실행 확인
 - 기능 추가 시 문서 동기화
+- **로그아웃/계정 전환 시 모든 유저 데이터 상태 초기화** (token + profile + cached data + UI state)
+- **Supabase Auth 리다이렉트 URL 명시 설정** (signUp → emailRedirectTo, OAuth → redirectTo)
+- **service_role 의존 기능은 키 부재 시 startup 경고** (silent fail 방지)
+- **배포 환경변수 체크리스트 유지** (SUPABASE_URL, ANON_KEY, SERVICE_ROLE_KEY, SITE_URL, API keys)
