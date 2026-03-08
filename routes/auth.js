@@ -16,6 +16,23 @@ module.exports = function (deps) {
     logSecurityEvent,
   } = deps;
 
+  // Helper: record auth event to auth_events table
+  async function recordAuthEvent(eventType, { userId, provider, ip, userAgent, metadata } = {}) {
+    if (!supabaseAdmin) return;
+    try {
+      await supabaseAdmin.from('auth_events').insert({
+        user_id: userId || null,
+        event_type: eventType,
+        provider: provider || 'email',
+        ip_address: ip || null,
+        user_agent: userAgent || null,
+        metadata: metadata || {},
+      });
+    } catch (err) {
+      logger.warn('인증 이벤트 기록 실패', { eventType, error: err.message });
+    }
+  }
+
   // Helper: mask email for security logs
   function maskEmail(email) {
     if (!email || typeof email !== 'string') return '***';
@@ -82,6 +99,12 @@ module.exports = function (deps) {
       }
 
       logger.info('회원가입 성공', { requestId: rid, userId: data.user?.id });
+      recordAuthEvent('signup', {
+        userId: data.user?.id,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { has_nickname: !!req.body.nickname, email_confirmed: !!data.session },
+      });
 
       res.status(201).json({
         data: {
@@ -132,6 +155,11 @@ module.exports = function (deps) {
       }
 
       logger.info('로그인 성공', { requestId: rid, userId: data.user?.id });
+      recordAuthEvent('login', {
+        userId: data.user?.id,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      });
 
       res.json({
         data: {
@@ -169,6 +197,7 @@ module.exports = function (deps) {
         }
       }
       logger.info('로그아웃 성공', { requestId: rid, userId: req.user?.id });
+      recordAuthEvent('logout', { userId: req.user?.id, ip: req.ip, userAgent: req.get('user-agent') });
       res.json({ data: { success: true } });
     } catch (err) {
       logger.warn('로그아웃 처리 중 오류', { requestId: rid, error: err.message });
@@ -190,6 +219,7 @@ module.exports = function (deps) {
     try {
       // Always return success to prevent email enumeration
       await supabase.auth.resetPasswordForEmail(emailV.value);
+      recordAuthEvent('password_reset', { ip: req.ip, userAgent: req.get('user-agent') });
       logger.info('비밀번호 재설정 요청', { requestId: rid });
     } catch (err) {
       logger.warn('비밀번호 재설정 오류', { requestId: rid, error: err.message });
@@ -270,6 +300,7 @@ module.exports = function (deps) {
       }
 
       logger.info('OAuth URL 생성', { requestId: rid, provider });
+      recordAuthEvent('oauth_started', { provider, ip: req.ip, userAgent: req.get('user-agent') });
       res.json({ data: { url: data.url } });
     } catch (err) {
       logger.error('OAuth 처리 중 오류', { requestId: rid, error: err.message });
@@ -338,6 +369,7 @@ module.exports = function (deps) {
       }
 
       logSecurityEvent('ACCOUNT_DELETED', { requestId: rid, userId, ip: req.ip });
+      recordAuthEvent('account_deleted', { userId, ip: req.ip, userAgent: req.get('user-agent') });
       logger.info('회원탈퇴 완료', { requestId: rid, userId });
       res.json({ data: { success: true }, message: '회원탈퇴가 완료되었습니다.' });
     } catch (err) {
@@ -392,6 +424,7 @@ module.exports = function (deps) {
       }
 
       logSecurityEvent('PASSWORD_CHANGED', { requestId: rid, userId: req.user?.id, ip: req.ip });
+      recordAuthEvent('password_changed', { userId: req.user?.id, ip: req.ip, userAgent: req.get('user-agent') });
       logger.info('비밀번호 변경 완료', { requestId: rid, userId: req.user?.id });
       res.json({ data: { success: true }, message: '비밀번호가 변경되었습니다.' });
     } catch (err) {
