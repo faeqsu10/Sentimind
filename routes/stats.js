@@ -29,6 +29,10 @@ module.exports = function (deps) {
 
     const periodCutoff = periodDays > 0 ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString() : null;
 
+    // Client timezone offset in minutes (e.g., -540 for KST/UTC+9)
+    const tzOffset = parseInt(req.query.tz_offset, 10);
+    const hasValidTz = !isNaN(tzOffset) && tzOffset >= -720 && tzOffset <= 840;
+
     logger.info('GET /api/stats', { requestId: rid, userId: req.user?.id, period: periodParam });
 
     // Guest mode — return empty stats (no auth required)
@@ -52,8 +56,16 @@ module.exports = function (deps) {
       // Supabase path: RPC 집계 + 최신 항목/프로필 병렬 조회
       if (USE_SUPABASE && req.supabaseClient) {
         const nowDate = new Date();
-        const weekAgoISO = new Date(nowDate.getTime() - 7 * 86400000).toISOString();
-        const todayStart = new Date(nowDate.toISOString().split('T')[0]).toISOString();
+        // Use client timezone offset to calculate correct "today" boundary
+        let todayStart;
+        if (hasValidTz) {
+          const localNow = new Date(nowDate.getTime() - tzOffset * 60000);
+          const localDateStr = localNow.toISOString().split('T')[0];
+          todayStart = new Date(new Date(localDateStr).getTime() + tzOffset * 60000).toISOString();
+        } else {
+          todayStart = new Date(nowDate.toISOString().split('T')[0]).toISOString();
+        }
+        const weekAgoISO = new Date(new Date(todayStart).getTime() - 7 * 86400000).toISOString();
 
         const [rpcResult, latestResult, profileResult, weekResult, todayResult] = await Promise.all([
           req.supabaseClient.rpc('get_user_stats_by_period', {
@@ -112,7 +124,13 @@ module.exports = function (deps) {
           });
         }
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        let todayStr;
+        if (hasValidTz) {
+          const localNow = new Date(Date.now() - tzOffset * 60000);
+          todayStr = localNow.toISOString().split('T')[0];
+        } else {
+          todayStr = new Date().toISOString().split('T')[0];
+        }
         const todayCompleted = profile?.last_entry_date === todayStr;
 
         const thisWeekCount = weekResult.count || 0;
@@ -174,7 +192,13 @@ module.exports = function (deps) {
 
       const avgConfidence = entries.reduce((sum, e) => sum + (e.ontology?.confidence || 0), 0) / Math.max(entries.length, 1);
 
-      const todayStr2 = new Date().toISOString().split('T')[0];
+      let todayStr2;
+      if (hasValidTz) {
+        const localNow = new Date(Date.now() - tzOffset * 60000);
+        todayStr2 = localNow.toISOString().split('T')[0];
+      } else {
+        todayStr2 = new Date().toISOString().split('T')[0];
+      }
       const weekAgo2 = new Date();
       weekAgo2.setDate(weekAgo2.getDate() - 7);
       weekAgo2.setHours(0, 0, 0, 0);

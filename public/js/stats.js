@@ -1,5 +1,5 @@
 import { state, PERIOD_MAP } from './state.js';
-import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton } from './utils.js';
+import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr } from './utils.js';
 import { fetchWithAuth } from './api.js';
 
 // 대시보드 캐시: 같은 기간+같은 항목 수면 API 재호출 스킵
@@ -12,7 +12,11 @@ export async function loadDashboard(period, forceReload = false) {
 
   if (!forceReload && _lastDashboardKey === cacheKey) return;
 
-  const queryParam = state.activePeriod !== 'all' ? '?period=' + state.activePeriod : '';
+  const tzOffset = new Date().getTimezoneOffset();
+  const params = new URLSearchParams();
+  if (state.activePeriod !== 'all') params.set('period', state.activePeriod);
+  params.set('tz_offset', tzOffset);
+  const queryParam = '?' + params.toString();
   const dashEl = document.getElementById('dashboardContent');
   if (dashEl) dashEl.setAttribute('aria-busy', 'true');
   showSkeleton('stats');
@@ -162,7 +166,7 @@ function renderInsights(entries) {
   // 1. 요일 패턴: 각 요일별 가장 빈번한 감정
   const byDay = Array.from({ length: 7 }, () => ({}));
   entries.forEach(e => {
-    const d = new Date((e.date || e.created_at || '').slice(0, 10));
+    const d = new Date(e.date || e.created_at || '');
     if (isNaN(d.getTime())) return;
     const dow = d.getDay();
     const emo = e.emotion;
@@ -364,7 +368,7 @@ function renderTrendChart(entries) {
   cutoff.setHours(0, 0, 0, 0);
 
   const filtered = (entries || []).filter(e => {
-    const d = new Date((e.date || e.created_at || '').slice(0, 10));
+    const d = new Date(e.date || e.created_at || '');
     return d >= cutoff && d <= now;
   });
 
@@ -375,7 +379,7 @@ function renderTrendChart(entries) {
 
   const byDate = {};
   filtered.forEach(e => {
-    const d = (e.date || e.created_at || '').slice(0, 10);
+    const d = toLocalDateStr(e.date || e.created_at || '');
     if (!byDate[d]) byDate[d] = { scores: [], emotions: [] };
     byDate[d].scores.push(emotionScore(e.emotion));
     byDate[d].emotions.push(e.emotion);
@@ -551,14 +555,14 @@ function renderEmotionGrowth(entries) {
   // Group entries by ISO week
   const weekMap = {};
   entries.forEach(e => {
-    const d = new Date((e.date || e.created_at || '').slice(0, 10));
+    const d = new Date(e.date || e.created_at || '');
     if (isNaN(d.getTime())) return;
     // Week key: start of week (Monday)
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(d);
     monday.setDate(diff);
-    const weekKey = monday.toISOString().slice(0, 10);
+    const weekKey = toLocalDateStr(monday);
     if (!weekMap[weekKey]) weekMap[weekKey] = [];
     weekMap[weekKey].push(e);
   });
@@ -721,12 +725,12 @@ function renderYearPixels(entries) {
   // Build date→emotion map for the selected year
   const dateMap = {};
   entries.forEach(e => {
-    const raw = (e.date || e.created_at || '').slice(0, 10);
+    const raw = e.date || e.created_at || '';
     if (!raw) return;
     const d = new Date(raw);
     if (d.getFullYear() !== _pixelsYear) return;
-    // Keep the last entry per day
-    dateMap[raw] = e.emotion;
+    // Keep the last entry per day (local date)
+    dateMap[toLocalDateStr(d)] = e.emotion;
   });
 
   // Generate all days of the year grouped by week (Sunday-start columns like GitHub)
@@ -774,7 +778,7 @@ function renderYearPixels(entries) {
 
   for (let d = 0; d < totalDays; d++) {
     const date = new Date(_pixelsYear, 0, 1 + d);
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = toLocalDateStr(date);
     const dayOfWeek = (d + startDay) % 7;
     const weekIdx = Math.floor((d + startDay) / 7);
     const x = LABEL_LEFT + weekIdx * step;

@@ -233,7 +233,7 @@ function initApp() {
   todayDate.textContent = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
   }).format(now);
-  todayDate.setAttribute('datetime', now.toISOString().split('T')[0]);
+  todayDate.setAttribute('datetime', now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0'));
 
   loadEntries();
   renderProfileScreen();

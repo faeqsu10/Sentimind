@@ -1,10 +1,10 @@
 import { state } from './state.js';
-import { emotionColor, escapeHtml } from './utils.js';
+import { emotionColor, escapeHtml, toLocalDateStr, todayLocalStr } from './utils.js';
 
 function buildCalEntryMap() {
   const entryMap = {};
   (state.allEntries || []).forEach(e => {
-    const d = (e.date || e.created_at || '').slice(0, 10);
+    const d = toLocalDateStr(e.date || e.created_at || '');
     if (!entryMap[d]) entryMap[d] = [];
     entryMap[d].push(e);
   });
@@ -28,7 +28,7 @@ export function renderCalendar() {
 
   const firstDay = new Date(state.calYear, state.calMonth, 1).getDay();
   const daysInMonth = new Date(state.calYear, state.calMonth + 1, 0).getDate();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = todayLocalStr();
 
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
   let html = weekdays.map(w => `<div class="cal-weekday">${w}</div>`).join('');
@@ -164,7 +164,7 @@ export function setupCalendar() {
     const now = new Date();
     state.calYear = now.getFullYear();
     state.calMonth = now.getMonth();
-    state.calSelectedDate = now.toISOString().slice(0, 10);
+    state.calSelectedDate = todayLocalStr();
     renderCalendar();
   });
 }

@@ -1,5 +1,5 @@
 import { state, STREAK_MILESTONES } from './state.js';
-import { escapeHtml, emotionColor, getEmotionGroup, showToast, calculateStreak } from './utils.js';
+import { escapeHtml, emotionColor, getEmotionGroup, showToast, calculateStreak, toLocalDateStr, todayLocalStr } from './utils.js';
 
 export function updateSidebar() {
   updateSidebarLatest();
@@ -47,10 +47,10 @@ function updateSidebarToday() {
   const container = document.getElementById('sidebarTodayContent');
   if (!container) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayLocalStr();
   const todayEntries = (state.allEntries || []).filter(e => {
     if (!e.date) return false;
-    return e.date.startsWith(todayStr);
+    return toLocalDateStr(e.date) === todayStr;
   });
 
   if (todayEntries.length === 0) {
@@ -75,11 +75,11 @@ function updateSidebarStreak() {
 
   const entries = state.allEntries || [];
   const dateSet = new Set();
-  entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+  entries.forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = todayLocalStr();
 
   const streak = calculateStreak(entries);
   const hasTodayEntry = dateSet.has(todayStr);
@@ -94,7 +94,7 @@ function updateSidebarStreak() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
+      const ds = toLocalDateStr(d);
       const active = dateSet.has(ds);
       const isToday = i === 0;
       const cls = 'streak-dot' + (active ? ' active' : '') + (isToday ? ' today' : '');
@@ -126,7 +126,7 @@ export function renderProfileBadges() {
   if (!grid) return;
   const entries = state.allEntries || [];
   const dateSet = new Set();
-  entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+  entries.forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
   const sortedDates = [...dateSet].sort();
   let maxStreak = 0, tempStreak = sortedDates.length > 0 ? 1 : 0;
   for (let i = 1; i < sortedDates.length; i++) {
@@ -286,11 +286,11 @@ function updateMobileStreakBanner() {
 
   const entries = state.allEntries || [];
   const dateSet = new Set();
-  entries.forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+  entries.forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = todayLocalStr();
 
   // Calculate streak
   const streak = calculateStreak(entries);
@@ -300,7 +300,7 @@ function updateMobileStreakBanner() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split('T')[0];
+    const ds = toLocalDateStr(d);
     const active = dateSet.has(ds);
     const isToday = i === 0;
     const cls = 'streak-dot' + (active ? ' active' : '') + (isToday ? ' today' : '');
@@ -314,7 +314,7 @@ function updateMobileStreakBanner() {
   // Today's emotion emoji
   const hasTodayEntry = dateSet.has(todayStr);
   if (hasTodayEntry) {
-    const todayEntry = entries.find(e => e.date && e.date.startsWith(todayStr));
+    const todayEntry = entries.find(e => e.date && toLocalDateStr(e.date) === todayStr);
     todayEl.textContent = todayEntry && todayEntry.emoji ? todayEntry.emoji : '마음 전달 완료';
   } else {
     todayEl.textContent = '오늘의 이야기를 기다려요';
@@ -334,8 +334,8 @@ export function updateSidebarWeeklyChart() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split('T')[0];
-    const count = (state.allEntries || []).filter(e => (e.date || '').startsWith(ds)).length;
+    const ds = toLocalDateStr(d);
+    const count = (state.allEntries || []).filter(e => e.date && toLocalDateStr(e.date) === ds).length;
     dayData.push({ label: dayLabels[d.getDay()], count, isToday: i === 0 });
     maxCount = Math.max(maxCount, count);
   }

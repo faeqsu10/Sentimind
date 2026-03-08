@@ -1,6 +1,7 @@
 // Smart Reminder — Browser Notification API integration
 import { state } from './state.js';
 import { track } from './analytics.js';
+import { toLocalDateStr, todayLocalStr } from './utils.js';
 
 let _reminderTimer = null;
 
@@ -32,8 +33,8 @@ function pickReminderMessage() {
   // Evening (18-23)
   if (hour >= 18) {
     // Check if already wrote today
-    const today = new Date().toISOString().slice(0, 10);
-    const wroteToday = entries.some(e => (e.date || '').slice(0, 10) === today);
+    const today = todayLocalStr();
+    const wroteToday = entries.some(e => toLocalDateStr(e.date || '') === today);
     if (wroteToday) return null; // Don't remind if already wrote
     return REMINDER_MESSAGES[6]; // 하루 마무리
   }

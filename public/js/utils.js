@@ -81,6 +81,24 @@ export function getPasswordStrength(password) {
   return 'strong';
 }
 
+// ===== Local Date Helpers (timezone-safe) =====
+/**
+ * UTC ISO 문자열을 사용자 로컬 타임존 기준 YYYY-MM-DD로 변환.
+ * `.split('T')[0]`은 UTC 날짜를 반환하므로 KST 등 UTC+ 시간대에서
+ * 자정 전후 기록이 전날로 잡히는 문제를 해결한다.
+ */
+export function toLocalDateStr(dateOrStr) {
+  const d = typeof dateOrStr === 'string' ? new Date(dateOrStr) : dateOrStr;
+  if (isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+export function todayLocalStr() {
+  return toLocalDateStr(new Date());
+}
+
 // ===== Toast Notification System =====
 const toastContainer = document.getElementById('toastContainer');
 
@@ -241,20 +259,20 @@ export function showSkeleton(type) {
  */
 export function calculateStreak(entries) {
   const dateSet = new Set();
-  (entries || []).forEach(e => { if (e.date) dateSet.add(e.date.split('T')[0]); });
+  (entries || []).forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   let streak = 0;
   let checkDate = new Date(today);
 
-  const todayStr = checkDate.toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(checkDate);
   if (!dateSet.has(todayStr)) {
     checkDate.setDate(checkDate.getDate() - 1);
   }
 
   while (true) {
-    const ds = checkDate.toISOString().split('T')[0];
+    const ds = toLocalDateStr(checkDate);
     if (dateSet.has(ds)) {
       streak++;
       checkDate.setDate(checkDate.getDate() - 1);
