@@ -60,6 +60,7 @@ module.exports = function (deps) {
     if (!passV.valid) return res.status(400).json({ error: passV.error, code: 'VALIDATION_ERROR' });
 
     try {
+      const siteUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
       const { data, error } = await supabase.auth.signUp({
         email: emailV.value,
         password: req.body.password,
@@ -67,6 +68,7 @@ module.exports = function (deps) {
           data: {
             nickname: req.body.nickname || null,
           },
+          emailRedirectTo: siteUrl,
         },
       });
 
