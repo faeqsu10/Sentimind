@@ -351,4 +351,30 @@ export function initAuthForms() {
   document.getElementById('showLoginFromSignupBtn').addEventListener('click', () => deps.showAuthCard('login'));
   document.getElementById('showResetBtn').addEventListener('click', () => deps.showAuthCard('reset'));
   document.getElementById('showLoginFromResetBtn').addEventListener('click', () => deps.showAuthCard('login'));
+
+  // Google OAuth
+  async function handleGoogleOAuth(btn, context) {
+    btn.disabled = true;
+    try {
+      track('oauth_started', { provider: 'google', context });
+      const res = await fetch('/api/auth/oauth/google');
+      const result = await res.json();
+      if (res.ok && result.data?.url) {
+        window.location.href = result.data.url;
+      } else {
+        showError(result.error || 'Google 로그인에 실패했습니다.');
+      }
+    } catch {
+      showError('서버에 연결할 수 없습니다.');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('googleLoginBtn').addEventListener('click', function() {
+    handleGoogleOAuth(this, 'login');
+  });
+  document.getElementById('googleSignupBtn').addEventListener('click', function() {
+    handleGoogleOAuth(this, 'signup');
+  });
 }

@@ -151,6 +151,33 @@
   background: var(--color-divider);
 }
 
+/* OAuth buttons */
+.btn-oauth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 1.2rem;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.btn-oauth-google:hover {
+  background: var(--color-bg);
+  border-color: var(--color-text-muted);
+}
+.btn-oauth-google:active { transform: scale(0.98); }
+.btn-oauth-google:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.btn-oauth-google:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.oauth-google-icon { flex-shrink: 0; }
+
 /* Password strength indicator */
 .password-strength {
   display: flex;

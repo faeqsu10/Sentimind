@@ -241,6 +241,42 @@ module.exports = function (deps) {
     }
   });
 
+  // GET /oauth/:provider - OAuth 로그인 URL 생성
+  router.get('/oauth/:provider', async (req, res) => {
+    const rid = requestId();
+    const provider = req.params.provider;
+
+    if (!USE_SUPABASE) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    const allowedProviders = ['google'];
+    if (!allowedProviders.includes(provider)) {
+      return res.status(400).json({ error: '지원하지 않는 로그인 방식입니다.', code: 'INVALID_PROVIDER' });
+    }
+
+    try {
+      const siteUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: siteUrl,
+        },
+      });
+
+      if (error) {
+        logger.warn('OAuth URL 생성 실패', { requestId: rid, provider, error: error.message });
+        return res.status(500).json({ error: 'OAuth 로그인 처리에 실패했습니다.', code: 'OAUTH_ERROR' });
+      }
+
+      logger.info('OAuth URL 생성', { requestId: rid, provider });
+      res.json({ data: { url: data.url } });
+    } catch (err) {
+      logger.error('OAuth 처리 중 오류', { requestId: rid, error: err.message });
+      res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   // GET /me - 현재 사용자 정보
   router.get('/me', authMiddleware, async (req, res) => {
     if (!req.user) {
