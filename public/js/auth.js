@@ -175,6 +175,8 @@ export function initAuthForms() {
       const result = await res.json();
 
       if (!res.ok) {
+        // E-23: auth_error_shown
+        track('auth_error_shown', { form_type: 'login', error_code: result.code || 'LOGIN_FAILED' });
         loginMessage.textContent = result.error || '로그인에 실패했습니다.';
         loginMessage.className = 'auth-message error';
         loginMessage.hidden = false;
@@ -188,6 +190,9 @@ export function initAuthForms() {
       localStorage.setItem('sb-refresh-token', state.refreshToken);
 
       await loadProfile();
+      // E-07: login_completed
+      const guestEntries = JSON.parse(localStorage.getItem('sentimind-guest-entries') || '[]');
+      track('login_completed', { had_guest_data: guestEntries.length > 0 });
       await deps.migrateGuestData();
       if (state.userProfile && !state.userProfile.onboarding_completed) {
         deps.showOnboarding();
@@ -263,6 +268,8 @@ export function initAuthForms() {
       const result = await res.json();
 
       if (!res.ok) {
+        // E-23: auth_error_shown
+        track('auth_error_shown', { form_type: 'signup', error_code: result.code || 'SIGNUP_FAILED' });
         signupMessage.textContent = result.error || '회원가입에 실패했습니다.';
         signupMessage.className = 'auth-message error';
         signupMessage.hidden = false;

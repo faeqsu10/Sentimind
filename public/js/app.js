@@ -74,6 +74,11 @@ function showDemo(pushHistory = true) {
   state.guestMode = true;
   setScreen('demo');
   if (pushHistory) pushScreen('demo');
+  // E-03: guest_demo_started
+  const entryPoint = document.referrer && document.referrer.includes(window.location.hostname)
+    ? 'landing_btn'
+    : (history.state?.prevScreen === 'landing' ? 'landing_btn' : 'direct');
+  track('guest_demo_started', { entry_point: entryPoint });
   initDemoScreen();
 }
 
@@ -207,6 +212,10 @@ async function completeOnboarding() {
     // Silently continue
   }
   await loadProfile();
+  // E-09: onboarding_completed
+  track('onboarding_completed', {
+    notification_set: !!(state.selectedNotificationTime),
+  });
   showApp();
 }
 
@@ -330,7 +339,11 @@ function switchTab(activeTab) {
     }
   });
 
-  if (activeTab === tabCalendar) renderCalendar();
+  if (activeTab === tabCalendar) {
+    renderCalendar();
+    // E-17: calendar_viewed
+    track('calendar_viewed', { total_entries: (state.allEntries || []).length });
+  }
   if (activeTab === tabDashboard) loadDashboard();
   if (activeTab === tabProfile) renderProfileScreen();
 }
@@ -723,6 +736,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (e) => {
     if (e.data?.type === 'OFFLINE_SYNC_COMPLETE') {
       showError(`오프라인에서 쓴 이야기 ${e.data.count}건이 저장되었어요.`);
+      // E-25: offline_sync_completed
+      track('offline_sync_completed', { synced_count: e.data.count || 0 });
       loadEntries();
     }
   });

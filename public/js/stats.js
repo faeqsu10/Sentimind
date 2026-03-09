@@ -1,6 +1,7 @@
 import { state, PERIOD_MAP } from './state.js';
 import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr } from './utils.js';
 import { fetchWithAuth } from './api.js';
+import { track } from './analytics.js';
 
 // 대시보드 캐시: 같은 기간+같은 항목 수면 API 재호출 스킵
 let _lastDashboardKey = null;
@@ -25,6 +26,11 @@ export async function loadDashboard(period, forceReload = false) {
     if (!response.ok) throw new Error();
     const stats = await response.json();
     renderDashboard(stats);
+    // E-15: stats_dashboard_viewed
+    track('stats_dashboard_viewed', {
+      period: state.activePeriod,
+      total_entries_in_period: stats.total_entries || 0,
+    });
     _lastDashboardKey = cacheKey;
   } catch {
     hideSkeleton('stats');
@@ -505,6 +511,8 @@ export async function fetchReport(period) {
         '</div>' +
       '</div>';
     resultEl.hidden = false;
+    // E-16: report_generated
+    track('report_generated', { period });
   } catch (err) {
     const msg = err.userMessage || '리포트를 만드는 중에 문제가 생겼어요.';
     resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';

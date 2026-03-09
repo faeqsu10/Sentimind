@@ -1,5 +1,6 @@
 import { state, STREAK_MILESTONES } from './state.js';
 import { escapeHtml, emotionColor, getEmotionGroup, showToast, calculateStreak, toLocalDateStr, todayLocalStr } from './utils.js';
+import { track } from './analytics.js';
 
 export function updateSidebar() {
   updateSidebarLatest();
@@ -113,6 +114,11 @@ function checkStreakMilestone(streak) {
   if (localStorage.getItem(key)) return;
   localStorage.setItem(key, '1');
 
+  // E-19: streak_milestone_achieved
+  track('streak_milestone_achieved', {
+    streak_days: milestone.days,
+    milestone_label: milestone.label,
+  });
   showToast(milestone.badge + ' ' + milestone.label + ' 달성! ' + milestone.desc, 'success');
   const streakCard = document.getElementById('sidebarStreak');
   if (streakCard) {

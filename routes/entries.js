@@ -10,6 +10,7 @@ module.exports = function (deps) {
   const {
     logger, requestId,
     USE_SUPABASE,
+    supabaseAdmin,
     authMiddleware,
     validateEntryText, validateConfidenceScore,
     validatePagination,
@@ -360,6 +361,16 @@ module.exports = function (deps) {
 
       if (format !== 'csv' && format !== 'json') {
         return res.status(400).json({ error: "format은 'csv' 또는 'json'만 가능합니다.", code: 'VALIDATION_ERROR' });
+      }
+
+      // E-18: data_exported (server-side analytics)
+      if (USE_SUPABASE && supabaseAdmin) {
+        supabaseAdmin.from('analytics_events').insert({
+          user_id: req.user.id,
+          event_name: 'data_exported',
+          properties: { format, entry_count: entries.length },
+          created_at: new Date().toISOString(),
+        }).catch(() => {});
       }
 
       if (format === 'json') {

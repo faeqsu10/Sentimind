@@ -514,6 +514,8 @@ function showRetentionCard() {
   retentionCard.hidden = false;
   retentionCard.style.animation = 'none';
   requestAnimationFrame(() => { retentionCard.style.animation = ''; });
+  // E-21: retention_card_shown
+  track('retention_card_shown', { message_type: message.icon });
 }
 
 function getRetentionMessage() {

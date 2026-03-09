@@ -153,6 +153,11 @@ export async function migrateGuestData() {
     if (res.ok) {
       const result = await res.json();
       clearGuestData();
+      // E-22: guest_data_migrated
+      track('guest_data_migrated', {
+        imported_count: result.imported || 0,
+        skipped_count: result.skipped || 0,
+      });
       if (result.imported > 0) {
         showError(`체험에서 나눈 이야기 ${result.imported}건을 일기장에 옮겨왔어요.`);
       }
