@@ -17,7 +17,7 @@ AI 공감 다이어리 — 사용자가 한 줄 일기를 쓰면 AI(Google Gemin
 public/              ──fetch──▸  server.js (Express :3000)  ──fetch──▸  Google Gemini API
 ├── index.html (HTML only)                │
 ├── css/ (4 files)                   data/entries.json
-├── js/ (12 ES modules)
+├── js/ (13 ES modules)
 └── sw.js
 ```
 
@@ -26,6 +26,7 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - **public/css/**: base.css (변수/리셋), layout.css (그리드/탭), components.css (UI 컴포넌트+다크모드), landing.css (랜딩 페이지)
 - **public/js/**: ES Module로 분리된 13개 파일. `app.js`가 진입점, `state.js`가 공유 상태, `analytics.js`가 이벤트 트래킹, 나머지는 기능별 모듈 (auth, guest, diary, history, calendar, stats, profile, sidebar, api, utils)
 - **routes/analytics.js**: POST /api/analytics — 이벤트 배치 수집 (최대 50개/요청, sendBeacon 호환)
+- **routes/emotion-graph.js**: GET /api/stats/emotion-graph — 감정 별자리 그래프 데이터 (노드/엣지/별자리 패턴)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
 
 ## Key Technical Decisions

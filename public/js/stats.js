@@ -2,6 +2,7 @@ import { state, PERIOD_MAP } from './state.js';
 import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr } from './utils.js';
 import { fetchWithAuth } from './api.js';
 import { track } from './analytics.js';
+import { loadEmotionGraph } from './emotion-graph.js';
 
 // 대시보드 캐시: 같은 기간+같은 항목 수면 API 재호출 스킵
 let _lastDashboardKey = null;
@@ -531,7 +532,9 @@ export function setupStats() {
     document.querySelectorAll('#periodFilter .period-chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     const days = chip.dataset.days || '0';
-    loadDashboard(PERIOD_MAP[days] || 'all', true);
+    const period = PERIOD_MAP[days] || 'all';
+    loadDashboard(period, true);
+    loadEmotionGraph(period);
   });
 
   document.getElementById('btnWeeklyReport').addEventListener('click', () => fetchReport('weekly'));

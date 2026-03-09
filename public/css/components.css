@@ -3533,3 +3533,182 @@ kbd {
   opacity: 0.6;
 }
 .footer-legal a { color: inherit; }
+
+/* ===== 마음의 별자리 (Constellation Graph) ===== */
+
+.constellation-section { position: relative; }
+
+.constellation-loading {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.constellation-message {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.constellation-svg {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+}
+
+/* 별자리 배경 (다크모드에서 자연스러운 밤하늘) */
+.constellation-background { rx: 12; }
+[data-theme="dark"] .constellation-background { opacity: 1; }
+
+/* 배경 작은 별 — 반짝임 */
+.constellation-bg-star {
+  animation: constellationTwinkle 4s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.7s);
+}
+
+/* 별(노드) 반짝임 애니메이션 */
+@keyframes constellationTwinkle {
+  0%, 100% { opacity: 0.3; filter: drop-shadow(0 0 1px currentColor); }
+  50% { opacity: 1; filter: drop-shadow(0 0 4px currentColor); }
+}
+
+@keyframes constellationStarPulse {
+  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
+  50% { filter: drop-shadow(0 0 8px currentColor); }
+}
+
+.constellation-star {
+  cursor: pointer;
+  animation: constellationStarPulse 3s ease-in-out infinite;
+  transition: r 0.2s ease;
+}
+.constellation-star:hover,
+.constellation-star--active {
+  filter: drop-shadow(0 0 12px currentColor) !important;
+}
+
+/* 별자리 연결선 */
+.constellation-line {
+  transition: opacity 0.3s ease;
+}
+
+/* 중심 "나" */
+.constellation-center {
+  animation: constellationTwinkle 5s ease-in-out infinite;
+}
+
+/* 별자리 이름 레이블 */
+.constellation-name-label {
+  font-family: var(--font-ui);
+  letter-spacing: 0.05em;
+}
+
+/* 툴팁 */
+.constellation-tooltip {
+  position: absolute;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(20, 22, 40, 0.95);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
+}
+.constellation-tooltip-emotion { font-weight: 600; font-size: 0.85rem; }
+.constellation-tooltip-count { color: rgba(255,255,255,0.7); }
+.constellation-tooltip-date { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+
+/* 빈 상태 */
+.constellation-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-muted);
+}
+.constellation-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.constellation-empty-text { font-size: 0.9rem; margin-bottom: 0.25rem; }
+.constellation-empty-sub { font-size: 0.75rem; opacity: 0.7; }
+
+/* 별자리 정보 패널 */
+.constellation-info {
+  margin-top: 1rem;
+}
+.constellation-info-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.constellation-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.constellation-card--complete {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+.constellation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+.constellation-card-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+.constellation-card-badge {
+  font-size: 0.65rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.constellation-card-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+.constellation-progress {
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.constellation-progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.constellation-card-emotions {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.constellation-emotion-tag.matched {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .constellation-star-label { display: none; }
+}

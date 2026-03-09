@@ -11,6 +11,7 @@ import { loadDashboard, setupStats } from './stats.js';
 import { updateSidebar, createConfetti, renderProfileBadges } from './sidebar.js';
 import { setupProfile, renderProfileScreen, initProfileEventListeners } from './profile.js';
 import { track } from './analytics.js';
+import { loadEmotionGraph } from './emotion-graph.js';
 import { initReminder, requestNotificationPermission, scheduleReminder } from './reminder.js';
 
 // ===== DOM Elements =====
@@ -344,7 +345,7 @@ function switchTab(activeTab) {
     // E-17: calendar_viewed
     track('calendar_viewed', { total_entries: (state.allEntries || []).length });
   }
-  if (activeTab === tabDashboard) loadDashboard();
+  if (activeTab === tabDashboard) { loadDashboard(); loadEmotionGraph(state.activePeriod || '30d'); }
   if (activeTab === tabProfile) renderProfileScreen();
 }
 

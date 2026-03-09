@@ -50,7 +50,8 @@ Sentimind/
 │   ├── stats.js                # 통계 조회 (기간 필터)
 │   ├── report.js               # AI 리포트 생성
 │   ├── migrate.js              # 게스트→회원 데이터 마이그레이션
-│   └── analytics.js            # 이벤트 트래킹 수집
+│   ├── analytics.js            # 이벤트 트래킹 수집
+│   └── emotion-graph.js        # 감정 별자리 그래프 API
 ├── config/
 │   ├── llm-config.js           # Gemini API 설정 (모델, 프롬프트)
 │   └── supabase-config.js      # Supabase 클라이언트 & 설정
@@ -172,6 +173,7 @@ Sentimind/
 - 🕐 시간대별 감정 분석
 - 📊 상황별 빈도
 - 🎯 스트릭 뱃지 및 캘린더 히트맵
+- ⭐ 마음의 별자리 — 감정 그래프 시각화 (SVG, 힘 기반 레이아웃)
 
 ### 6. 검색 및 필터
 - 🔎 텍스트 검색 (일기 내용)
@@ -494,5 +496,5 @@ ISC License - [LICENSE](LICENSE) 파일 참고
 
 ---
 
-**마지막 업데이트**: 2026-03-06
-**현재 상태**: Phase 5A 완료, Phase 6 완료, Vercel 배포 중 ✅
+**마지막 업데이트**: 2026-03-09
+**현재 상태**: Phase 8 진행 중, Vercel 배포 중 ✅

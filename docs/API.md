@@ -293,6 +293,64 @@ Content-Type: application/json
 
 ---
 
+## 7. 감정 별자리 그래프 (GET /api/stats/emotion-graph)
+
+감정 데이터를 그래프 구조(노드/엣지)로 변환하고, 사전 정의된 별자리 패턴을 탐지합니다.
+
+**요청**
+```javascript
+GET /api/stats/emotion-graph?period=30d
+Authorization: Bearer {token}  // 선택 (게스트는 빈 데이터 반환)
+```
+
+**파라미터**
+- `period`: `7d` | `30d` (기본값) | `90d` | `all`
+
+**응답 (성공)**
+```json
+{
+  "nodes": [
+    {
+      "id": "기쁨",
+      "level": 2,
+      "parent": "긍정",
+      "emoji": "😊",
+      "count": 12,
+      "firstSeen": "2026-02-15T09:00:00Z",
+      "lastSeen": "2026-03-08T14:30:00Z"
+    }
+  ],
+  "edges": [
+    { "source": "기쁨", "target": "감사", "type": "transitionsTo", "count": 3 },
+    { "source": "기쁨", "target": "설렘", "type": "relatedTo", "count": 2 }
+  ],
+  "constellations": [
+    {
+      "name": "사랑의 별자리",
+      "description": "따뜻한 관계에서 행복을 느끼는 패턴",
+      "emotions": ["따뜻함", "감사", "기쁨", "사랑"],
+      "matched": ["감사", "기쁨", "사랑"],
+      "progress": 0.75,
+      "complete": true
+    }
+  ],
+  "meta": {
+    "totalEntries": 42,
+    "uniqueEmotions": 8,
+    "dominantEmotion": "기쁨"
+  }
+}
+```
+
+**기술 상세**
+- **노드 제한**: 최대 50개 (빈도순)
+- **엣지 유형**: `transitionsTo` (연속 전환 2회+), `relatedTo` (연관 감정 1회+)
+- **별자리 패턴**: 6종 (도전, 성장, 사랑, 회복, 탐구, 평온)
+- **감정 별칭**: 유사 표현 자동 통합 (예: '우울' → '슬픔')
+- **캐시**: `Cache-Control: private, max-age=60`
+
+---
+
 ## 에러 처리
 
 모든 API 응답은 다음 HTTP 상태 코드를 사용합니다.
@@ -356,4 +414,4 @@ curl http://localhost:3000/api/stats
 
 ---
 
-**마지막 업데이트**: 2026-03-05
+**마지막 업데이트**: 2026-03-09
