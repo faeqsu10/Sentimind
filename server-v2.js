@@ -66,6 +66,16 @@ function validateEnvironment() {
   if (!process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
     console.warn('[WARN] SUPABASE_ANON_KEY 설정됨, SUPABASE_URL 누락 -> JSON fallback 사용');
   }
+
+  // service_role 키 부재 경고 (auth_events, analytics 등 admin 기능 비활성화)
+  if (process.env.SUPABASE_URL && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('[WARN] SUPABASE_SERVICE_ROLE_KEY 누락 -> auth_events 기록, analytics 저장 등 admin 기능 비활성화');
+  }
+
+  // SITE_URL 미설정 경고 (이메일 확인 리다이렉트 문제)
+  if (!process.env.SITE_URL) {
+    console.warn('[WARN] SITE_URL 미설정 -> 이메일 확인/OAuth 리다이렉트가 기본값(localhost) 사용');
+  }
 }
 
 validateEnvironment();

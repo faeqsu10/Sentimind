@@ -11,6 +11,7 @@ module.exports = function (deps) {
   const {
     logger, requestId,
     authMiddleware,
+    supabaseAdmin,
     sanitizeString,
     validateEntryText,
     generateId,
@@ -82,6 +83,20 @@ module.exports = function (deps) {
       }
 
       logger.info('게스트 데이터 마이그레이션 완료', { requestId: rid, userId, imported, skipped });
+
+      // Record guest_conversion event in auth_events
+      if (supabaseAdmin && imported > 0) {
+        supabaseAdmin.from('auth_events').insert({
+          user_id: userId,
+          event_type: 'guest_conversion',
+          provider: 'email',
+          ip_address: req.ip || null,
+          user_agent: req.get('user-agent') || null,
+          metadata: { guest_entries: entries.length, imported, skipped },
+        }).then(() => {}).catch(err => {
+          logger.warn('guest_conversion 이벤트 기록 실패', { requestId: rid, error: err.message });
+        });
+      }
 
       res.json({ success: true, imported, skipped });
 
