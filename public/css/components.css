@@ -2468,11 +2468,22 @@ kbd {
   height: auto;
   overflow: visible;
 }
+.flower-subtitle {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  margin-top: -0.25rem;
+}
 .flower-petal {
   transition: opacity 0.2s;
   cursor: pointer;
 }
 .flower-petal:hover { opacity: 0.75; }
+.flower-petal-label {
+  font-family: var(--font-ui, sans-serif);
+  fill: var(--color-text);
+}
 .flower-tooltip {
   position: fixed;
   background: var(--color-surface);
@@ -2496,6 +2507,84 @@ kbd {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   padding: 1.5rem 0;
+}
+.flower-legend {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0 0.25rem;
+}
+.flower-legend-item {
+  display: grid;
+  grid-template-columns: 10px 3.5rem 1fr 2.2rem 2.4rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+.flower-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.flower-legend-name {
+  color: var(--color-text-light);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flower-legend-bar {
+  height: 5px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.flower-legend-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.flower-legend-count {
+  color: var(--color-text-muted);
+  text-align: right;
+  font-size: 0.73rem;
+}
+.flower-legend-pct {
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  font-size: 0.73rem;
+}
+.flower-legend-item:first-child .flower-legend-name {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.flower-legend-hidden {
+  font-size: 0.73rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin-top: 0.2rem;
+  display: block;
+}
+.flower-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0 0.5rem;
+}
+.flower-empty-state svg {
+  opacity: 0.18;
+  width: 120px;
+  height: 120px;
+}
+.flower-empty-state p {
+  font-size: 0.83rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.5;
 }
 
 /* Emotion × Situation Heatmap */

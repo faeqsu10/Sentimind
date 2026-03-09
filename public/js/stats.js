@@ -265,8 +265,21 @@ function renderEmotionFlower(entries) {
   const container = document.getElementById('emotionFlowerChart');
   if (!container) return;
 
+  // R9. Better empty state
   if (!entries || entries.length < 5) {
-    container.innerHTML = '<p class="flower-empty">5개 이상 이야기를 나누면 마음의 꽃잎이 피어나요</p>';
+    const grayPetals = Array.from({ length: 5 }, (_, i) => {
+      const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+      const r = 48, cr = 20, pw = 0.38;
+      const bAL = angle - pw, bAR = angle + pw;
+      const bx1 = 60 + cr * Math.cos(bAL), by1 = 60 + cr * Math.sin(bAL);
+      const bx2 = 60 + cr * Math.cos(bAR), by2 = 60 + cr * Math.sin(bAR);
+      const tx = 60 + r * Math.cos(angle), ty = 60 + r * Math.sin(angle);
+      const mr = r * 0.65;
+      const cp1x = 60 + mr * Math.cos(bAL), cp1y = 60 + mr * Math.sin(bAL);
+      const cp2x = 60 + mr * Math.cos(bAR), cp2y = 60 + mr * Math.sin(bAR);
+      return `<path d="M ${bx1.toFixed(1)},${by1.toFixed(1)} Q ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)} Q ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} Z" fill="#aaa"/>`;
+    }).join('');
+    container.innerHTML = `<div class="flower-empty-state"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${grayPetals}<circle cx="60" cy="60" r="20" fill="#ccc"/></svg><p>5개 이상 이야기를 나누면<br>마음의 꽃잎이 피어나요</p></div>`;
     return;
   }
 
@@ -276,34 +289,45 @@ function renderEmotionFlower(entries) {
     if (e.emotion) counts[e.emotion] = (counts[e.emotion] || 0) + 1;
   });
 
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  if (sorted.length === 0) {
-    container.innerHTML = '<p class="flower-empty">아직 감정 데이터가 없어요</p>';
+  const allSorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (allSorted.length === 0) {
+    container.innerHTML = `<div class="flower-empty-state"><p>아직 감정 데이터가 없어요</p></div>`;
     return;
   }
 
+  // R2. Cap at max 8 petals
+  const MAX_PETALS = 8;
+  const sorted = allSorted.slice(0, MAX_PETALS);
+  const hiddenCount = allSorted.length - sorted.length;
+
   const maxCount = sorted[0][1];
-  const total = entries.length;
+  const totalClassified = Object.values(counts).reduce((s, c) => s + c, 0);
+  const total = totalClassified;
+  const topEmotion = sorted[0][0];
+  const topEmoji = EMOTION_EMOJI_MAP[topEmotion] || '💭';
+
   const CX = 150, CY = 150;
-  const MAX_R = 100;   // max petal length (tip distance from center)
-  const MIN_R = 20;    // min petal length when count > 0
-  const CENTER_R = 28; // central circle radius
-  const PETAL_W = 0.38; // half-angle for petal width in radians (~22 degrees)
+  const MAX_R = 100;
+  const MIN_R = 20;
+  const CENTER_R = 32; // R3. increased from 28
+  const PETAL_W = 0.38;
 
   const n = sorted.length;
   const angleStep = (2 * Math.PI) / n;
 
+  let defs = '';
   let petals = '';
-  let labels = '';
+  let veins = '';
+  let inlineLabels = '';
+  let emojiLabels = '';
 
   sorted.forEach(([emotion, count], i) => {
-    const angle = -Math.PI / 2 + i * angleStep; // start from top
+    const angle = -Math.PI / 2 + i * angleStep;
     const r = MIN_R + (count / maxCount) * (MAX_R - MIN_R);
     const color = emotionColor(emotion);
     const emoji = EMOTION_EMOJI_MAP[emotion] || '💭';
+    const pct = Math.round((count / total) * 100);
 
-    // Petal: ellipse-like path using bezier curves
-    // Base at center+CENTER_R, tip at center+r along angle
     const baseAngleL = angle - PETAL_W;
     const baseAngleR = angle + PETAL_W;
 
@@ -315,41 +339,104 @@ function renderEmotionFlower(entries) {
     const tipX = CX + r * Math.cos(angle);
     const tipY = CY + r * Math.sin(angle);
 
-    // Control points for bezier — bulge the petal outward
     const midR = r * 0.65;
     const cp1x = CX + midR * Math.cos(baseAngleL);
     const cp1y = CY + midR * Math.sin(baseAngleL);
     const cp2x = CX + midR * Math.cos(baseAngleR);
     const cp2y = CY + midR * Math.sin(baseAngleR);
 
-    const safeEmotion = emotion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const safeEmotion = escapeHtml(emotion);
 
-    petals += `<path class="flower-petal" d="M ${bx1.toFixed(1)},${by1.toFixed(1)} Q ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} Q ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} Z" fill="${color}" fill-opacity="0.85" data-emotion="${safeEmotion}" data-count="${count}" aria-label="${safeEmotion} ${count}회"/>`;
+    // R5. Petal gradient
+    const gradId = `pg_${i}`;
+    const gx1 = CX + CENTER_R * Math.cos(angle);
+    const gy1 = CY + CENTER_R * Math.sin(angle);
+    defs += `<linearGradient id="${gradId}" x1="${gx1.toFixed(1)}" y1="${gy1.toFixed(1)}" x2="${tipX.toFixed(1)}" y2="${tipY.toFixed(1)}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="${color}" stop-opacity="0.55"/><stop offset="100%" stop-color="${color}" stop-opacity="0.90"/></linearGradient>`;
 
-    // Emoji at petal tip
-    const emojiR = r + 14;
-    const ex = CX + emojiR * Math.cos(angle);
-    const ey = CY + emojiR * Math.sin(angle);
-    labels += `<text x="${ex.toFixed(1)}" y="${ey.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="13" style="pointer-events:none;user-select:none">${emoji}</text>`;
+    // R10. Better aria-label per petal
+    petals += `<path class="flower-petal" d="M ${bx1.toFixed(1)},${by1.toFixed(1)} Q ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} Q ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} Z" fill="url(#${gradId})" data-emotion="${safeEmotion}" data-count="${count}" data-pct="${pct}" aria-label="${safeEmotion} ${count}회, 전체의 ${pct}%"/>`;
+
+    // R6. Petal vein line
+    const veinEndR = r * 0.72;
+    const veinStartX = CX + CENTER_R * Math.cos(angle);
+    const veinStartY = CY + CENTER_R * Math.sin(angle);
+    const veinEndX = CX + veinEndR * Math.cos(angle);
+    const veinEndY = CY + veinEndR * Math.sin(angle);
+    veins += `<line x1="${veinStartX.toFixed(1)}" y1="${veinStartY.toFixed(1)}" x2="${veinEndX.toFixed(1)}" y2="${veinEndY.toFixed(1)}" stroke="${color}" stroke-width="1" stroke-opacity="0.45" style="pointer-events:none"/>`;
+
+    // R4. Text labels on petals (only if petal long enough)
+    if (r > CENTER_R + 24) {
+      const labelFrac = 0.62;
+      const labelR = CENTER_R + (r - CENTER_R) * labelFrac;
+      const lx = CX + labelR * Math.cos(angle);
+      const ly = CY + labelR * Math.sin(angle);
+      // Convert angle to degrees for SVG rotate
+      let deg = angle * (180 / Math.PI);
+      // Flip text if it would be upside-down
+      let flip = false;
+      const normAngle = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      if (normAngle > Math.PI / 2 && normAngle < 3 * Math.PI / 2) {
+        flip = true;
+        deg += 180;
+      }
+      const fontSize = i < 3 ? 9.5 : 8.5;
+      inlineLabels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="${fontSize}" class="flower-petal-label" opacity="0.85" transform="rotate(${(deg + 90).toFixed(1)},${lx.toFixed(1)},${ly.toFixed(1)})" style="pointer-events:none;user-select:none">${safeEmotion}</text>`;
+    }
+
+    // Emoji at petal tip (only if petal long enough to avoid center overlap)
+    if (r > CENTER_R + 20) {
+      const emojiR = r + 14;
+      const ex = CX + emojiR * Math.cos(angle);
+      const ey = CY + emojiR * Math.sin(angle);
+      emojiLabels += `<text x="${ex.toFixed(1)}" y="${ey.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="13" style="pointer-events:none;user-select:none">${emoji}</text>`;
+    }
   });
 
-  // Tooltip element id
+  // R7. Legend strip (top 5)
+  const legendItems = sorted.slice(0, 5).map(([emotion, count]) => {
+    const color = emotionColor(emotion);
+    const pct = Math.round((count / total) * 100);
+    const safeEmotion = escapeHtml(emotion);
+    return `<div class="flower-legend-item">
+      <span class="flower-legend-dot" style="background:${color}"></span>
+      <span class="flower-legend-name">${safeEmotion}</span>
+      <span class="flower-legend-bar"><span class="flower-legend-fill" style="width:${pct}%;background:${color}"></span></span>
+      <span class="flower-legend-count">${count}회</span>
+      <span class="flower-legend-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  const hiddenNote = hiddenCount > 0 ? ` <span class="flower-legend-hidden">그 외 ${hiddenCount}개</span>` : '';
+
+  // R10. Better SVG aria-label
+  const svgAriaLabel = `감정 꽃잎 차트: 총 ${total}개 기록, 가장 많은 감정은 ${escapeHtml(topEmotion)} (${maxCount}회)`;
+
   const tooltipId = 'flowerTooltip';
 
-  container.innerHTML = `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-label="감정 꽃잎 차트">
+  // R1. Subtitle, R3. Center shows dominant emotion
+  container.innerHTML = `<p class="flower-subtitle">꽃잎이 클수록 자주 느낀 감정이에요</p>
+  <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-label="${svgAriaLabel}">
+    <defs>${defs}</defs>
     ${petals}
+    ${veins}
     <circle cx="${CX}" cy="${CY}" r="${CENTER_R}" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
-    <text x="${CX}" y="${CY - 7}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" class="flower-center-label">${total}</text>
-    <text x="${CX}" y="${CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="9" class="flower-center-label" opacity="0.7">이야기</text>
-    ${labels}
-  </svg><div class="flower-tooltip" id="${tooltipId}"></div>`;
+    <text x="${CX}" y="${CY - 9}" text-anchor="middle" dominant-baseline="middle" font-size="18" style="pointer-events:none;user-select:none">${topEmoji}</text>
+    <text x="${CX}" y="${CY + 11}" text-anchor="middle" dominant-baseline="middle" font-size="8" class="flower-center-label" opacity="0.75">${escapeHtml(topEmotion)}</text>
+    ${inlineLabels}
+    ${emojiLabels}
+  </svg>
+  <div class="flower-tooltip" id="${tooltipId}"></div>
+  <div class="flower-legend">${legendItems}${hiddenNote}</div>`;
 
+  // R8. Enhanced tooltip with percentage
   const tooltip = document.getElementById(tooltipId);
   container.querySelectorAll('.flower-petal').forEach(petal => {
     function showTip(x, y) {
-      tooltip.textContent = petal.dataset.emotion + ' · ' + petal.dataset.count + '회';
+      const pct = petal.dataset.pct;
+      tooltip.textContent = petal.dataset.emotion + ' · ' + petal.dataset.count + '회 (' + pct + '%)';
       tooltip.style.display = 'block';
-      tooltip.style.left = (x + 14) + 'px';
+      const maxLeft = window.innerWidth - (tooltip.offsetWidth || 120) - 8;
+      tooltip.style.left = Math.min(Math.max(8, x + 14), maxLeft) + 'px';
       tooltip.style.top  = (y - 32) + 'px';
     }
     petal.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
