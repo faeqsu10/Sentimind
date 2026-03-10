@@ -11,7 +11,7 @@ module.exports = function (deps) {
     logger, requestId,
     USE_SUPABASE,
     authMiddleware,
-    validateNickname, validateBio, validateTheme, validateNotificationTime,
+    validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone,
   } = deps;
 
   // GET /profile - 프로필 조회
@@ -69,6 +69,7 @@ module.exports = function (deps) {
       ['bio', validateBio],
       ['theme', validateTheme],
       ['notification_time', validateNotificationTime],
+      ['ai_tone', validateAiTone],
     ];
 
     for (const [field, validator] of validations) {

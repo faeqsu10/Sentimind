@@ -42,6 +42,12 @@ export function renderProfileScreen() {
       bioCounter.classList.toggle('at-limit', len >= 200);
     }
 
+    // AI 톤 설정 반영
+    const savedTone = state.userProfile.ai_tone || 'warm';
+    document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.tone === savedTone ? 'true' : 'false');
+    });
+
     const savedTime = state.userProfile.notification_time || '';
     document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
       btn.setAttribute('aria-pressed', btn.dataset.time === savedTime ? 'true' : 'false');
@@ -98,6 +104,14 @@ export function initProfileEventListeners() {
     counter.classList.toggle('at-limit', len >= 200);
   });
 
+  // AI tone buttons
+  document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  });
+
   // Notification time preset buttons
   document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -137,6 +151,10 @@ export function initProfileEventListeners() {
     saveBtn.disabled = true;
     saveBtn.textContent = '저장 중...';
 
+    // AI 톤 설정
+    const activeTone = document.querySelector('.ai-tone-btn[data-tone][aria-pressed="true"]');
+    const aiTone = activeTone ? activeTone.dataset.tone : 'warm';
+
     let notificationTime = null;
     const activePreset = document.querySelector('.notification-time-btn[data-time][aria-pressed="true"]');
     const customTimeInput = document.getElementById('profile-notification-custom');
@@ -149,6 +167,7 @@ export function initProfileEventListeners() {
     const patchBody = {
       nickname: nicknameInput.value.trim(),
       bio: bioInput.value.trim(),
+      ai_tone: aiTone,
     };
     if (notificationTime) {
       patchBody.notification_time = notificationTime;

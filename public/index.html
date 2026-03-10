@@ -306,9 +306,9 @@
     <div class="demo-samples">
       <p class="demo-samples-label">이런 마음을 꺼내보세요</p>
       <div class="demo-samples-grid">
-        <button type="button" class="demo-sample-card" data-sample="오늘 하루가 참 길게 느껴졌다">오늘 하루가 참 길게 느껴졌다</button>
-        <button type="button" class="demo-sample-card" data-sample="친구와 맛있는 걸 먹어서 기분이 좋았다">친구와 맛있는 걸 먹어서 기분이 좋았다</button>
-        <button type="button" class="demo-sample-card" data-sample="이유 없이 마음이 무겁다">이유 없이 마음이 무겁다</button>
+        <button type="button" class="demo-sample-card" data-sample="잘했다는 칭찬을 받았는데 왜인지 기분이 이상하다">잘했다는 칭찬을 받았는데 왜인지 기분이 이상하다</button>
+        <button type="button" class="demo-sample-card" data-sample="오랜만에 혼자 걸었는데 생각이 많아졌다">오랜만에 혼자 걸었는데 생각이 많아졌다</button>
+        <button type="button" class="demo-sample-card" data-sample="그냥 아무것도 하기 싫은 하루였다">그냥 아무것도 하기 싫은 하루였다</button>
       </div>
     </div>
 
@@ -331,10 +331,47 @@
 
     <!-- Response -->
     <div class="demo-response" id="demoResponse" hidden>
+      <p class="ai-persona-tag" aria-label="AI 마음이의 분석">마음이가 읽었어요</p>
       <div class="demo-response-emoji" id="demoResponseEmoji"></div>
       <p class="demo-response-emotion" id="demoResponseEmotion"></p>
       <p class="demo-response-message" id="demoResponseMessage"></p>
       <p class="demo-response-advice" id="demoResponseAdvice"></p>
+
+      <!-- Ontology details -->
+      <details class="demo-analysis-details" id="demoAnalysisDetails" hidden>
+        <summary class="analysis-details-summary">마음의 결 살펴보기</summary>
+        <div class="demo-ontology">
+          <span class="ontology-label">마음의 층위</span>
+          <div class="emotion-hierarchy" id="demoEmotionHierarchy"></div>
+          <span class="ontology-label ontology-label--context">상황 맥락</span>
+          <div class="situation-tags" id="demoSituationTags"></div>
+        </div>
+        <div class="confidence-badge" id="demoConfidenceBadge" hidden>
+          <span class="confidence-badge-label">마음 읽기 정확도</span>
+          <div class="confidence-badge-bar">
+            <div class="confidence-badge-fill" id="demoConfidenceFill"></div>
+          </div>
+          <span class="confidence-badge-percent" id="demoConfidencePercent"></span>
+        </div>
+      </details>
+
+      <!-- Follow-up conversation -->
+      <div class="demo-followup" id="demoFollowup" hidden>
+        <div class="demo-followup-header">
+          <span class="demo-followup-title">마음이와 더 이야기하기</span>
+          <div class="followup-stages">
+            <span class="followup-stage-dot active" data-stage="explore"></span>
+            <span class="followup-stage-dot" data-stage="insight"></span>
+            <span class="followup-stage-dot" data-stage="action"></span>
+          </div>
+          <span class="followup-stage-label" id="demoFollowupStageLabel">탐색</span>
+        </div>
+        <div class="demo-followup-messages" id="demoFollowupMessages"></div>
+        <div class="demo-followup-input-row" id="demoFollowupInputRow">
+          <input type="text" class="demo-followup-input" id="demoFollowupInput" placeholder="마음이에게 답해보세요..." maxlength="500">
+          <button type="button" class="demo-followup-send" id="demoFollowupSend" disabled>전송</button>
+        </div>
+      </div>
     </div>
 
     <!-- History -->
@@ -955,6 +992,27 @@
                   <textarea id="profile-bio" rows="2" maxlength="200" placeholder="나를 한 줄로 표현한다면?" aria-describedby="bioCharCount"></textarea>
                   <div class="profile-field-footer">
                     <span class="char-counter" id="bioCharCount" aria-live="polite">0 / 200</span>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <label id="aiToneLabel">마음이 말투</label>
+                  <div class="ai-tone-group" role="radiogroup" aria-labelledby="aiToneLabel">
+                    <button type="button" class="ai-tone-btn" data-tone="warm" aria-pressed="true" role="radio">
+                      <span class="ai-tone-emoji" aria-hidden="true">&#x1F33F;</span>
+                      <span class="ai-tone-name">따뜻한 위로</span>
+                    </button>
+                    <button type="button" class="ai-tone-btn" data-tone="professional" aria-pressed="false" role="radio">
+                      <span class="ai-tone-emoji" aria-hidden="true">&#x1F4CB;</span>
+                      <span class="ai-tone-name">전문 상담</span>
+                    </button>
+                    <button type="button" class="ai-tone-btn" data-tone="friendly" aria-pressed="false" role="radio">
+                      <span class="ai-tone-emoji" aria-hidden="true">&#x1F60A;</span>
+                      <span class="ai-tone-name">다정한 친구</span>
+                    </button>
+                    <button type="button" class="ai-tone-btn" data-tone="poetic" aria-pressed="false" role="radio">
+                      <span class="ai-tone-emoji" aria-hidden="true">&#x1F338;</span>
+                      <span class="ai-tone-name">감성 시인</span>
+                    </button>
                   </div>
                 </div>
                 <div class="profile-field">

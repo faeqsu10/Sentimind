@@ -37,20 +37,28 @@ module.exports = function (deps) {
       return res.status(500).json({ error: '서버에 API 키가 설정되지 않았습니다.', code: 'INTERNAL_ERROR' });
     }
 
-    // 인증된 사용자의 최근 3개 일기를 조회하여 연속적 공감 맥락 생성
+    // 인증된 사용자의 최근 3개 일기 + AI 톤 설정 조회
     let contextSection = '';
+    let userAiTone = 'warm';
     if (req.user && req.supabaseClient) {
       try {
-        const { data: recentEntries } = await req.supabaseClient
-          .from('entries')
-          .select('emotion, text, created_at')
-          .eq('user_id', req.user.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false })
-          .limit(3);
+        const [entriesResult, profileResult] = await Promise.all([
+          req.supabaseClient
+            .from('entries')
+            .select('emotion, text, created_at')
+            .eq('user_id', req.user.id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false })
+            .limit(3),
+          req.supabaseClient
+            .from('user_profiles')
+            .select('ai_tone')
+            .eq('id', req.user.id)
+            .single(),
+        ]);
 
-        if (recentEntries && recentEntries.length > 0) {
-          const summary = recentEntries.map(e => {
+        if (entriesResult.data && entriesResult.data.length > 0) {
+          const summary = entriesResult.data.map(e => {
             const date = new Date(e.created_at);
             const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
             const snippet = (e.text || '').slice(0, 50);
@@ -58,16 +66,30 @@ module.exports = function (deps) {
           }).join(', ');
           contextSection = `\n\n참고: 사용자의 최근 감정 기록 - ${summary}`;
         }
+
+        if (profileResult.data && profileResult.data.ai_tone) {
+          userAiTone = profileResult.data.ai_tone;
+        }
       } catch {
-        // 맥락 조회 실패 시 기존대로 분석 (비차단)
+        // 맥락/톤 조회 실패 시 기존대로 분석 (비차단)
       }
     }
 
     const userPrompt = contextSection ? `${textV.value}${contextSection}` : textV.value;
 
+    // 톤별 추가 지시 생성
+    const toneInstructions = {
+      warm: '', // 기본 톤 — SYSTEM_PROMPT 그대로
+      professional: '\n\n추가 톤 지시: 전문적인 심리 상담사처럼 응답하세요. 감정 용어를 정확히 사용하고, 공감하되 분석적 통찰도 함께 제공합니다. 존댓말을 사용하되 약간 격식체를 유지합니다.',
+      friendly: '\n\n추가 톤 지시: 다정한 친구처럼 편하게 응답하세요. 반말은 쓰지 않되, "~요" 체를 사용하고 구어체 표현을 자연스럽게 섞어주세요. "아 정말?" "대박" 같은 공감 추임새를 가볍게 활용합니다.',
+      poetic: '\n\n추가 톤 지시: 감성적이고 시적인 문체로 응답하세요. 비유, 은유를 활용하고 짧은 문장으로 여운을 남기는 표현을 사용합니다. 마치 짧은 산문시처럼 리듬감 있게 작성합니다.',
+    };
+    const toneModifier = toneInstructions[userAiTone] || '';
+    const finalSystemPrompt = SYSTEM_PROMPT + toneModifier;
+
     const requestBody = {
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: finalSystemPrompt }] },
       generationConfig: {
         maxOutputTokens: config.gemini.maxOutputTokens,
         temperature: config.gemini.temperature,
