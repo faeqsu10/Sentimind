@@ -43,10 +43,11 @@ function ensureHistoryListListener() {
         const original = state.allEntries.find(en => en.id === id);
         if (original) original.is_bookmarked = newState;
         bookmarkBtn.classList.toggle('active', newState);
-        bookmarkBtn.textContent = newState ? '★' : '☆';
+        bookmarkBtn.textContent = newState ? '♥' : '♡';
+        bookmarkBtn.title = newState ? '즐겨찾기 해제' : '즐겨찾기 추가';
+        showToast(newState ? '즐겨찾기에 추가했어요' : '즐겨찾기에서 해제했어요');
       } catch {
-        const { showError } = await import('./utils.js');
-        showError('즐겨찾기 변경에 실패했습니다.');
+        showToast('즐겨찾기 변경에 실패했습니다.', 'error');
       }
       return;
     }
@@ -165,8 +166,8 @@ export function renderHistoryList(entries) {
           '</div>' +
         '</div>' +
       '</button>' +
-      '<span class="btn-bookmark' + (bookmarked ? ' active' : '') + '" role="button" tabindex="0" data-id="' + entry.id + '" aria-label="즐겨찾기" title="즐겨찾기">' +
-        (bookmarked ? '★' : '☆') +
+      '<span class="btn-bookmark' + (bookmarked ? ' active' : '') + '" role="button" tabindex="0" data-id="' + entry.id + '" aria-label="즐겨찾기" title="' + (bookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가') + '">' +
+        (bookmarked ? '♥' : '♡') +
       '</span>' +
     '</li>';
   }).join('');
