@@ -451,7 +451,7 @@ async function callGeminiAPI(requestBody, { rid, label = 'Gemini' } = {}) {
 // Streak Calculator
 // ---------------------------------------------------------------------------
 
-async function updateStreak(supabaseClient, userId) {
+async function updateStreak(supabaseClient, userId, tzOffsetMinutes) {
   if (!USE_SUPABASE || !supabaseClient) return;
 
   try {
@@ -464,9 +464,12 @@ async function updateStreak(supabaseClient, userId) {
 
     if (profileErr || !profile) return;
 
-    // KST 기준 오늘 날짜 (ISO format)
-    const kstNow = new Date(new Date().getTime() + config.timezone.utcOffsetHours * 60 * 60 * 1000);
-    const today = kstNow.toISOString().split('T')[0];
+    // 클라이언트 타임존 기준 오늘 날짜 (폴백: 서버 설정 KST)
+    const offsetMs = (typeof tzOffsetMinutes === 'number' && tzOffsetMinutes >= -720 && tzOffsetMinutes <= 840)
+      ? -tzOffsetMinutes * 60 * 1000
+      : config.timezone.utcOffsetHours * 60 * 60 * 1000;
+    const localNow = new Date(Date.now() + offsetMs);
+    const today = localNow.toISOString().split('T')[0];
     const todayDate = new Date(today + "T00:00:00Z");
 
     // Already wrote today

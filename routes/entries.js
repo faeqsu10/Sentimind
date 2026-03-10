@@ -129,8 +129,9 @@ module.exports = function (deps) {
           return res.status(500).json({ error: '일기 저장에 실패했습니다.', code: 'INTERNAL_ERROR' });
         }
 
-        // Update streak
-        await updateStreak(req.supabaseClient, req.user.id);
+        // Update streak (클라이언트 타임존 반영)
+        const tzOffset = parseInt(req.body.tz_offset, 10);
+        await updateStreak(req.supabaseClient, req.user.id, isNaN(tzOffset) ? undefined : tzOffset);
 
         const duration = Date.now() - startTime;
         logger.info('일기 저장 완료', { requestId: rid, entryId: data.id, duration: `${duration}ms` });
