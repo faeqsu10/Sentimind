@@ -777,7 +777,18 @@
       </section>
 
       <section class="diary-history" aria-label="이전 일기 목록">
-        <h2 class="section-title">지난 이야기들</h2>
+        <div class="history-title-row">
+          <h2 class="section-title">지난 이야기들</h2>
+          <button type="button" class="btn-select-mode" id="selectModeBtn" aria-label="선택 모드">선택</button>
+        </div>
+        <div class="select-toolbar" id="selectToolbar" hidden>
+          <label class="select-all-label">
+            <input type="checkbox" id="selectAllCheck" aria-label="전체 선택">
+            <span id="selectedCount">0개 선택</span>
+          </label>
+          <button type="button" class="btn-select-delete" id="selectDeleteBtn" disabled>삭제</button>
+          <button type="button" class="btn-select-cancel" id="selectCancelBtn">취소</button>
+        </div>
         <div class="history-filter" id="historyFilter">
           <label for="historySearch" class="sr-only">일기 검색</label>
           <input type="search" id="historySearch" class="search-input" placeholder="이야기 속 마음 찾기..." autocomplete="off">

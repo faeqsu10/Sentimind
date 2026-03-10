@@ -1,10 +1,13 @@
 import { state, PAGE_SIZE } from './state.js';
-import { escapeHtml, emotionColor, getEmotionGroup, debounce, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, emotionColor, getEmotionGroup, debounce, openModalFocus, closeModalFocus, showToast } from './utils.js';
 import { toggleBookmarkAPI, deleteEntryAPI } from './api.js';
 
 // Dependencies injected from app.js
 let deps = {};
 export function setupHistory(d) { deps = d; }
+
+// ===== Select Mode =====
+const selectedIds = new Set();
 
 // 이벤트 위임: historyList에 한 번만 리스너 등록 (renderHistoryList 호출 시마다 등록 방지)
 let _historyListenerAttached = false;
@@ -149,7 +152,9 @@ export function renderHistoryList(entries) {
     const color = emotionColor(entry.emotion);
     const bookmarked = entry.is_bookmarked;
 
-    return '<li class="history-item" data-emotion-group="' + emotionGroup + '" style="animation-delay:' + (idx * 30) + 'ms">' +
+    const isSelected = selectedIds.has(entry.id);
+    return '<li class="history-item' + (isSelected ? ' selected' : '') + '" data-emotion-group="' + emotionGroup + '" data-entry-id="' + entry.id + '" style="animation-delay:' + (idx * 30) + 'ms">' +
+      '<input type="checkbox" class="select-check" data-id="' + entry.id + '"' + (isSelected ? ' checked' : '') + ' aria-label="선택">' +
       '<button class="history-item-inner" aria-label="' + escapeHtml(entry.text) + ' 상세보기" data-idx="' + idx + '">' +
         '<div class="history-emoji" aria-hidden="true">' + escapeHtml(entry.emoji || '') + '</div>' +
         '<div class="history-content">' +
@@ -245,7 +250,92 @@ export function showHistoryDetail(entry) {
   }
 }
 
+function updateSelectUI() {
+  const count = selectedIds.size;
+  document.getElementById('selectedCount').textContent = count + '개 선택';
+  document.getElementById('selectDeleteBtn').disabled = count === 0;
+  const visibleIds = state.filteredEntries.slice(0, state.currentPage * PAGE_SIZE).map(e => e.id);
+  const allChecked = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  document.getElementById('selectAllCheck').checked = allChecked;
+}
+
+function exitSelectMode() {
+  selectedIds.clear();
+  const historySection = document.querySelector('.diary-history');
+  historySection.classList.remove('select-mode');
+  document.getElementById('selectModeBtn').classList.remove('active');
+  document.getElementById('selectToolbar').hidden = true;
+  document.querySelectorAll('.history-item.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.select-check').forEach(el => { el.checked = false; });
+}
+
 export function initHistoryEventListeners() {
   const historySearch = document.getElementById('historySearch');
   historySearch.addEventListener('input', debounce(applyFilters, 300));
+
+  // 선택 모드 토글
+  document.getElementById('selectModeBtn').addEventListener('click', () => {
+    const historySection = document.querySelector('.diary-history');
+    const isActive = historySection.classList.toggle('select-mode');
+    document.getElementById('selectModeBtn').classList.toggle('active', isActive);
+    document.getElementById('selectToolbar').hidden = !isActive;
+    if (!isActive) exitSelectMode();
+  });
+
+  // 취소 버튼
+  document.getElementById('selectCancelBtn').addEventListener('click', exitSelectMode);
+
+  // 전체 선택
+  document.getElementById('selectAllCheck').addEventListener('change', (e) => {
+    const visibleIds = state.filteredEntries.slice(0, state.currentPage * PAGE_SIZE).map(en => en.id);
+    if (e.target.checked) {
+      visibleIds.forEach(id => selectedIds.add(id));
+    } else {
+      visibleIds.forEach(id => selectedIds.delete(id));
+    }
+    document.querySelectorAll('.select-check').forEach(cb => { cb.checked = e.target.checked; });
+    document.querySelectorAll('.history-item').forEach(el => {
+      el.classList.toggle('selected', e.target.checked);
+    });
+    updateSelectUI();
+  });
+
+  // 개별 체크박스 (이벤트 위임)
+  document.getElementById('historyList').addEventListener('change', (e) => {
+    const cb = e.target.closest('.select-check');
+    if (!cb) return;
+    const id = cb.dataset.id;
+    const item = cb.closest('.history-item');
+    if (cb.checked) {
+      selectedIds.add(id);
+      item.classList.add('selected');
+    } else {
+      selectedIds.delete(id);
+      item.classList.remove('selected');
+    }
+    updateSelectUI();
+  });
+
+  // 선택 삭제
+  document.getElementById('selectDeleteBtn').addEventListener('click', async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    if (!confirm(count + '개의 이야기를 삭제할까요?')) return;
+    const btn = document.getElementById('selectDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = '삭제 중...';
+    try {
+      const ids = [...selectedIds];
+      await Promise.all(ids.map(id => deleteEntryAPI(id)));
+      showToast(count + '개의 이야기가 삭제되었어요.');
+      exitSelectMode();
+      await deps.loadEntries();
+    } catch {
+      showToast('일부 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
+      await deps.loadEntries();
+      exitSelectMode();
+    } finally {
+      btn.textContent = '삭제';
+    }
+  });
 }

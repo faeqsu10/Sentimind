@@ -1159,6 +1159,84 @@
   font-weight: 600;
   margin-bottom: 1.25rem;
 }
+/* ===== Select Mode ===== */
+.history-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.history-title-row .section-title { margin-bottom: 0; }
+.btn-select-mode {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: color 200ms, border-color 200ms;
+}
+.btn-select-mode:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.btn-select-mode.active { color: var(--color-primary); border-color: var(--color-primary); font-weight: 600; }
+.select-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+}
+.select-toolbar[hidden] { display: none; }
+.select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex: 1;
+}
+.select-all-label input[type="checkbox"] { accent-color: var(--color-primary); }
+.btn-select-delete {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity 200ms;
+}
+.btn-select-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-select-cancel {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.history-item .select-check {
+  display: none;
+  margin-left: 0.5rem;
+  margin-right: -0.5rem;
+  accent-color: var(--color-primary);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.select-mode .history-item .select-check { display: block; }
+.select-mode .history-item .btn-bookmark { display: none; }
+.history-item.selected { border-color: var(--color-primary); background: rgba(196, 139, 108, 0.05); }
+
 .history-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
 .history-item {
   background: var(--color-surface);

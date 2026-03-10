@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sentimind-v28';
+const CACHE_VERSION = 'sentimind-v29';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
