@@ -625,10 +625,9 @@ document.getElementById('landingStartBtn').addEventListener('click', () => {
   showAuthScreen();
   showAuthCard('signup');
 });
-document.getElementById('landingSignupBtn').addEventListener('click', () => {
-  track('landing_cta_clicked', { cta_type: 'signup', cta_position: 'footer' });
-  showAuthScreen();
-  showAuthCard('signup');
+document.getElementById('landingFooterDemoBtn').addEventListener('click', () => {
+  track('landing_cta_clicked', { cta_type: 'demo', cta_position: 'footer' });
+  showDemo();
 });
 document.getElementById('landingDemoBtn').addEventListener('click', () => {
   track('landing_cta_clicked', { cta_type: 'demo', cta_position: 'hero' });
@@ -636,10 +635,6 @@ document.getElementById('landingDemoBtn').addEventListener('click', () => {
 });
 document.getElementById('landingLoginBtn').addEventListener('click', () => {
   track('landing_cta_clicked', { cta_type: 'login', cta_position: 'hero' });
-  showAuthScreen();
-});
-document.getElementById('landingLoginBtn2').addEventListener('click', () => {
-  track('landing_cta_clicked', { cta_type: 'login', cta_position: 'footer' });
   showAuthScreen();
 });
 
