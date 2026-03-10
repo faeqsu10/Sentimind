@@ -1,5 +1,5 @@
 import { state, GUEST_STORAGE_KEY, GUEST_MAX_ENTRIES, GUEST_MAX_DAYS, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, showError, getEmotionGroup, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, showError, getEmotionGroup, emotionColor, calculateStreak, toLocalDateStr, openModalFocus, closeModalFocus } from './utils.js';
 import { fetchWithAuth, analyzeEmotion, fetchFollowup } from './api.js';
 import { track } from './analytics.js';
 
@@ -45,6 +45,11 @@ export function initDemoScreen() {
   // Reset followup
   const followup = document.getElementById('demoFollowup');
   if (followup) followup.hidden = true;
+
+  // Reset feature preview
+  _previewShown = false;
+  const preview = document.getElementById('demoFeaturePreview');
+  if (preview) preview.hidden = true;
 }
 
 function updateDemoCounter() {
@@ -124,6 +129,9 @@ async function analyzeDemo(text) {
 
     // Start followup conversation
     initDemoFollowup(result.emotion, text);
+
+    // Show feature preview after first analysis (1.5s delay)
+    showFeaturePreview(entries);
 
     // Check if should show nudge (5회로 변경 — 가치 충분히 체험 후)
     const used = GUEST_MAX_ENTRIES - getGuestRemaining();
@@ -320,6 +328,174 @@ function appendDemoFollowupMsg(role, text) {
 }
 
 // ---------------------------------------------------------------------------
+// Feature Preview (mock UI + real streak)
+// ---------------------------------------------------------------------------
+
+let _previewShown = false;
+
+function showFeaturePreview(entries) {
+  const section = document.getElementById('demoFeaturePreview');
+  if (!section) return;
+
+  // Always update streak with latest entries
+  updatePreviewStreak(entries);
+
+  // Only animate the first time
+  if (_previewShown) return;
+  _previewShown = true;
+
+  renderPreviewCalendar(entries);
+  renderPreviewPetal(entries);
+  renderPreviewConstellation();
+
+  setTimeout(() => {
+    section.hidden = false;
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 1500);
+}
+
+function renderPreviewCalendar(entries) {
+  const container = document.getElementById('demoPreviewCalendar');
+  if (!container) return;
+
+  // Build a 5x7 mini calendar grid with some mock + real data
+  const mockEmotions = ['기쁨', '슬픔', '평온', '불안', '감사', '피곤'];
+  const today = new Date();
+  let cells = '';
+
+  for (let i = 34; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = toLocalDateStr(d);
+
+    // Check if guest has a real entry for this date
+    const real = entries.find(e => {
+      const ed = toLocalDateStr(new Date(e.timestamp));
+      return ed === dateStr;
+    });
+
+    let bg = 'transparent';
+    let opacity = '0';
+    if (real) {
+      bg = emotionColor(real.emotion);
+      opacity = '1';
+    } else if (i < 30 && Math.random() > 0.55) {
+      // Sparse mock data for past days
+      bg = emotionColor(mockEmotions[Math.floor(Math.random() * mockEmotions.length)]);
+      opacity = '0.5';
+    }
+
+    cells += '<div style="background:' + bg + ';opacity:' + opacity +
+      ';border-radius:3px;aspect-ratio:1/1;"></div>';
+  }
+
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:4px;">' + cells + '</div>';
+}
+
+function renderPreviewPetal(entries) {
+  const container = document.getElementById('demoPreviewPetal');
+  if (!container) return;
+
+  // Collect real emotions from entries + fill with mock to show 5 petals
+  const emotionCounts = {};
+  entries.forEach(e => {
+    if (e.emotion) emotionCounts[e.emotion] = (emotionCounts[e.emotion] || 0) + 1;
+  });
+  const mockFill = [
+    ['기쁨', 4], ['슬픔', 3], ['평온', 2], ['불안', 2], ['감사', 1]
+  ];
+  mockFill.forEach(([em, cnt]) => {
+    if (!emotionCounts[em]) emotionCounts[em] = cnt;
+  });
+
+  const sorted = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const max = sorted[0]?.[1] || 1;
+
+  // Build SVG petals
+  const cx = 60, cy = 60;
+  let petals = '';
+  sorted.forEach(([em, cnt], i) => {
+    const angle = (i * 72 - 90) * Math.PI / 180;
+    const r = 18 + (cnt / max) * 22;
+    const px = cx + Math.cos(angle) * r * 0.6;
+    const py = cy + Math.sin(angle) * r * 0.6;
+    const color = emotionColor(em);
+    petals += '<ellipse cx="' + px + '" cy="' + py +
+      '" rx="' + (r * 0.45) + '" ry="' + (r * 0.7) +
+      '" fill="' + color + '" opacity="0.7"' +
+      ' transform="rotate(' + (i * 72) + ' ' + px + ' ' + py + ')"/>';
+  });
+
+  container.innerHTML = '<svg viewBox="0 0 120 120" width="100%" height="100%">' +
+    petals +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="var(--color-primary)" opacity="0.5"/>' +
+    '</svg>';
+}
+
+function renderPreviewConstellation() {
+  const container = document.getElementById('demoPreviewConstellation');
+  if (!container) return;
+
+  // Static mock constellation — night sky theme
+  const nodes = [
+    { x: 30, y: 25, r: 5, c: '#F4A261' },
+    { x: 70, y: 20, r: 4, c: '#7EB8DA' },
+    { x: 50, y: 50, r: 6, c: '#A8DAAB' },
+    { x: 20, y: 65, r: 3.5, c: '#9C89B8' },
+    { x: 80, y: 60, r: 4.5, c: '#E76F51' },
+    { x: 55, y: 80, r: 3, c: '#F2A0A0' },
+    { x: 35, y: 45, r: 3, c: '#E9C46A' },
+  ];
+  const edges = [
+    [0, 2], [1, 2], [2, 3], [2, 4], [4, 5], [0, 6], [3, 6]
+  ];
+
+  let svg = '<svg viewBox="0 0 100 100" width="100%" height="100%">' +
+    '<rect width="100" height="100" fill="#1a1a2e" rx="8"/>';
+
+  // Stars background
+  for (let i = 0; i < 15; i++) {
+    svg += '<circle cx="' + (Math.random() * 100) + '" cy="' + (Math.random() * 100) +
+      '" r="0.5" fill="#fff" opacity="' + (0.2 + Math.random() * 0.4) + '"/>';
+  }
+
+  // Edges
+  edges.forEach(([a, b]) => {
+    svg += '<line x1="' + nodes[a].x + '" y1="' + nodes[a].y +
+      '" x2="' + nodes[b].x + '" y2="' + nodes[b].y +
+      '" stroke="#fff" stroke-opacity="0.2" stroke-width="0.5"/>';
+  });
+
+  // Nodes
+  nodes.forEach(n => {
+    svg += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + n.r +
+      '" fill="' + n.c + '" opacity="0.8"/>';
+    svg += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (n.r + 2) +
+      '" fill="' + n.c + '" opacity="0.15"/>';
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+function updatePreviewStreak(entries) {
+  const streakEl = document.getElementById('demoPreviewStreak');
+  const textEl = document.getElementById('demoPreviewStreakText');
+  if (!streakEl || !textEl) return;
+
+  // Convert guest entries to date format for calculateStreak
+  const dated = entries.map(e => ({ date: toLocalDateStr(new Date(e.timestamp)) }));
+  const streak = calculateStreak(dated);
+
+  if (streak > 0) {
+    textEl.textContent = streak + '일 연속 기록 중이에요!';
+    streakEl.hidden = false;
+  } else {
+    streakEl.hidden = true;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Signup Modal
 // ---------------------------------------------------------------------------
 
@@ -458,6 +634,16 @@ export function initDemoEventListeners() {
         e.preventDefault();
         sendDemoFollowupReply();
       }
+    });
+  }
+
+  // Feature preview CTA
+  const previewCta = document.getElementById('demoPreviewCta');
+  if (previewCta) {
+    previewCta.addEventListener('click', () => {
+      track('preview_cta_clicked', { source: 'feature_preview' });
+      deps.showAuthScreen();
+      deps.showAuthCard('signup');
     });
   }
 

@@ -306,9 +306,10 @@
     <div class="demo-samples">
       <p class="demo-samples-label">이런 마음을 꺼내보세요</p>
       <div class="demo-samples-grid">
-        <button type="button" class="demo-sample-card" data-sample="잘했다는 칭찬을 받았는데 왜인지 기분이 이상하다">잘했다는 칭찬을 받았는데 왜인지 기분이 이상하다</button>
-        <button type="button" class="demo-sample-card" data-sample="오랜만에 혼자 걸었는데 생각이 많아졌다">오랜만에 혼자 걸었는데 생각이 많아졌다</button>
-        <button type="button" class="demo-sample-card" data-sample="그냥 아무것도 하기 싫은 하루였다">그냥 아무것도 하기 싫은 하루였다</button>
+        <button type="button" class="demo-sample-card" data-sample="친구가 잘 됐다는 소식에 축하하면서도 마음 한편이 묘했다">친구가 잘 됐다는 소식에 축하하면서도 마음 한편이 묘했다</button>
+        <button type="button" class="demo-sample-card" data-sample="퇴근하고 혼자 치킨 시켜 먹었는데 갑자기 행복했다">퇴근하고 혼자 치킨 시켜 먹었는데 갑자기 행복했다</button>
+        <button type="button" class="demo-sample-card" data-sample="내일 발표인데 자꾸 최악의 상황만 떠올라">내일 발표인데 자꾸 최악의 상황만 떠올라</button>
+        <button type="button" class="demo-sample-card" data-sample="엄마한테 괜히 짜증 내고 후회된다">엄마한테 괜히 짜증 내고 후회된다</button>
       </div>
     </div>
 
@@ -372,6 +373,42 @@
           <button type="button" class="demo-followup-send" id="demoFollowupSend" disabled>전송</button>
         </div>
       </div>
+    </div>
+
+    <!-- Feature Preview (shown after first analysis) -->
+    <div class="demo-feature-preview" id="demoFeaturePreview" hidden>
+      <p class="demo-preview-title">기록이 쌓이면 이런 것도 볼 수 있어요</p>
+      <div class="demo-preview-grid">
+        <!-- Mini Calendar -->
+        <div class="demo-preview-card">
+          <div class="demo-preview-card-inner" id="demoPreviewCalendar"></div>
+          <div class="demo-preview-overlay">
+            <span class="demo-preview-lock" aria-hidden="true">&#x1F512;</span>
+            <span class="demo-preview-label">마음 달력</span>
+          </div>
+        </div>
+        <!-- Petal Chart -->
+        <div class="demo-preview-card">
+          <div class="demo-preview-card-inner" id="demoPreviewPetal"></div>
+          <div class="demo-preview-overlay">
+            <span class="demo-preview-lock" aria-hidden="true">&#x1F512;</span>
+            <span class="demo-preview-label">마음의 꽃잎</span>
+          </div>
+        </div>
+        <!-- Constellation -->
+        <div class="demo-preview-card">
+          <div class="demo-preview-card-inner" id="demoPreviewConstellation"></div>
+          <div class="demo-preview-overlay">
+            <span class="demo-preview-lock" aria-hidden="true">&#x1F512;</span>
+            <span class="demo-preview-label">마음의 별자리</span>
+          </div>
+        </div>
+      </div>
+      <div class="demo-preview-streak" id="demoPreviewStreak" hidden>
+        <span class="demo-preview-streak-icon" aria-hidden="true">&#x1F525;</span>
+        <span id="demoPreviewStreakText"></span>
+      </div>
+      <button type="button" class="btn-demo-preview-cta" id="demoPreviewCta">나만의 기록 시작하기</button>
     </div>
 
     <!-- History -->
