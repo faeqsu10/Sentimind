@@ -28,26 +28,40 @@ export function emotionColor(emotion) {
 
 export function emotionScore(emotion) {
   const e = (emotion || '').trim();
-  const positive = ['기쁨','감사','사랑','설렘','행복','애정'];
-  const neutral  = ['평온','편안함','안도'];
-  if (positive.includes(e)) return 1;
-  if (neutral.includes(e))  return 0;
-  return -1;
+  const positive = [
+    '기쁨','감사','사랑','설렘','행복','애정','만족감','유쾌함','즐거움',
+    '성취감','자신감','희망','뿌듯함','흥분','열정','감동','몰입감','상쾌함',
+    '활력','자부심','환희','반가움','든든함','벅찬','황홀','신남',
+  ];
+  const neutral = [
+    '평온','편안함','안도','여유','고요','담담','무난','차분','놀라움',
+    '호기심','궁금함','생각에 잠김','복합적',
+  ];
+  const negative = [
+    '슬픔','분노','불안','두려움','외로움','우울','짜증','걱정','긴장',
+    '억울함','화남','그리움','무기력','피곤','지침','후회','실망','좌절',
+    '피로감','공허','질투','혐오','수치심','죄책감','답답함','서운함',
+  ];
+  if (positive.some(p => e.includes(p))) return 1;
+  if (neutral.some(n => e.includes(n)))  return 0;
+  if (negative.some(n => e.includes(n))) return -1;
+  // 알 수 없는 감정은 중립으로 (기존: -1로 분류하여 왜곡 발생)
+  return 0;
 }
 
 export function getEmotionGroup(emotion) {
   const e = (emotion || '').trim();
   const groups = {
-    joy: ['기쁨','감사','설렘','행복'],
-    sadness: ['슬픔','외로움','그리움','우울'],
-    anger: ['분노','짜증','억울함','화남'],
-    anxiety: ['불안','걱정','두려움','긴장'],
-    peace: ['평온','편안함','안도','여유'],
+    joy: ['기쁨','감사','설렘','행복','만족감','유쾌함','즐거움','성취감','뿌듯함','자신감','희망','몰입감','상쾌함','활력','자부심','감동','열정','흥분','신남','반가움','든든함','벅찬','환희','황홀'],
+    sadness: ['슬픔','외로움','그리움','우울','공허','실망','좌절','서운함'],
+    anger: ['분노','짜증','억울함','화남','답답함','혐오'],
+    anxiety: ['불안','걱정','두려움','긴장','후회','수치심','죄책감'],
+    peace: ['평온','편안함','안도','여유','고요','담담','차분'],
     love: ['사랑','애정'],
-    tired: ['피곤','지침','무기력'],
+    tired: ['피곤','지침','무기력','피로감'],
   };
-  for (const [group, emotions] of Object.entries(groups)) {
-    if (emotions.includes(e)) return group;
+  for (const [group, keywords] of Object.entries(groups)) {
+    if (keywords.some(k => e.includes(k))) return group;
   }
   return 'default';
 }
