@@ -116,17 +116,26 @@ function showWelcomeScreen() {
 
 // Handle browser back/forward
 window.addEventListener('popstate', (e) => {
-  const screen = e.state?.screen;
-  if (!screen) { showLanding(false); return; }
-  switch (screen) {
-    case 'landing': showLanding(false); break;
-    case 'auth': showAuthScreen(false); break;
-    case 'demo': showDemo(false); break;
-    case 'app':
-      if (state.accessToken) { showApp(false); }
-      else { showLanding(false); }
-      break;
-    default: showLanding(false);
+  try {
+    // 열린 모달 정리
+    document.querySelectorAll('.modal-overlay:not([hidden])').forEach(m => { m.hidden = true; });
+    document.getElementById('historyDetail').hidden = true;
+
+    const screen = e.state?.screen;
+    if (!screen) { showLanding(false); return; }
+    switch (screen) {
+      case 'landing': showLanding(false); break;
+      case 'auth': showAuthScreen(false); break;
+      case 'demo': showDemo(false); break;
+      case 'app':
+        if (state.accessToken) { showApp(false); }
+        else { showLanding(false); }
+        break;
+      default: showLanding(false);
+    }
+  } catch (err) {
+    console.error('popstate error:', err);
+    showLanding(false);
   }
 });
 
