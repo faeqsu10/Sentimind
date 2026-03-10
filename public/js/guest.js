@@ -176,7 +176,7 @@ function renderDemoOntology(result) {
   // Confidence badge
   const confBadge = document.getElementById('demoConfidenceBadge');
   if (confBadge && result.ontology.confidence !== undefined) {
-    const pct = result.ontology.confidence || 0;
+    const pct = result.ontology.confidence ?? 0;
     document.getElementById('demoConfidencePercent').textContent = pct + '%';
     const fill = document.getElementById('demoConfidenceFill');
     fill.style.width = '0%';
@@ -200,6 +200,7 @@ const FOLLOWUP_STAGES = ['explore', 'insight', 'action'];
 const FOLLOWUP_LABELS = { explore: '탐색', insight: '통찰', action: '행동' };
 
 let _demoFollowupState = null;
+let _isFollowupLoading = false;
 
 function initDemoFollowup(emotion, originalText) {
   const section = document.getElementById('demoFollowup');
@@ -240,11 +241,19 @@ function updateDemoFollowupStages() {
 }
 
 async function requestDemoFollowup(userReply) {
-  if (!_demoFollowupState || _demoFollowupState.completed) return;
+  if (!_demoFollowupState || _demoFollowupState.completed || _isFollowupLoading) return;
 
+  _isFollowupLoading = true;
+  const prevStageIdx = _demoFollowupState.currentStageIdx;
   const stage = FOLLOWUP_STAGES[_demoFollowupState.currentStageIdx];
   const messages = document.getElementById('demoFollowupMessages');
   const inputRow = document.getElementById('demoFollowupInputRow');
+  const input = document.getElementById('demoFollowupInput');
+  const sendBtn = document.getElementById('demoFollowupSend');
+
+  // Disable input during request
+  if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
 
   // Show loading
   const loading = document.createElement('div');
@@ -286,9 +295,16 @@ async function requestDemoFollowup(userReply) {
       messages.appendChild(done);
       messages.scrollTop = messages.scrollHeight;
     }
-  } catch {
+  } catch (err) {
     loading.remove();
-    appendDemoFollowupMsg('ai', '질문을 만들지 못했어요. 다시 시도해주세요.');
+    // Rollback stage on failure
+    _demoFollowupState.currentStageIdx = prevStageIdx;
+    updateDemoFollowupStages();
+    appendDemoFollowupMsg('ai', err.userMessage || '질문을 만들지 못했어요. 다시 시도해주세요.');
+  } finally {
+    _isFollowupLoading = false;
+    if (input) input.disabled = false;
+    if (sendBtn) sendBtn.disabled = !input || input.value.trim().length === 0;
   }
 }
 
@@ -415,7 +431,7 @@ export function initDemoEventListeners() {
     });
 
     async function sendDemoFollowupReply() {
-      if (!_demoFollowupState || _demoFollowupState.completed) return;
+      if (!_demoFollowupState || _demoFollowupState.completed || _isFollowupLoading) return;
       const reply = demoFollowupInput.value.trim();
       if (!reply) return;
 
@@ -423,6 +439,9 @@ export function initDemoEventListeners() {
       _demoFollowupState.context.push({ role: 'user', text: reply });
       demoFollowupInput.value = '';
       demoFollowupSend.disabled = true;
+
+      const stage = FOLLOWUP_STAGES[_demoFollowupState.currentStageIdx];
+      track('followup_replied', { stage, emotion: _demoFollowupState.emotion, is_guest: true });
 
       if (_demoFollowupState.currentStageIdx < FOLLOWUP_STAGES.length - 1) {
         _demoFollowupState.currentStageIdx++;
