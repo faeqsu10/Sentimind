@@ -23,6 +23,8 @@ const demoScreen = document.getElementById('demoScreen');
 
 // ===== Screen Navigation =====
 function setScreen(screen) {
+  const splash = document.getElementById('loadingSplash');
+  if (splash) splash.style.display = 'none';
   landingScreen.hidden = true;
   authScreen.hidden = true;
   onboardingScreen.hidden = true;

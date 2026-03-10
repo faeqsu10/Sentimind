@@ -29,6 +29,18 @@
 </head>
 <body>
 
+  <!-- ===== Loading Splash (인증 확인 중 빈 화면 방지) ===== -->
+  <div id="loadingSplash" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;font-family:'Gowun Dodum',sans-serif;color:#8B7E74;background:var(--bg-primary,#FBF9F7)">
+    <div style="font-size:2rem" aria-hidden="true">&#x1F4D6;</div>
+    <div>마음 일기장을 여는 중...</div>
+  </div>
+  <script>
+    // 토큰 없으면 스플래시 숨기고 랜딩 바로 표시 (API 대기 불필요)
+    if (!localStorage.getItem('sb-access-token')) {
+      document.getElementById('loadingSplash').style.display = 'none';
+    }
+  </script>
+
   <!-- ===== Landing Screen ===== -->
   <div class="landing-screen" id="landingScreen" hidden>
 
