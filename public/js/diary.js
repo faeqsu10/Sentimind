@@ -276,7 +276,7 @@ export function showResponse(result) {
   track('ai_response_received', {
     emotion: result.emotion,
     emotion_level1: result.ontology?.emotion_hierarchy?.level1 || null,
-    confidence_score: result.ontology?.confidence || 0,
+    confidence_score: result.ontology?.confidence ?? 0,
     has_ontology: !!result.ontology,
     situation_domains: (result.ontology?.situation_context || []).map(c => c.domain),
   });
@@ -374,7 +374,7 @@ function renderConfidenceBadge(confidence) {
   const confidenceBadgeFill = document.getElementById('confidenceBadgeFill');
   const confidenceBadgePercent = document.getElementById('confidenceBadgePercent');
 
-  const pct = confidence || 0;
+  const pct = confidence ?? 0;
   confidenceBadgePercent.textContent = pct + '%';
   confidenceBadgeFill.style.width = '0%';
   requestAnimationFrame(() => { confidenceBadgeFill.style.width = pct + '%'; });
@@ -491,7 +491,7 @@ async function handleFeedbackClick(rating) {
     track('ai_feedback_submitted', {
       rating,
       emotion: state.latestAnalysisResult?.emotion || '',
-      confidence_score: state.latestAnalysisResult?.ontology?.confidence || 0,
+      confidence_score: state.latestAnalysisResult?.ontology?.confidence ?? 0,
     });
     feedbackButtons.hidden = true;
     feedbackThanks.hidden = false;

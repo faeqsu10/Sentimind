@@ -121,7 +121,7 @@ export async function saveEntry(text, result, activityTags = []) {
       advice: result.advice,
       emotion_hierarchy: result.ontology?.emotion_hierarchy || {},
       situation_context: result.ontology?.situation_context || [],
-      confidence_score: result.ontology?.confidence || 0,
+      confidence_score: result.ontology?.confidence ?? 0,
       related_emotions: result.ontology?.related_emotions || [],
       activity_tags: activityTags,
       tz_offset: new Date().getTimezoneOffset(),

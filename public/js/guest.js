@@ -207,6 +207,7 @@ function initDemoFollowup(emotion, originalText) {
   const messages = document.getElementById('demoFollowupMessages');
   if (!section || !messages) return;
 
+  _isFollowupLoading = false;
   _demoFollowupState = {
     emotion,
     originalText,
