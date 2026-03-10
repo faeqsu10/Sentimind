@@ -121,7 +121,8 @@ window.addEventListener('popstate', (e) => {
   try {
     // 열린 모달 정리
     document.querySelectorAll('.modal-overlay:not([hidden])').forEach(m => { m.hidden = true; });
-    document.getElementById('historyDetail').hidden = true;
+    const hd = document.getElementById('historyDetail');
+    if (hd) hd.hidden = true;
 
     const screen = e.state?.screen;
     if (!screen) { showLanding(false); return; }

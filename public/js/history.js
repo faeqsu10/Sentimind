@@ -273,20 +273,29 @@ export function initHistoryEventListeners() {
   const historySearch = document.getElementById('historySearch');
   historySearch.addEventListener('input', debounce(applyFilters, 300));
 
+  // 선택 모드 (null 체크 — SW 캐시 전환 시 old HTML과의 호환)
+  const selectModeBtn = document.getElementById('selectModeBtn');
+  const selectCancelBtn = document.getElementById('selectCancelBtn');
+  const selectAllCheck = document.getElementById('selectAllCheck');
+  const selectDeleteBtn = document.getElementById('selectDeleteBtn');
+  const historyList = document.getElementById('historyList');
+
+  if (!selectModeBtn || !selectCancelBtn || !selectAllCheck || !selectDeleteBtn) return;
+
   // 선택 모드 토글
-  document.getElementById('selectModeBtn').addEventListener('click', () => {
+  selectModeBtn.addEventListener('click', () => {
     const historySection = document.querySelector('.diary-history');
     const isActive = historySection.classList.toggle('select-mode');
-    document.getElementById('selectModeBtn').classList.toggle('active', isActive);
+    selectModeBtn.classList.toggle('active', isActive);
     document.getElementById('selectToolbar').hidden = !isActive;
     if (!isActive) exitSelectMode();
   });
 
   // 취소 버튼
-  document.getElementById('selectCancelBtn').addEventListener('click', exitSelectMode);
+  selectCancelBtn.addEventListener('click', exitSelectMode);
 
   // 전체 선택
-  document.getElementById('selectAllCheck').addEventListener('change', (e) => {
+  selectAllCheck.addEventListener('change', (e) => {
     const visibleIds = state.filteredEntries.slice(0, state.currentPage * PAGE_SIZE).map(en => en.id);
     if (e.target.checked) {
       visibleIds.forEach(id => selectedIds.add(id));
@@ -301,7 +310,7 @@ export function initHistoryEventListeners() {
   });
 
   // 개별 체크박스 (이벤트 위임)
-  document.getElementById('historyList').addEventListener('change', (e) => {
+  historyList.addEventListener('change', (e) => {
     const cb = e.target.closest('.select-check');
     if (!cb) return;
     const id = cb.dataset.id;
@@ -317,7 +326,7 @@ export function initHistoryEventListeners() {
   });
 
   // 선택 삭제
-  document.getElementById('selectDeleteBtn').addEventListener('click', async () => {
+  selectDeleteBtn.addEventListener('click', async () => {
     const count = selectedIds.size;
     if (count === 0) return;
     if (!confirm(count + '개의 이야기를 삭제할까요?')) return;
