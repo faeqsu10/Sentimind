@@ -912,6 +912,10 @@
 @media (max-width: 480px) {
   .demo-preview-grid { gap: 0.5rem; }
 }
+@media (max-width: 360px) {
+  .demo-preview-grid { grid-template-columns: 1fr; }
+  .demo-preview-card { aspect-ratio: 3 / 2; }
+}
 .demo-preview-card {
   position: relative;
   background: var(--color-surface);

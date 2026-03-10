@@ -331,6 +331,12 @@ function appendDemoFollowupMsg(role, text) {
 // Feature Preview (mock UI + real streak)
 // ---------------------------------------------------------------------------
 
+const SAFE_COLOR_RE = /^#[0-9a-fA-F]{3,8}$|^var\(--[\w-]+\)$/;
+function safeColor(emotion) {
+  const c = emotionColor(emotion);
+  return SAFE_COLOR_RE.test(c) ? c : 'var(--color-primary)';
+}
+
 let _previewShown = false;
 
 function showFeaturePreview(entries) {
@@ -377,11 +383,11 @@ function renderPreviewCalendar(entries) {
     let bg = 'transparent';
     let opacity = '0';
     if (real) {
-      bg = emotionColor(real.emotion);
+      bg = safeColor(real.emotion);
       opacity = '1';
     } else if (i < 30 && Math.random() > 0.55) {
       // Sparse mock data for past days
-      bg = emotionColor(mockEmotions[Math.floor(Math.random() * mockEmotions.length)]);
+      bg = safeColor(mockEmotions[Math.floor(Math.random() * mockEmotions.length)]);
       opacity = '0.5';
     }
 
@@ -419,7 +425,7 @@ function renderPreviewPetal(entries) {
     const r = 18 + (cnt / max) * 22;
     const px = cx + Math.cos(angle) * r * 0.6;
     const py = cy + Math.sin(angle) * r * 0.6;
-    const color = emotionColor(em);
+    const color = safeColor(em);
     petals += '<ellipse cx="' + px + '" cy="' + py +
       '" rx="' + (r * 0.45) + '" ry="' + (r * 0.7) +
       '" fill="' + color + '" opacity="0.7"' +
