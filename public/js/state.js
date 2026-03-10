@@ -34,7 +34,7 @@ export const state = {
 };
 
 // Constants
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 5;
 
 export const GUEST_STORAGE_KEY = 'sentimind-guest-entries';
 export const GUEST_MAX_ENTRIES = 10;

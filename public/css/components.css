@@ -1252,7 +1252,18 @@
 .select-mode .history-item .btn-bookmark { display: none; }
 .history-item.selected { border-color: var(--color-primary); background: rgba(196, 139, 108, 0.05); }
 
-.history-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.history-list::-webkit-scrollbar { width: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+.history-list::-webkit-scrollbar-track { background: transparent; }
 .history-item {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
