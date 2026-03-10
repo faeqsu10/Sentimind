@@ -247,7 +247,7 @@ function initApp() {
 
   loadEntries();
   renderProfileScreen();
-  updateSidebar();
+  updateSidebar(); // 초기 빈 상태 렌더 — loadEntries 완료 후 다시 갱신됨
   initReminder();
 
   if (!diaryText._listenerAttached) {
@@ -286,6 +286,7 @@ async function loadEntries() {
     if (!err.userMessage) showError('일기 목록을 불러올 수 없습니다.');
   } finally {
     historyList.removeAttribute('aria-busy');
+    updateSidebar(); // entries 로드 완료 후 사이드바 갱신
   }
 }
 
