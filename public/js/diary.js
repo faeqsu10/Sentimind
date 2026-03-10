@@ -186,6 +186,7 @@ export async function handleSubmit(e) {
 
   try {
     const result = await analyzeEmotion(text);
+    state._lastDiaryText = text;
     showResponse(result);
 
     let savedEntry = null;
@@ -202,8 +203,6 @@ export async function handleSubmit(e) {
         is_guest: state.guestMode,
       });
     }
-
-    state._lastDiaryText = text;
     diaryText.value = '';
     diaryText.style.height = 'auto';
     charCount.textContent = '';
@@ -238,6 +237,15 @@ export function showResponse(result) {
   const responseAdvice = document.getElementById('responseAdvice');
   const analysisDetails = document.getElementById('analysisDetails');
   const confidenceBadge = document.getElementById('confidenceBadge');
+
+  // 원문 표시
+  const myDiaryText = document.getElementById('myDiaryText');
+  if (myDiaryText && state._lastDiaryText) {
+    myDiaryText.textContent = state._lastDiaryText;
+    myDiaryText.hidden = false;
+  } else if (myDiaryText) {
+    myDiaryText.hidden = true;
+  }
 
   responseEmoji.textContent = result.emoji;
   responseEmotion.textContent = '지금 느끼고 있는 ' + result.emotion;

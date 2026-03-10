@@ -861,6 +861,21 @@
 
 /* AI Response */
 .ai-response { margin-bottom: 1.5rem; }
+.my-diary-text {
+  font-family: var(--font-diary);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  background: rgba(0,0,0,0.03);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.my-diary-text[hidden] { display: none; }
+[data-theme="dark"] .my-diary-text { background: rgba(255,255,255,0.05); }
 .ai-persona-tag {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
