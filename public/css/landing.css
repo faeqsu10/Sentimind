@@ -724,6 +724,76 @@
   line-height: 1.6;
 }
 
+/* Demo ontology (reuses components.css classes) */
+.demo-analysis-details {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+.demo-ontology {
+  margin-top: 0.5rem;
+}
+
+/* Demo followup */
+.demo-followup {
+  margin-top: 1.2rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+.demo-followup-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.demo-followup-title {
+  font-family: var(--font-diary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.demo-followup-messages {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.demo-followup-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.demo-followup-input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.demo-followup-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+.demo-followup-send {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.demo-followup-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Demo history */
 .demo-history { margin-bottom: 1.5rem; }
 .demo-history-title {
