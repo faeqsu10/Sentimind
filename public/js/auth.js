@@ -76,17 +76,16 @@ export async function checkAuth() {
   const refresh = localStorage.getItem('sb-refresh-token');
   if (token) {
     try {
-      // auth/me와 loadProfile을 병렬 호출하여 초기 로딩 속도 개선
-      state.accessToken = token;
-      state.refreshToken = refresh;
-      const [res] = await Promise.all([
-        fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } }),
-        loadProfile(),
-      ]);
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
       if (res.ok) {
         const result = await res.json();
         if (result.data && result.data.id) {
           state.currentUser = result.data;
+          state.accessToken = token;
+          state.refreshToken = refresh;
+          await loadProfile();
           if (state.userProfile && !state.userProfile.onboarding_completed) {
             deps.showOnboarding();
           } else {
@@ -97,16 +96,17 @@ export async function checkAuth() {
       }
       // Access token expired — try refresh
       if (refresh) {
+        state.refreshToken = refresh;
         const refreshed = await tryRefreshToken();
         if (refreshed) {
-          const [retryRes] = await Promise.all([
-            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + state.accessToken } }),
-            loadProfile(),
-          ]);
+          const retryRes = await fetch('/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + state.accessToken }
+          });
           if (retryRes.ok) {
             const retryResult = await retryRes.json();
             if (retryResult.data && retryResult.data.id) {
               state.currentUser = retryResult.data;
+              await loadProfile();
               if (state.userProfile && !state.userProfile.onboarding_completed) {
                 deps.showOnboarding();
               } else {
@@ -120,8 +120,6 @@ export async function checkAuth() {
     } catch {
       // Fall through to showLanding
     }
-    state.accessToken = null;
-    state.refreshToken = null;
     localStorage.removeItem('sb-access-token');
     localStorage.removeItem('sb-refresh-token');
   }
