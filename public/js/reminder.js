@@ -61,6 +61,7 @@ export function scheduleReminder() {
     _reminderTimer = null;
   }
 
+  if (!state.userProfile?.notification_enabled) return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
   const notifTime = state.userProfile?.notification_time;

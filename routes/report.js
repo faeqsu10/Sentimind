@@ -40,7 +40,6 @@ module.exports = function (deps) {
     authMiddleware,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
-    readEntries,
     analyzeLimiter,
   } = deps;
 
@@ -60,6 +59,10 @@ module.exports = function (deps) {
 
     logger.info(`GET /api/report (${period})`, { requestId: rid, userId: req.user?.id });
 
+    if (!USE_SUPABASE || !req.supabaseClient || !req.user) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
     // 캐시 조회
     const cacheKey = getCacheKey(req.user.id, period);
     const cached = reportCache.get(cacheKey);
@@ -78,31 +81,20 @@ module.exports = function (deps) {
     }
 
     try {
-      // 해당 기간 entries 조회
-      let entries = [];
-      if (USE_SUPABASE && req.supabaseClient) {
-        const { data, error } = await req.supabaseClient
-          .from('entries')
-          .select('text, emotion, emoji, created_at')
-          .eq('user_id', req.user.id)
-          .is('deleted_at', null)
-          .gte('created_at', since)
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        entries = data || [];
-      } else {
-        const all = await readEntries();
-        const cutoff = new Date(since);
-        entries = all
-          .filter(e => new Date(e.date || e.created_at) >= cutoff)
-          .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
-      }
+      const { data: entries, error } = await req.supabaseClient
+        .from('entries')
+        .select('text, emotion, emoji, created_at')
+        .eq('user_id', req.user.id)
+        .is('deleted_at', null)
+        .gte('created_at', since)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
 
-      if (entries.length < config.report.minEntries) {
+      if ((entries || []).length < config.report.minEntries) {
         return res.status(400).json({
           error: `리포트 생성에 최소 ${config.report.minEntries}건의 일기가 필요합니다.`,
           code: 'INSUFFICIENT_DATA',
-          count: entries.length,
+          count: (entries || []).length,
         });
       }
 

@@ -4,6 +4,14 @@
 
 const express = require('express');
 
+function isMissingColumnError(error, columns) {
+  const message = error?.message || '';
+  return columns.some(column =>
+    message.includes(column) &&
+    (message.includes('does not exist') || message.includes('schema cache'))
+  );
+}
+
 module.exports = function (deps) {
   const router = express.Router();
 
@@ -12,6 +20,7 @@ module.exports = function (deps) {
     USE_SUPABASE,
     authMiddleware,
     validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone,
+    validateResponseLength, validateAdviceStyle, validatePersonaPreset,
   } = deps;
 
   // GET /profile - 프로필 조회
@@ -70,6 +79,9 @@ module.exports = function (deps) {
       ['theme', validateTheme],
       ['notification_time', validateNotificationTime],
       ['ai_tone', validateAiTone],
+      ['response_length', validateResponseLength],
+      ['advice_style', validateAdviceStyle],
+      ['persona_preset', validatePersonaPreset],
     ];
 
     for (const [field, validator] of validations) {
@@ -97,12 +109,32 @@ module.exports = function (deps) {
     }
 
     try {
-      const { data, error } = await req.supabaseClient
+      let { data, error } = await req.supabaseClient
         .from('user_profiles')
         .update(updates)
         .eq('id', req.user.id)
         .select()
         .single();
+
+      // Backward compatibility: if new personalization columns are not migrated yet,
+      // retry without them so legacy fields like ai_tone still persist.
+      if (error && isMissingColumnError(error, ['response_length', 'advice_style', 'persona_preset'])) {
+        const fallbackUpdates = { ...updates };
+        delete fallbackUpdates.response_length;
+        delete fallbackUpdates.advice_style;
+        delete fallbackUpdates.persona_preset;
+
+        if (Object.keys(fallbackUpdates).length > 0) {
+          const retryResult = await req.supabaseClient
+            .from('user_profiles')
+            .update(fallbackUpdates)
+            .eq('id', req.user.id)
+            .select()
+            .single();
+          data = retryResult.data;
+          error = retryResult.error;
+        }
+      }
 
       if (error) {
         logger.warn('프로필 수정 실패', { requestId: rid, error: error.message });

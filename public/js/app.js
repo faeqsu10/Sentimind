@@ -4,7 +4,7 @@ import { showToast, showError, showSkeleton, autoResize, openModalFocus, closeMo
 import { setAuthExpiredHandler, fetchWithAuth, fetchEntries, loadProfile } from './api.js';
 import { setupAuth, checkAuth, initAuthForms } from './auth.js';
 import { setupGuest, initDemoScreen, initDemoEventListeners, migrateGuestData } from './guest.js';
-import { setupDiary, handleSubmit } from './diary.js';
+import { setupDiary, handleSubmit, processOfflineDraftQueue } from './diary.js';
 import { setupHistory, renderHistory, showHistoryDetail, initHistoryEventListeners } from './history.js';
 import { renderCalendar, setupCalendar } from './calendar.js';
 import { loadDashboard, setupStats } from './stats.js';
@@ -258,6 +258,9 @@ function initApp() {
   todayDate.setAttribute('datetime', now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0'));
 
   loadEntries();
+  if (navigator.onLine) {
+    processOfflineDraftQueue().catch(() => {});
+  }
   renderProfileScreen();
   updateSidebar(); // 초기 빈 상태 렌더 — loadEntries 완료 후 다시 갱신됨
   initReminder();
@@ -740,6 +743,7 @@ if ('serviceWorker' in navigator) {
 
   window.addEventListener('online', () => {
     navigator.serviceWorker.controller?.postMessage('SYNC_OFFLINE');
+    processOfflineDraftQueue().catch(() => {});
   });
 
   navigator.serviceWorker.addEventListener('message', (e) => {

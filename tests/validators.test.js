@@ -9,6 +9,10 @@ const {
   validateBio,
   validateTheme,
   validateNotificationTime,
+  validateAiTone,
+  validateResponseLength,
+  validateAdviceStyle,
+  validatePersonaPreset,
   validatePagination,
 } = require('../lib/validators');
 
@@ -186,6 +190,53 @@ describe('validateNotificationTime', () => {
 
   it('accepts undefined (optional)', () => {
     expect(validateNotificationTime(undefined).valid).toBe(true);
+  });
+});
+
+describe('validateAiTone', () => {
+  it('accepts existing supported tone', () => {
+    expect(validateAiTone('warm').valid).toBe(true);
+  });
+
+  it('rejects unsupported tone', () => {
+    expect(validateAiTone('funny').valid).toBe(false);
+  });
+});
+
+describe('validateResponseLength', () => {
+  it('accepts supported values', () => {
+    expect(validateResponseLength('short').valid).toBe(true);
+    expect(validateResponseLength('balanced').valid).toBe(true);
+    expect(validateResponseLength('detailed').valid).toBe(true);
+  });
+
+  it('rejects unsupported values', () => {
+    expect(validateResponseLength('long').valid).toBe(false);
+  });
+});
+
+describe('validateAdviceStyle', () => {
+  it('accepts supported values', () => {
+    expect(validateAdviceStyle('comfort').valid).toBe(true);
+    expect(validateAdviceStyle('balanced').valid).toBe(true);
+    expect(validateAdviceStyle('actionable').valid).toBe(true);
+  });
+
+  it('rejects unsupported values', () => {
+    expect(validateAdviceStyle('coach').valid).toBe(false);
+  });
+});
+
+describe('validatePersonaPreset', () => {
+  it('accepts supported values', () => {
+    expect(validatePersonaPreset('none').valid).toBe(true);
+    expect(validatePersonaPreset('gentle_friend').valid).toBe(true);
+    expect(validatePersonaPreset('calm_coach').valid).toBe(true);
+    expect(validatePersonaPreset('clear_reflector').valid).toBe(true);
+  });
+
+  it('rejects unsupported values', () => {
+    expect(validatePersonaPreset('celebrity').valid).toBe(false);
   });
 });
 

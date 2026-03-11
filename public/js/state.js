@@ -39,6 +39,7 @@ export const PAGE_SIZE = 5;
 export const GUEST_STORAGE_KEY = 'sentimind-guest-entries';
 export const GUEST_MAX_ENTRIES = 10;
 export const GUEST_MAX_DAYS = 7;
+export const OFFLINE_DRAFT_QUEUE_KEY = 'sentimind-offline-draft-queue';
 
 export const PERIOD_MAP = { '0': 'all', '7': '7d', '30': '30d', '90': '90d' };
 

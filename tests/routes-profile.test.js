@@ -34,6 +34,26 @@ function createMockDeps(overrides = {}) {
       if (!/^\d{2}:\d{2}$/.test(v)) return { valid: false, error: '시간 형식이 올바르지 않습니다.' };
       return { valid: true, value: v + ':00' };
     },
+    validateAiTone: (v) => {
+      if (v === undefined) return { valid: true };
+      if (!['warm', 'professional', 'friendly', 'poetic'].includes(v)) return { valid: false, error: 'AI 톤이 올바르지 않습니다.' };
+      return { valid: true, value: v };
+    },
+    validateResponseLength: (v) => {
+      if (v === undefined) return { valid: true };
+      if (!['short', 'balanced', 'detailed'].includes(v)) return { valid: false, error: '응답 길이가 올바르지 않습니다.' };
+      return { valid: true, value: v };
+    },
+    validateAdviceStyle: (v) => {
+      if (v === undefined) return { valid: true };
+      if (!['comfort', 'balanced', 'actionable'].includes(v)) return { valid: false, error: '조언 스타일이 올바르지 않습니다.' };
+      return { valid: true, value: v };
+    },
+    validatePersonaPreset: (v) => {
+      if (v === undefined) return { valid: true };
+      if (!['none', 'gentle_friend', 'calm_coach', 'clear_reflector'].includes(v)) return { valid: false, error: '페르소나가 올바르지 않습니다.' };
+      return { valid: true, value: v };
+    },
     ...overrides,
   };
 }
@@ -235,6 +255,139 @@ describe('Profile Routes', () => {
       const app = createApp(deps);
       const res = await request(app, 'PATCH', '/api/profile', { onboarding_completed: true });
       expect(res.status).toBe(200);
+    });
+
+    it('updates notification settings together', async () => {
+      const update = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { notification_enabled: true, notification_time: '21:00:00' },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      const mockSupabase = {
+        from: vi.fn(() => ({ update })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/profile', {
+        notification_enabled: true,
+        notification_time: '21:00',
+      });
+
+      expect(res.status).toBe(200);
+      expect(update).toHaveBeenCalledWith({
+        notification_enabled: true,
+        notification_time: '21:00:00',
+      });
+    });
+
+    it('updates AI response style fields together', async () => {
+      const update = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                ai_tone: 'warm',
+                response_length: 'detailed',
+                advice_style: 'comfort',
+                persona_preset: 'gentle_friend',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      const mockSupabase = {
+        from: vi.fn(() => ({ update })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/profile', {
+        ai_tone: 'warm',
+        response_length: 'detailed',
+        advice_style: 'comfort',
+        persona_preset: 'gentle_friend',
+      });
+
+      expect(res.status).toBe(200);
+      expect(update).toHaveBeenCalledWith({
+        ai_tone: 'warm',
+        response_length: 'detailed',
+        advice_style: 'comfort',
+        persona_preset: 'gentle_friend',
+      });
+    });
+
+    it('retries with legacy fields when new personalization columns are missing', async () => {
+      const update = vi
+        .fn()
+        .mockReturnValueOnce({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: "Could not find the 'persona_preset' column of 'user_profiles' in the schema cache" },
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { ai_tone: 'friendly' },
+                error: null,
+              }),
+            }),
+          }),
+        });
+      const mockSupabase = {
+        from: vi.fn(() => ({ update })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/profile', {
+        ai_tone: 'friendly',
+        response_length: 'detailed',
+        advice_style: 'actionable',
+        persona_preset: 'calm_coach',
+      });
+
+      expect(res.status).toBe(200);
+      expect(update).toHaveBeenNthCalledWith(1, {
+        ai_tone: 'friendly',
+        response_length: 'detailed',
+        advice_style: 'actionable',
+        persona_preset: 'calm_coach',
+      });
+      expect(update).toHaveBeenNthCalledWith(2, {
+        ai_tone: 'friendly',
+      });
     });
   });
 });

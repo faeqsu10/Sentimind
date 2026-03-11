@@ -26,11 +26,11 @@
 - **배포**: Vercel (Serverless)
 
 ### 프론트엔드
-- **구조**: 단일 HTML 파일 (public/index.html, ~7400줄)
+- **구조**: `public/index.html` + `public/js/*.js` ES 모듈 + `public/css/*.css`
 - **스타일**: CSS Grid/Flexbox (반응형, 다크모드 지원)
 - **폰트**: Google Fonts (Gowun Batang 일기, Gowun Dodum UI)
-- **상태 관리**: 서버 기반 (localStorage 미사용)
-- **PWA**: Service Worker (오프라인 큐잉, 설치 가능)
+- **상태 관리**: 인증 상태는 서버+localStorage 혼합, 게스트 데이터는 localStorage 기반
+- **PWA**: Service Worker (설치 가능, 일부 요청 오프라인 큐잉)
 
 ### 온톨로지
 - **감정 분류**: 3단계 계층 (30개 세부 감정)
@@ -164,8 +164,8 @@ Sentimind/
 
 ### 4. 게스트 모드
 - 회원가입 없이 AI 분석 10회 체험
-- 게스트 일기는 서버에 저장 (세션 기반)
-- 회원 가입 시 자동으로 마이그레이션
+- 게스트 일기는 브라우저 localStorage에 임시 저장
+- 회원 가입 시 저장된 게스트 일기를 계정으로 마이그레이션
 
 ### 5. 통계 대시보드
 - 📊 감정 분포 (상위 5개)
@@ -183,7 +183,7 @@ Sentimind/
 
 ### 7. PWA & 오프라인 지원
 - 📱 PWA 설치 가능 (홈 화면 추가)
-- 📴 오프라인 일기 작성 (큐잉, 온라인 복귀 시 자동 동기화)
+- 📴 오프라인 제출 시 일기 초안 임시 저장, 온라인 복귀 시 자동 분석/저장
 - ⌨️ 키보드 단축키
   - `Ctrl+Enter`: 일기 전송
   - `Ctrl+1~4`: 탭 전환
@@ -221,19 +221,19 @@ Authorization: Bearer {token}
 
 # 토큰 갱신
 POST /api/auth/refresh
-{"refreshToken": "token"}
+{"refresh_token": "token"}
 
 # 현재 사용자 정보
 GET /api/auth/me
 Authorization: Bearer {token}
 
 # 비밀번호 변경
-POST /api/auth/change-password
+PUT /api/auth/password
 Authorization: Bearer {token}
 {"currentPassword": "old", "newPassword": "new"}
 
 # 계정 삭제
-DELETE /api/auth/delete-account
+DELETE /api/auth/account
 Authorization: Bearer {token}
 ```
 
@@ -283,16 +283,16 @@ DELETE /api/entries/:id
 Authorization: Bearer {token}
 
 # 즐겨찾기 (북마크)
-PATCH /api/entries/:id/bookmark
+PATCH /api/entries/:id
 Authorization: Bearer {token}
-{"isBookmarked": true}
+{"is_bookmarked": true}
 ```
 
 ### 통계 (인증 필수)
 
 ```bash
 GET /api/stats?period=30d
-Authorization: Bearer {token}
+# 게스트 모드에서도 호출 가능
 
 응답:
 {
@@ -309,15 +309,17 @@ Authorization: Bearer {token}
 ### 리포트 (인증 필수)
 
 ```bash
-GET /api/report?type=weekly
+GET /api/report?period=weekly
 Authorization: Bearer {token}
 
 응답:
 {
-  "type": "weekly",
+  "period": "weekly",
+  "entryCount": 7,
   "summary": "이번 주 감정 요약...",
-  "insights": [...],
-  "recommendations": [...]
+  "emotionTrend": "감정 흐름 요약...",
+  "insight": "패턴 인사이트...",
+  "encouragement": "따뜻한 격려 메시지..."
 }
 ```
 
@@ -346,7 +348,18 @@ Authorization: Bearer {token}
 ```bash
 POST /api/migrate/from-guest
 Authorization: Bearer {token}
-{"guestToken": "guest_token_here"}
+{
+  "entries": [
+    {
+      "text": "게스트로 작성한 일기",
+      "emotion": "기쁨",
+      "emoji": "😊",
+      "message": "좋은 하루네요",
+      "advice": "이 감정을 기억해보세요",
+      "date": "2026-03-11T00:00:00.000Z"
+    }
+  ]
+}
 ```
 
 ### 이벤트 트래킹 (인증 불필요)

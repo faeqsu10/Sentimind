@@ -1053,6 +1053,56 @@
                   </div>
                 </div>
                 <div class="profile-field">
+                  <label id="responseLengthLabel">응답 길이</label>
+                  <div class="profile-choice-group" role="radiogroup" aria-labelledby="responseLengthLabel">
+                    <button type="button" class="profile-choice-btn response-length-btn" data-response-length="short" aria-pressed="false" role="radio">짧게</button>
+                    <button type="button" class="profile-choice-btn response-length-btn" data-response-length="balanced" aria-pressed="true" role="radio">보통</button>
+                    <button type="button" class="profile-choice-btn response-length-btn" data-response-length="detailed" aria-pressed="false" role="radio">조금 자세히</button>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <label id="adviceStyleLabel">조언 강도</label>
+                  <div class="profile-choice-group" role="radiogroup" aria-labelledby="adviceStyleLabel">
+                    <button type="button" class="profile-choice-btn advice-style-btn" data-advice-style="comfort" aria-pressed="false" role="radio">공감 위주</button>
+                    <button type="button" class="profile-choice-btn advice-style-btn" data-advice-style="balanced" aria-pressed="true" role="radio">균형 있게</button>
+                    <button type="button" class="profile-choice-btn advice-style-btn" data-advice-style="actionable" aria-pressed="false" role="radio">조언 조금 더</button>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <label id="personaPresetLabel">대화 스타일</label>
+                  <div class="persona-preset-group" role="radiogroup" aria-labelledby="personaPresetLabel">
+                    <button type="button" class="persona-preset-btn" data-persona-preset="none" aria-pressed="true" role="radio">
+                      <span class="persona-preset-name">기본 마음이</span>
+                      <span class="persona-preset-desc">현재의 따뜻한 기본 응답 방식이에요.</span>
+                    </button>
+                    <button type="button" class="persona-preset-btn" data-persona-preset="gentle_friend" aria-pressed="false" role="radio">
+                      <span class="persona-preset-name">따뜻한 친구형</span>
+                      <span class="persona-preset-desc">편안하게 공감하고 다정하게 반응해요.</span>
+                    </button>
+                    <button type="button" class="persona-preset-btn" data-persona-preset="calm_coach" aria-pressed="false" role="radio">
+                      <span class="persona-preset-name">차분한 코치형</span>
+                      <span class="persona-preset-desc">감정을 정리하고 다음 한 걸음을 같이 봐요.</span>
+                    </button>
+                    <button type="button" class="persona-preset-btn" data-persona-preset="clear_reflector" aria-pressed="false" role="radio">
+                      <span class="persona-preset-name">담백한 정리형</span>
+                      <span class="persona-preset-desc">군더더기 없이 핵심만 차분히 정리해요.</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <div class="setting-row">
+                    <div>
+                      <div class="setting-row-label" id="notificationEnabledLabel">마음 기록 알림</div>
+                      <div class="setting-row-desc">정한 시간에 기록을 떠올릴 수 있게 알려드려요</div>
+                    </div>
+                    <label class="toggle-switch" aria-labelledby="notificationEnabledLabel">
+                      <input type="checkbox" id="profileNotificationEnabled">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-knob"></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="profile-field">
                   <label id="notificationTimeLabel">알림 시간</label>
                   <div class="notification-time-group" role="radiogroup" aria-labelledby="notificationTimeLabel">
                     <button type="button" class="notification-time-btn" data-time="08:00" aria-pressed="false" role="radio">08:00</button>

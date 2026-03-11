@@ -31,6 +31,10 @@ module.exports = function (deps) {
 
     logger.info('POST /api/migrate/from-guest', { requestId: rid, userId });
 
+    if (!req.user || !req.supabaseClient) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
     const { entries } = req.body || {};
 
     if (!Array.isArray(entries) || entries.length === 0) {

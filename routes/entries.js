@@ -368,7 +368,7 @@ module.exports = function (deps) {
       if (USE_SUPABASE && supabaseAdmin) {
         supabaseAdmin.from('analytics_events').insert({
           user_id: req.user.id,
-          event_name: 'data_exported',
+          event: 'data_exported',
           properties: { format, entry_count: entries.length },
           created_at: new Date().toISOString(),
         }).catch(() => {});

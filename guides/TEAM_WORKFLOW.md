@@ -324,6 +324,59 @@ curl https://sentimind-delta.vercel.app/api/stats
 
 ---
 
+## AI 에이전트 운영 플레이북
+
+### 기본 원칙
+
+- 총괄 조율은 `project-orchestrator`가 맡는다.
+- API 변경이 있으면 `api-contract-guardian`을 반드시 거친다.
+- 배포 전 최종 판단은 `release-manager`가 맡는다.
+- 구현 후 검증은 항상 `qa-engineer`가 맡는다.
+
+### 작업 유형별 권장 순서
+
+#### 신규 기능
+
+1. `project-orchestrator`
+2. `product-requirements-manager` 또는 `tech-architect`
+3. `api-contract-guardian`
+4. `backend-developer` / `frontend-developer` / `db-architect`
+5. `qa-engineer`
+6. `release-manager`
+
+#### 버그 수정
+
+1. `project-orchestrator`
+2. `backend-developer` 또는 `frontend-developer`
+3. `api-contract-guardian` (API/문서 영향 있을 때)
+4. `qa-engineer`
+
+#### API 변경
+
+1. `api-contract-guardian`
+2. `backend-developer`
+3. `frontend-developer`
+4. `qa-engineer`
+5. `release-manager`
+
+#### 출시 점검
+
+1. `release-manager`
+2. `qa-engineer`
+3. `api-contract-guardian`
+4. `project-orchestrator`
+
+### 산출물 기준
+
+- `backend-developer`: 코드, 라우트 테스트, 환경 요구사항
+- `frontend-developer`: 사용자 플로우 수정, DOM/상태 영향 설명
+- `db-architect`: 스키마/RLS/인덱스 변경 근거
+- `qa-engineer`: 재현 절차, 검증 결과, 남은 리스크
+- `api-contract-guardian`: 구현/문서/호출부/테스트 차이 목록
+- `release-manager`: ship / no-ship / ship-with-risks 판단
+
+---
+
 ## 트러블슈팅
 
 문제 발생 시 대응 순서:

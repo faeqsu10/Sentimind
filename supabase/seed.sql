@@ -1,0 +1,2 @@
+-- Sentimind local seed
+-- Intentionally empty. Add demo users or sample entries only when needed.

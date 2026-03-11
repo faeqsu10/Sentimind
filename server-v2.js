@@ -44,6 +44,9 @@ const {
   validateTheme,
   validateNotificationTime,
   validateAiTone,
+  validateResponseLength,
+  validateAdviceStyle,
+  validatePersonaPreset,
   validatePagination,
 } = require('./lib/validators');
 
@@ -672,7 +675,7 @@ const routeDeps = {
   callGeminiAPI, GeminiAPIError, calculateTokenCost,
   parseGeminiResponse,
   validateEmail, validatePassword, validateEntryText, validateConfidenceScore,
-  validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone, validatePagination,
+  validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone, validateResponseLength, validateAdviceStyle, validatePersonaPreset, validatePagination,
   sanitizeString, isPlainObject,
   updateStreak,
   signupLimiter, loginLimiter, analyzeLimiter,

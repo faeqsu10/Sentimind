@@ -1,0 +1,1 @@
+ALTER TABLE entries ADD COLUMN IF NOT EXISTS is_bookmarked BOOLEAN DEFAULT false;

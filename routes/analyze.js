@@ -3,6 +3,18 @@
 // ---------------------------------------------------------------------------
 
 const express = require('express');
+const {
+  DEFAULT_PERSONALIZATION,
+  buildPersonalizationPrompt,
+} = require('../config/ai-personalization');
+
+function isMissingColumnError(error, columns) {
+  const message = error?.message || '';
+  return columns.some(column =>
+    message.includes(column) &&
+    (message.includes('does not exist') || message.includes('schema cache'))
+  );
+}
 
 module.exports = function (deps) {
   const router = express.Router();
@@ -39,10 +51,13 @@ module.exports = function (deps) {
 
     // 인증된 사용자의 최근 3개 일기 + AI 톤 설정 조회
     let contextSection = '';
-    let userAiTone = 'warm';
+    let userAiTone = DEFAULT_PERSONALIZATION.aiTone;
+    let userResponseLength = DEFAULT_PERSONALIZATION.responseLength;
+    let userAdviceStyle = DEFAULT_PERSONALIZATION.adviceStyle;
+    let userPersonaPreset = DEFAULT_PERSONALIZATION.personaPreset;
     if (req.user && req.supabaseClient) {
       try {
-        const [entriesResult, profileResult] = await Promise.all([
+        const [entriesResult, toneResult, styleResult] = await Promise.all([
           req.supabaseClient
             .from('entries')
             .select('emotion, text, created_at')
@@ -53,6 +68,11 @@ module.exports = function (deps) {
           req.supabaseClient
             .from('user_profiles')
             .select('ai_tone')
+            .eq('id', req.user.id)
+            .single(),
+          req.supabaseClient
+            .from('user_profiles')
+            .select('response_length, advice_style, persona_preset')
             .eq('id', req.user.id)
             .single(),
         ]);
@@ -67,8 +87,21 @@ module.exports = function (deps) {
           contextSection = `\n\n참고: 사용자의 최근 감정 기록 - ${summary}`;
         }
 
-        if (profileResult.data && profileResult.data.ai_tone) {
-          userAiTone = profileResult.data.ai_tone;
+        if (toneResult.data && toneResult.data.ai_tone) {
+          userAiTone = toneResult.data.ai_tone;
+        }
+
+        if (styleResult.error && !isMissingColumnError(styleResult.error, ['response_length', 'advice_style', 'persona_preset'])) {
+          throw styleResult.error;
+        }
+        if (styleResult.data && styleResult.data.response_length) {
+          userResponseLength = styleResult.data.response_length;
+        }
+        if (styleResult.data && styleResult.data.advice_style) {
+          userAdviceStyle = styleResult.data.advice_style;
+        }
+        if (styleResult.data && styleResult.data.persona_preset) {
+          userPersonaPreset = styleResult.data.persona_preset;
         }
       } catch {
         // 맥락/톤 조회 실패 시 기존대로 분석 (비차단)
@@ -77,15 +110,13 @@ module.exports = function (deps) {
 
     const userPrompt = contextSection ? `${textV.value}${contextSection}` : textV.value;
 
-    // 톤별 추가 지시 생성
-    const toneInstructions = {
-      warm: '', // 기본 톤 — SYSTEM_PROMPT 그대로
-      professional: '\n\n추가 톤 지시: 전문적인 심리 상담사처럼 응답하세요. 감정 용어를 정확히 사용하고, 공감하되 분석적 통찰도 함께 제공합니다. 존댓말을 사용하되 약간 격식체를 유지합니다.',
-      friendly: '\n\n추가 톤 지시: 다정한 친구처럼 편하게 응답하세요. 반말은 쓰지 않되, "~요" 체를 사용하고 구어체 표현을 자연스럽게 섞어주세요. "아 정말?" "대박" 같은 공감 추임새를 가볍게 활용합니다.',
-      poetic: '\n\n추가 톤 지시: 감성적이고 시적인 문체로 응답하세요. 비유, 은유를 활용하고 짧은 문장으로 여운을 남기는 표현을 사용합니다. 마치 짧은 산문시처럼 리듬감 있게 작성합니다.',
-    };
-    const toneModifier = toneInstructions[userAiTone] || '';
-    const finalSystemPrompt = SYSTEM_PROMPT + toneModifier;
+    const finalSystemPrompt = buildPersonalizationPrompt({
+      systemPrompt: SYSTEM_PROMPT,
+      aiTone: userAiTone,
+      responseLength: userResponseLength,
+      adviceStyle: userAdviceStyle,
+      personaPreset: userPersonaPreset,
+    });
 
     const requestBody = {
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -148,6 +179,14 @@ module.exports = function (deps) {
           emotionMatch: emotionCrisis,
         });
       }
+
+      enrichedResult.personalization = {
+        applied_tone: userAiTone,
+        applied_response_length: userResponseLength,
+        applied_advice_style: userAdviceStyle,
+        applied_persona_preset: userPersonaPreset,
+        safety_mode: isCrisis || emotionCrisis ? 'crisis' : 'normal',
+      };
 
       return res.json(enrichedResult);
     } catch (err) {

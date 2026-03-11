@@ -375,6 +375,110 @@ Phase 5 진행 중 프로젝트 관리 및 팀 조율이 필요할 때 사용합
 - "RLS 정책의 보안 취약점 분석"
 - "쿼리 성능 최적화 제안"
 
+### release-manager 사용 시기
+
+릴리스 직전 실제 출시 가능 여부를 판단할 때 사용합니다.
+
+**사용 사례**:
+- "지금 상태로 배포 가능한지 확인"
+- "체크리스트와 실제 구현이 맞는지 검증"
+- "남은 출시 리스크와 소유자 정리"
+
+### api-contract-guardian 사용 시기
+
+백엔드 구현, 프런트 호출, 테스트, 문서 사이의 API 계약이 맞는지 점검할 때 사용합니다.
+
+**사용 사례**:
+- "README 예제와 실제 엔드포인트가 같은지 확인"
+- "프런트가 호출하는 payload와 서버가 받는 payload 비교"
+- "API 변경 후 어떤 문서와 테스트를 같이 고쳐야 하는지 확인"
+
+### 권장 AI 에이전트 팀 구성
+
+현재 저장소 기준 권장 코어 팀:
+
+| 역할 | 에이전트 | 용도 |
+|------|---------|------|
+| 총괄 조율 | `project-orchestrator` | 일정, 의존성, 블로커, 우선순위 |
+| 백엔드 구현 | `backend-developer` | API, 인증, 서버 로직 |
+| 프런트 구현 | `frontend-developer` | UI, 사용자 흐름, 접근성 |
+| DB 설계 | `db-architect` | 스키마, 인덱싱, RLS, 성능 |
+| QA | `qa-engineer` | 기능 검증, 회귀 점검, 테스트 관점 리뷰 |
+| 릴리스 검증 | `release-manager` | 출시 가능 여부, 체크리스트, 리스크 판단 |
+| 계약 정합성 | `api-contract-guardian` | 구현/문서/테스트/API 호출 일치 점검 |
+
+확장 팀:
+
+| 역할 | 에이전트 | 용도 |
+|------|---------|------|
+| 기술 설계 | `tech-architect` | 대규모 구조 변경, 시스템 설계 |
+| 제품 요구사항 | `product-requirements-manager` | PRD, 우선순위, 로드맵 |
+| UX 개선 | `ux-designer` | 플로우, 카피, 사용성 |
+| 성능 최적화 | `performance-optimizer` | 병목 분석, 최적화 |
+
+### 에이전트 협업 플레이북
+
+아래 순서를 기본값으로 사용합니다.
+
+#### 1. 신규 기능 개발
+
+1. `project-orchestrator`
+   - 범위, 의존성, 우선순위 정리
+2. `product-requirements-manager` 또는 `tech-architect`
+   - 요구사항 또는 기술 설계 확정
+3. `api-contract-guardian`
+   - API 계약, 문서, 테스트 영향 범위 확인
+4. `backend-developer` / `frontend-developer` / `db-architect`
+   - 실제 구현
+5. `qa-engineer`
+   - 기능 검증, 회귀 위험 점검
+6. `release-manager`
+   - 출시 가능 여부 판단
+
+#### 2. 버그 수정
+
+1. `project-orchestrator`
+   - 영향 범위와 소유자 확인
+2. `backend-developer` 또는 `frontend-developer`
+   - 재현, 원인 분석, 수정
+3. `api-contract-guardian`
+   - 버그 수정으로 문서/API 계약 수정이 필요한지 확인
+4. `qa-engineer`
+   - 회귀 테스트 및 사용자 흐름 검증
+
+#### 3. API 변경
+
+1. `api-contract-guardian`
+   - 엔드포인트, payload, 응답 형태 기준선 확인
+2. `backend-developer`
+   - 서버 구현 및 테스트 수정
+3. `frontend-developer`
+   - 호출부와 UI 영향 수정
+4. `qa-engineer`
+   - 실제 호출 경로 검증
+5. `release-manager`
+   - 문서, 테스트, 체크리스트 반영 여부 확인
+
+#### 4. 출시 전 점검
+
+1. `release-manager`
+   - 출시 차단 이슈와 잔여 리스크 식별
+2. `qa-engineer`
+   - 핵심 흐름 검증
+3. `api-contract-guardian`
+   - README, API 문서, 프런트 호출, 서버 구현 정합성 검토
+4. `project-orchestrator`
+   - 미해결 항목 소유자와 처리 순서 확정
+
+#### 5. 문서/체크리스트 드리프트 발견 시
+
+1. `api-contract-guardian`
+   - 구현과 문서의 실제 차이 정리
+2. `release-manager`
+   - 출시 리스크인지 운영 리스크인지 판단
+3. 해당 구현 담당 에이전트
+   - 코드 또는 문서 수정
+
 ---
 
 ## 📚 자료 및 가이드

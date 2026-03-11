@@ -1,10 +1,18 @@
 import { state } from './state.js';
 import { showError, showToast, getPasswordStrength, calculateStreak } from './utils.js';
-import { fetchWithAuth, loadProfile, exportData } from './api.js';
+import { fetchWithAuth, exportData } from './api.js';
+import { requestNotificationPermission, scheduleReminder } from './reminder.js';
 
 // Dependencies injected from app.js
 let deps = {};
 export function setupProfile(d) { deps = d; }
+
+const profilePreferenceDraft = {
+  aiTone: 'warm',
+  responseLength: 'balanced',
+  adviceStyle: 'balanced',
+  personaPreset: 'none',
+};
 
 export function renderProfileScreen() {
   const avatarEl = document.getElementById('profileAvatar');
@@ -44,16 +52,44 @@ export function renderProfileScreen() {
 
     // AI 톤 설정 반영
     const savedTone = state.userProfile.ai_tone || 'warm';
+    profilePreferenceDraft.aiTone = savedTone;
     document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(btn => {
       btn.setAttribute('aria-pressed', btn.dataset.tone === savedTone ? 'true' : 'false');
     });
 
+    const savedResponseLength = state.userProfile.response_length || 'balanced';
+    profilePreferenceDraft.responseLength = savedResponseLength;
+    document.querySelectorAll('.response-length-btn[data-response-length]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.responseLength === savedResponseLength ? 'true' : 'false');
+    });
+
+    const savedAdviceStyle = state.userProfile.advice_style || 'balanced';
+    profilePreferenceDraft.adviceStyle = savedAdviceStyle;
+    document.querySelectorAll('.advice-style-btn[data-advice-style]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.adviceStyle === savedAdviceStyle ? 'true' : 'false');
+    });
+
+    const savedPersonaPreset = state.userProfile.persona_preset || 'none';
+    profilePreferenceDraft.personaPreset = savedPersonaPreset;
+    document.querySelectorAll('.persona-preset-btn[data-persona-preset]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.personaPreset === savedPersonaPreset ? 'true' : 'false');
+    });
+
     const savedTime = state.userProfile.notification_time || '';
+    const notifEnabledToggle = document.getElementById('profileNotificationEnabled');
+    if (notifEnabledToggle) {
+      notifEnabledToggle.checked = !!state.userProfile.notification_enabled;
+    }
+    const notificationControlsDisabled = !state.userProfile.notification_enabled;
+    document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+      btn.disabled = notificationControlsDisabled;
+    });
     document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
       btn.setAttribute('aria-pressed', btn.dataset.time === savedTime ? 'true' : 'false');
     });
     const customTimeInput = document.getElementById('profile-notification-custom');
     if (customTimeInput) {
+      customTimeInput.disabled = notificationControlsDisabled;
       const presetTimes = ['08:00', '12:00', '18:00', '21:00', '22:00'];
       if (savedTime && !presetTimes.includes(savedTime)) {
         customTimeInput.value = savedTime;
@@ -94,6 +130,16 @@ function resetSessionAndUI() {
 }
 
 export function initProfileEventListeners() {
+  function bindSingleChoiceButtons(selector, draftKey, datasetKey) {
+    document.querySelectorAll(selector).forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll(selector).forEach(other => other.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+        profilePreferenceDraft[draftKey] = btn.dataset[datasetKey];
+      });
+    });
+  }
+
   // Bio character counter
   document.getElementById('profile-bio').addEventListener('input', function() {
     const counter = document.getElementById('bioCharCount');
@@ -105,12 +151,10 @@ export function initProfileEventListeners() {
   });
 
   // AI tone buttons
-  document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(b => b.setAttribute('aria-pressed', 'false'));
-      btn.setAttribute('aria-pressed', 'true');
-    });
-  });
+  bindSingleChoiceButtons('.ai-tone-btn[data-tone]', 'aiTone', 'tone');
+  bindSingleChoiceButtons('.response-length-btn[data-response-length]', 'responseLength', 'responseLength');
+  bindSingleChoiceButtons('.advice-style-btn[data-advice-style]', 'adviceStyle', 'adviceStyle');
+  bindSingleChoiceButtons('.persona-preset-btn[data-persona-preset]', 'personaPreset', 'personaPreset');
 
   // Notification time preset buttons
   document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
@@ -128,6 +172,18 @@ export function initProfileEventListeners() {
       if (this.value) {
         document.querySelectorAll('.notification-time-btn[data-time]').forEach(b => b.setAttribute('aria-pressed', 'false'));
       }
+    });
+  }
+
+  const profileNotifEnabled = document.getElementById('profileNotificationEnabled');
+  if (profileNotifEnabled) {
+    profileNotifEnabled.addEventListener('change', function() {
+      const disabled = !this.checked;
+      document.querySelectorAll('.notification-time-btn[data-time]').forEach(btn => {
+        btn.disabled = disabled;
+      });
+      const customInput = document.getElementById('profile-notification-custom');
+      if (customInput) customInput.disabled = disabled;
     });
   }
 
@@ -152,8 +208,11 @@ export function initProfileEventListeners() {
     saveBtn.textContent = '저장 중...';
 
     // AI 톤 설정
-    const activeTone = document.querySelector('.ai-tone-btn[data-tone][aria-pressed="true"]');
-    const aiTone = activeTone ? activeTone.dataset.tone : 'warm';
+    const aiTone = profilePreferenceDraft.aiTone || 'warm';
+    const responseLength = profilePreferenceDraft.responseLength || 'balanced';
+    const adviceStyle = profilePreferenceDraft.adviceStyle || 'balanced';
+    const personaPreset = profilePreferenceDraft.personaPreset || 'none';
+    const notificationEnabled = !!document.getElementById('profileNotificationEnabled')?.checked;
 
     let notificationTime = null;
     const activePreset = document.querySelector('.notification-time-btn[data-time][aria-pressed="true"]');
@@ -168,12 +227,37 @@ export function initProfileEventListeners() {
       nickname: nicknameInput.value.trim(),
       bio: bioInput.value.trim(),
       ai_tone: aiTone,
+      response_length: responseLength,
+      advice_style: adviceStyle,
+      persona_preset: personaPreset,
+      notification_enabled: notificationEnabled,
     };
-    if (notificationTime) {
+    if (notificationEnabled && notificationTime) {
       patchBody.notification_time = notificationTime;
     }
 
+    if (notificationEnabled && !notificationTime) {
+      profileMessage.textContent = '알림을 켜려면 시간을 선택해주세요.';
+      profileMessage.className = 'profile-message error';
+      profileMessage.hidden = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장';
+      return;
+    }
+
     try {
+      if (notificationEnabled) {
+        const permission = await requestNotificationPermission();
+        if (permission !== 'granted') {
+          profileMessage.textContent = '브라우저 알림 권한이 필요합니다.';
+          profileMessage.className = 'profile-message error';
+          profileMessage.hidden = false;
+          saveBtn.disabled = false;
+          saveBtn.textContent = '저장';
+          return;
+        }
+      }
+
       const res = await fetchWithAuth('/api/profile', {
         method: 'PATCH',
         body: JSON.stringify(patchBody),
@@ -181,9 +265,18 @@ export function initProfileEventListeners() {
 
       if (res.ok) {
         const result = await res.json();
+        const optimisticProfileState = {
+          ...patchBody,
+          notification_time: notificationEnabled
+            ? ((patchBody.notification_time || state.userProfile?.notification_time || '').slice(0, 5) || null)
+            : null,
+        };
         if (result.data) {
-          state.userProfile = { ...state.userProfile, ...result.data };
+          state.userProfile = { ...state.userProfile, ...optimisticProfileState, ...result.data };
+        } else {
+          state.userProfile = { ...state.userProfile, ...optimisticProfileState };
         }
+        scheduleReminder();
         profileMessage.textContent = '프로필이 저장되었어요.';
         profileMessage.className = 'profile-message success';
         profileMessage.hidden = false;
@@ -198,6 +291,9 @@ export function initProfileEventListeners() {
     } catch (err) {
       if (err.userMessage) {
         showError(err.userMessage);
+        profileMessage.textContent = err.userMessage;
+        profileMessage.className = 'profile-message error';
+        profileMessage.hidden = false;
       } else {
         profileMessage.textContent = '서버에 연결할 수 없습니다.';
         profileMessage.className = 'profile-message error';

@@ -1,6 +1,7 @@
 import { state, DOMAIN_EMOJI } from './state.js';
 import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup } from './api.js';
+import { enqueueOfflineDraft, flushOfflineDraftQueue, getOfflineDraftQueueCount } from './offline-drafts.js';
 import { track } from './analytics.js';
 
 // Dependencies injected from app.js
@@ -161,6 +162,22 @@ export async function handleSubmit(e) {
 
   const text = diaryText.value.trim();
   if (!text) return;
+  const activityTags = getSelectedActivityTags();
+
+  if (!navigator.onLine && !state.guestMode) {
+    enqueueOfflineDraft({ text, activityTags });
+    diaryText.value = '';
+    diaryText.style.height = 'auto';
+    charCount.textContent = '';
+    clearActivityTags();
+    submitBtn.disabled = true;
+    showToast('오프라인 상태예요. 이야기를 임시 저장했고 온라인이 되면 자동으로 분석해 저장할게요.', 'success');
+    track('offline_draft_queued', {
+      text_length: text.length,
+      queued_count: getOfflineDraftQueueCount(),
+    });
+    return;
+  }
 
   // E-11: diary_submitted
   const now = new Date();
@@ -190,7 +207,6 @@ export async function handleSubmit(e) {
     showResponse(result);
 
     let savedEntry = null;
-    const activityTags = getSelectedActivityTags();
     if (!state.guestMode) {
       savedEntry = await saveEntry(text, result, activityTags);
     }
@@ -227,6 +243,28 @@ export async function handleSubmit(e) {
     if (aiSection) aiSection.removeAttribute('aria-busy');
     submitBtn.disabled = diaryText.value.trim().length === 0;
   }
+}
+
+export async function processOfflineDraftQueue() {
+  if (state.guestMode || !navigator.onLine) {
+    return { processed: 0, remaining: getOfflineDraftQueueCount() };
+  }
+
+  const pendingCount = getOfflineDraftQueueCount();
+  if (pendingCount === 0) {
+    return { processed: 0, remaining: 0 };
+  }
+
+  const result = await flushOfflineDraftQueue({ analyzeEmotion, saveEntry });
+  if (result.processed > 0) {
+    await deps.loadEntries();
+    showToast(`오프라인에서 임시 저장한 이야기 ${result.processed}건을 분석하고 저장했어요.`, 'success');
+    track('offline_draft_synced', {
+      processed_count: result.processed,
+      remaining_count: result.remaining,
+    });
+  }
+  return result;
 }
 
 export function showResponse(result) {

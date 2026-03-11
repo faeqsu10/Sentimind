@@ -9,6 +9,7 @@ function createMockDeps(overrides = {}) {
     logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
     requestId: () => 'test-rid-001',
     USE_SUPABASE: true,
+    supabaseAdmin: null,
     authMiddleware: (req, _res, next) => {
       req.user = { id: 'user-123', email: 'test@example.com' };
       req.supabaseClient = req._mockSupabase || createMockSupabase();
@@ -316,6 +317,46 @@ describe('Entries Routes', () => {
       const res = await request(app, 'GET', '/api/export?format=xml');
       expect(res.status).toBe(400);
       expect(res.data.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('records export analytics with the correct event column', async () => {
+      const entries = [
+        { text: '일기1', emotion: '기쁨', emoji: '😊', created_at: '2026-03-08T10:00:00Z', confidence_score: 85 },
+      ];
+      const insert = vi.fn().mockResolvedValue({ error: null });
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: entries, error: null }),
+              }),
+            }),
+          }),
+        })),
+      };
+      const supabaseAdmin = {
+        from: vi.fn(() => ({ insert })),
+      };
+
+      const deps = createMockDeps({
+        supabaseAdmin,
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'GET', '/api/export?format=json');
+
+      expect(res.status).toBe(200);
+      expect(supabaseAdmin.from).toHaveBeenCalledWith('analytics_events');
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+        user_id: 'user-123',
+        event: 'data_exported',
+        properties: { format: 'json', entry_count: 1 },
+      }));
     });
   });
 });
