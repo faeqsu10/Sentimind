@@ -2,7 +2,7 @@
 
 당신의 감정을 AI가 이해해주는 하루 한 줄 다이어리 앱
 
-**Live**: https://sentimind-delta.vercel.app | **GitHub**: https://github.com/faeqsu10/Sentimind
+**Live**: senti-mind.com | **GitHub**: https://github.com/faeqsu10/Sentimind
 
 ## 🎯 개요
 
