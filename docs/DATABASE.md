@@ -25,7 +25,7 @@ CREATE TABLE entries (
   user_id UUID DEFAULT NULL,
 
   -- 제약 조건
-  CONSTRAINT text_not_empty CHECK (length(text) > 0 AND length(text) <= 500)
+  CONSTRAINT entries_text_check CHECK (length(text) > 0 AND length(text) <= 2000)
 );
 ```
 

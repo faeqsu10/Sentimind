@@ -126,7 +126,13 @@ module.exports = function (deps) {
           .single();
 
         if (error) {
-          logger.error('일기 저장 실패 (Supabase)', { requestId: rid, error: error.message });
+          logger.error('일기 저장 실패 (Supabase)', {
+            requestId: rid,
+            error: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+          });
           return res.status(500).json({ error: '일기 저장에 실패했습니다.', code: 'INTERNAL_ERROR' });
         }
 
