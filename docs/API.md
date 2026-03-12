@@ -271,6 +271,15 @@ Google OAuth 시작 URL을 반환합니다.
 
 과거 리포트 목록을 최신순으로 반환합니다.
 
+### `DELETE /api/reports/:id`
+헤더:
+- `Authorization: Bearer {access_token}`
+
+파라미터:
+- `id`: 삭제할 리포트 ID (UUID)
+
+본인의 리포트만 삭제 가능. 성공 시 204 No Content.
+
 응답:
 ```json
 [

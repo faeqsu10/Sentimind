@@ -278,5 +278,31 @@ module.exports = function (deps) {
     }
   });
 
+  // DELETE /reports/:id - 리포트 삭제
+  router.delete('/reports/:id', authMiddleware, async (req, res) => {
+    const rid = req.rid || requestId();
+    const { id } = req.params;
+
+    if (!USE_SUPABASE || !req.supabaseClient || !req.user) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    try {
+      const { error } = await req.supabaseClient
+        .from('user_reports')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', req.user.id);
+
+      if (error) throw error;
+
+      logger.info('리포트 삭제', { requestId: rid, reportId: id, userId: req.user.id });
+      return res.status(204).end();
+    } catch (err) {
+      logger.error('리포트 삭제 오류', { requestId: rid, error: err.message });
+      return res.status(500).json({ error: '리포트 삭제에 실패했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   return router;
 };

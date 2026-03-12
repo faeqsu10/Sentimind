@@ -1,5 +1,5 @@
 import { state, PERIOD_MAP } from './state.js';
-import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr } from './utils.js';
+import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr, showToast } from './utils.js';
 import { fetchWithAuth } from './api.js';
 import { track } from './analytics.js';
 import { loadEmotionGraph } from './emotion-graph.js';
@@ -169,6 +169,7 @@ function renderInsights(entries) {
   }
 
   const insights = [];
+  const POSITIVE_EMOTIONS = ['기쁨', '행복', '감사', '설렘', '희망', '평온', '만족', '사랑', '안도', '뿌듯'];
 
   // 1. 요일 패턴: 각 요일별 가장 빈번한 감정
   const byDay = Array.from({ length: 7 }, () => ({}));
@@ -194,6 +195,7 @@ function renderInsights(entries) {
   });
   if (bestDay >= 0 && bestDayScore >= 2) {
     insights.push({
+      priority: 3,
       emoji: emotionEmoji(bestDayEmotion),
       text: DAY_NAMES[bestDay] + '요일에 \'' + bestDayEmotion + '\'을(를) 가장 많이 느끼시네요',
       label: '요일 패턴',
@@ -226,6 +228,7 @@ function renderInsights(entries) {
   });
   if (bestSlot >= 0 && bestSlotScore >= 2) {
     insights.push({
+      priority: 4,
       emoji: emotionEmoji(bestSlotEmotion),
       text: TIME_SLOTS[bestSlot].label + '에 \'' + bestSlotEmotion + '\'을(를) 자주 느끼시네요',
       label: '시간대 패턴',
@@ -240,13 +243,113 @@ function renderInsights(entries) {
   const topEmotion = Object.entries(totalCounts).sort((a, b) => b[1] - a[1])[0];
   if (topEmotion && topEmotion[1] >= 3) {
     insights.push({
+      priority: 7,
       emoji: emotionEmoji(topEmotion[0]),
       text: '기록 전반에서 \'' + topEmotion[0] + '\'이(가) 가장 자주 찾아왔어요',
       label: '전체 패턴',
     });
   }
 
-  const shown = insights.slice(0, 3);
+  // 4. 감정 다양성: 고유 감정 5개 이상
+  const uniqueEmotions = Object.keys(totalCounts);
+  if (uniqueEmotions.length >= 5) {
+    insights.push({
+      priority: 5,
+      emoji: '🌈',
+      text: uniqueEmotions.length + '가지 다양한 감정을 기록했어요',
+      label: '감정 다양성',
+    });
+  }
+
+  // 5. 감정 추세: 최근 10개 vs 이전 엔트리 긍정 비율 비교 (20개 이상일 때)
+  if (entries.length >= 20) {
+    const sortedForTrend = entries.slice().sort((a, b) => {
+      const da = new Date(a.date || a.created_at || '');
+      const db = new Date(b.date || b.created_at || '');
+      return da - db;
+    });
+    const recentTrend = sortedForTrend.slice(-10);
+    const olderTrend = sortedForTrend.slice(0, sortedForTrend.length - 10);
+    const posRatio = arr => arr.filter(e => POSITIVE_EMOTIONS.includes(e.emotion)).length / arr.length;
+    const recentRatio = posRatio(recentTrend);
+    const olderRatio = posRatio(olderTrend);
+    if (recentRatio > olderRatio + 0.1) {
+      insights.push({
+        priority: 1,
+        emoji: '📈',
+        text: '최근 긍정적인 마음이 늘어나고 있어요',
+        label: '감정 추세',
+      });
+    } else if (recentRatio < olderRatio - 0.1) {
+      insights.push({
+        priority: 1,
+        emoji: '📉',
+        text: '마음이 조금 무거운 시기인 것 같아요',
+        label: '감정 추세',
+      });
+    }
+  }
+
+  // 6. 연속 패턴: 같은 감정이 3일 이상 연속
+  const sortedForStreak = entries.slice().sort((a, b) => {
+    const da = new Date(a.date || a.created_at || '');
+    const db = new Date(b.date || b.created_at || '');
+    return da - db;
+  });
+  let streak = 1, streakEmotion = sortedForStreak[0]?.emotion || '';
+  let maxStreak = 1, maxStreakEmotion = streakEmotion;
+  for (let i = 1; i < sortedForStreak.length; i++) {
+    const cur = sortedForStreak[i].emotion;
+    const prevDate = new Date(sortedForStreak[i - 1].date || sortedForStreak[i - 1].created_at || '');
+    const curDate = new Date(sortedForStreak[i].date || sortedForStreak[i].created_at || '');
+    const dayDiff = Math.round((curDate - prevDate) / 86400000);
+    if (cur === sortedForStreak[i - 1].emotion && dayDiff <= 1) {
+      streak++;
+    } else {
+      streak = 1;
+    }
+    if (streak > maxStreak) {
+      maxStreak = streak;
+      maxStreakEmotion = cur;
+    }
+  }
+  if (maxStreak >= 3) {
+    insights.push({
+      priority: 2,
+      emoji: emotionEmoji(maxStreakEmotion),
+      text: '\'' + maxStreakEmotion + '\'이(가) ' + maxStreak + '일 연속 찾아왔어요',
+      label: '연속 패턴',
+    });
+  }
+
+  // 7. 기록 습관: 가장 활발하게 기록한 시간대 (40% 이상)
+  const slotCounts = TIME_SLOTS.map(() => 0);
+  let slotTotal = 0;
+  entries.forEach(e => {
+    const raw = e.date || e.created_at || '';
+    const dt = new Date(raw);
+    if (isNaN(dt.getTime())) return;
+    const hour = dt.getHours();
+    const idx = TIME_SLOTS.findIndex(s => hour >= s.start && hour < s.end);
+    if (idx < 0) return;
+    slotCounts[idx]++;
+    slotTotal++;
+  });
+  if (slotTotal > 0) {
+    const topSlotIdx = slotCounts.indexOf(Math.max(...slotCounts));
+    const topSlotRatio = slotCounts[topSlotIdx] / slotTotal;
+    if (topSlotRatio >= 0.4) {
+      insights.push({
+        priority: 6,
+        emoji: '✍️',
+        text: '주로 ' + TIME_SLOTS[topSlotIdx].label + '에 마음을 꺼내시네요',
+        label: '기록 습관',
+      });
+    }
+  }
+
+  insights.sort((a, b) => a.priority - b.priority);
+  const shown = insights.slice(0, 5);
   if (shown.length === 0) {
     container.innerHTML = '<p class="insight-empty">아직 패턴을 찾기에 데이터가 부족해요</p>';
     return;
@@ -601,6 +704,7 @@ export async function fetchReport(period) {
     resultEl.hidden = false;
     // E-16: report_generated
     track('report_generated', { period });
+    showToast('리포트가 저장되었어요', 'success');
     // Load report history after generating
     loadReportHistory();
   } catch (err) {
@@ -635,16 +739,67 @@ async function loadReportHistory() {
       const dateStr = r.periodStart
         ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(r.periodStart))
         : '';
-      return '<li class="report-history-item">' +
+      return '<li class="report-history-item" data-report-id="' + escapeHtml(String(r.id)) + '">' +
         '<div class="report-history-item-header">' +
           '<span class="report-history-period">' + periodLabel + ' 리포트</span>' +
-          '<span class="report-history-date">' + escapeHtml(dateStr) + '</span>' +
+          '<div class="report-history-item-actions">' +
+            '<span class="report-history-date">' + escapeHtml(dateStr) + '</span>' +
+            '<button class="report-history-delete-btn" aria-label="리포트 삭제" data-report-id="' + escapeHtml(String(r.id)) + '">✕</button>' +
+          '</div>' +
         '</div>' +
         '<p class="report-history-summary">' + escapeHtml(r.summary || '') + '</p>' +
+        '<div class="report-history-detail" hidden>' +
+          '<div class="report-history-detail-section">' +
+            '<span class="report-history-detail-label">마음의 변화</span>' +
+            '<p class="report-history-detail-text">' + escapeHtml(r.emotionTrend || '') + '</p>' +
+          '</div>' +
+          '<div class="report-history-detail-section">' +
+            '<span class="report-history-detail-label">마음의 패턴</span>' +
+            '<p class="report-history-detail-text">' + escapeHtml(r.insight || '') + '</p>' +
+          '</div>' +
+          '<div class="report-history-detail-section">' +
+            '<span class="report-history-detail-label">따뜻한 한마디</span>' +
+            '<p class="report-history-detail-text">' + escapeHtml(r.encouragement || '') + '</p>' +
+          '</div>' +
+        '</div>' +
       '</li>';
     }).join('');
 
     historyEl.hidden = false;
+
+    // Accordion: click item (not delete button) to toggle detail
+    if (!listEl._clickBound) {
+      listEl._clickBound = true;
+      listEl.addEventListener('click', async (e) => {
+        const deleteBtn = e.target.closest('.report-history-delete-btn');
+        if (deleteBtn) {
+          e.stopPropagation();
+          const reportId = deleteBtn.dataset.reportId;
+          if (!confirm('이 리포트를 삭제할까요?')) return;
+          try {
+            const res = await fetchWithAuth('/api/reports/' + reportId, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+              const li = listEl.querySelector('[data-report-id="' + reportId + '"]');
+              if (li) li.remove();
+              showToast('리포트가 삭제되었어요', 'success');
+              if (listEl.children.length === 0) historyEl.hidden = true;
+            } else {
+              showToast('삭제에 실패했어요. 다시 시도해주세요.', 'error');
+            }
+          } catch {
+            showToast('삭제 중 문제가 생겼어요.', 'error');
+          }
+          return;
+        }
+
+        const item = e.target.closest('.report-history-item');
+        if (!item) return;
+        const detail = item.querySelector('.report-history-detail');
+        if (!detail) return;
+        detail.hidden = !detail.hidden;
+        item.classList.toggle('report-history-item--expanded', !detail.hidden);
+      });
+    }
 
     // Toggle accordion
     if (toggleEl && !toggleEl._bound) {
