@@ -139,11 +139,12 @@ function renderMonthlySummary(entryMap, daysInMonth) {
   }
 
   const topEmotion = Object.entries(emotionCount).sort((a, b) => b[1] - a[1])[0];
+  const topEmoji = topEmotion ? (Object.values(entryMap).flat().find(e => e.emotion === topEmotion[0])?.emoji || '') : '';
   container.innerHTML =
     '<div class="cal-summary-stats">' +
-      '<div class="cal-summary-stat"><span class="cal-summary-num">' + totalEntries + '</span> <span class="cal-summary-label">나눈 이야기</span></div>' +
-      '<div class="cal-summary-stat"><span class="cal-summary-num">' + daysWithEntries + '</span> <span class="cal-summary-label">마음을 꺼낸 날</span></div>' +
-      (topEmotion ? '<div class="cal-summary-stat"><span class="cal-summary-num">' + escapeHtml(topEmotion[0]) + '</span> <span class="cal-summary-label">가장 많이 찾아온 마음</span></div>' : '') +
+      '<div class="cal-summary-stat"><span class="cal-summary-num">' + totalEntries + '<small>건</small></span> <span class="cal-summary-label">나눈 이야기</span></div>' +
+      '<div class="cal-summary-stat"><span class="cal-summary-num">' + daysWithEntries + '<small>일</small></span> <span class="cal-summary-label">마음을 꺼낸 날</span></div>' +
+      (topEmotion ? '<div class="cal-summary-stat"><span class="cal-summary-num">' + escapeHtml(topEmoji) + ' ' + escapeHtml(topEmotion[0]) + '</span> <span class="cal-summary-label">가장 많이 찾아온 마음</span></div>' : '') +
     '</div>';
 }
 
