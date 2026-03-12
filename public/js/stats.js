@@ -702,9 +702,10 @@ export async function fetchReport(period) {
         '</div>' +
       '</div>';
     resultEl.hidden = false;
+    // 생성된 리포트로 자동 스크롤
+    setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     // E-16: report_generated
     track('report_generated', { period });
-    showToast('리포트가 저장되었어요', 'success');
     // Load report history after generating
     loadReportHistory();
   } catch (err) {

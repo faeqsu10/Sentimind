@@ -360,16 +360,13 @@ function calculateTokenCost(usageMetadata) {
   return { input, output, thinking, cached, total, inputCost, outputCost, thinkingCost, totalCost };
 }
 
-// Sanitize string fields to prevent stored XSS
-// 서버 측에서 HTML 특수문자를 이스케이프하여 저장
+// Sanitize string fields — truncate only, no HTML escaping
+// XSS 방지는 프론트엔드 escapeHtml()에서 표시 시점에 처리
 function sanitizeString(str, maxLength = 500) {
   if (typeof str !== 'string') return '';
-  return str.slice(0, maxLength)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  // Unicode-safe truncation (서로게이트 쌍 보호)
+  const chars = [...str];
+  return chars.length <= maxLength ? str : chars.slice(0, maxLength).join('');
 }
 
 // Validate that a value is a plain object (not array, not null)
