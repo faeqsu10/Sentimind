@@ -1,6 +1,6 @@
 import { state, PAGE_SIZE } from './state.js';
 import { escapeHtml, emotionColor, getEmotionGroup, debounce, openModalFocus, closeModalFocus, showToast } from './utils.js';
-import { toggleBookmarkAPI, deleteEntryAPI } from './api.js';
+import { toggleBookmarkAPI, deleteEntryAPI, fetchWithAuth } from './api.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -227,6 +227,18 @@ export function showHistoryDetail(entry) {
     }
   };
 
+  // Edit button
+  let editBtn = document.getElementById('detailEdit');
+  if (!editBtn) {
+    editBtn = document.createElement('button');
+    editBtn.id = 'detailEdit';
+    editBtn.className = 'entry-edit-btn';
+    editBtn.textContent = '수정';
+    const deleteBtn0 = document.getElementById('detailDelete');
+    if (deleteBtn0) deleteBtn0.parentNode.insertBefore(editBtn, deleteBtn0);
+  }
+  editBtn.onclick = () => startEntryEdit(entry, historyDetail);
+
   // Delete button
   const deleteBtn = document.getElementById('detailDelete');
   if (deleteBtn) {
@@ -249,6 +261,77 @@ export function showHistoryDetail(entry) {
       }
     };
   }
+}
+
+function startEntryEdit(entry, containerEl) {
+  const textEl = containerEl.querySelector('#detailText');
+  if (!textEl) return;
+
+  // Prevent double-edit
+  if (containerEl.querySelector('.entry-edit-textarea')) return;
+
+  const originalText = entry.text;
+  const textarea = document.createElement('textarea');
+  textarea.className = 'entry-edit-textarea';
+  textarea.value = originalText;
+  textarea.maxLength = 2000;
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'entry-edit-save';
+  saveBtn.textContent = '저장';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'entry-edit-cancel';
+  cancelBtn.textContent = '취소';
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'entry-edit-actions';
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+
+  textEl.hidden = true;
+  textEl.parentNode.insertBefore(textarea, textEl.nextSibling);
+  textEl.parentNode.insertBefore(btnRow, textarea.nextSibling);
+  textarea.focus();
+
+  cancelBtn.addEventListener('click', () => {
+    textarea.remove();
+    btnRow.remove();
+    textEl.hidden = false;
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const newText = textarea.value.trim();
+    if (!newText || newText === originalText) {
+      textarea.remove();
+      btnRow.remove();
+      textEl.hidden = false;
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+
+    try {
+      await fetchWithAuth('/api/entries/' + entry.id, {
+        method: 'PATCH',
+        body: JSON.stringify({ text: newText }),
+      });
+
+      // 로컬 상태 업데이트 (참조 객체이므로 allEntries도 자동 반영)
+      entry.text = newText;
+      textEl.textContent = newText;
+      textarea.remove();
+      btnRow.remove();
+      textEl.hidden = false;
+
+      showToast('일기가 수정되었어요.', 'success');
+    } catch (err) {
+      showToast(err.userMessage || '수정에 실패했어요.', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장';
+    }
+  });
 }
 
 function updateSelectUI() {

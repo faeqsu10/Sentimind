@@ -58,7 +58,7 @@ Sentimind/
 ├── lib/
 │   ├── auth-middleware.js      # JWT 인증 미들웨어
 │   └── validators.js           # 입력 검증 유틸리티
-├── migrations/                 # Supabase 마이그레이션 (001~018)
+├── migrations/                 # Supabase 마이그레이션 (001~019)
 ├── public/
 │   ├── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 │   ├── sw.js                   # Service Worker (오프라인 동기화)
@@ -206,6 +206,15 @@ Sentimind/
 - 🗑️ Soft delete (복구 가능)
 - 🎯 신규 사용자 온보딩 플로우
 - 📊 이벤트 트래킹 (10개 핵심 이벤트, 배치 전송, sendBeacon)
+
+### 11. 일기 수정
+- ✏️ 히스토리 상세에서 일기 텍스트 수정 가능
+- 감정, 메시지도 함께 수정 지원
+
+### 12. AI 사용량 추적
+- 📊 모든 Gemini API 호출의 토큰/비용 DB 로깅
+- ai_usage_logs 테이블로 사용량 기록
+- fire-and-forget 방식의 비동기 로깅
 
 ## 🔌 API 엔드포인트
 

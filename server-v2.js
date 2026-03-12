@@ -451,6 +451,26 @@ async function callGeminiAPI(requestBody, { rid, label = 'Gemini' } = {}) {
   throw new GeminiAPIError(502, '분석에 실패했습니다. 다시 시도해주세요.', 'AI_SERVICE_ERROR');
 }
 
+async function logAiUsage({ userId, endpoint, tokenCost, durationMs }) {
+  if (!supabaseAdmin || !tokenCost) return;
+  try {
+    await supabaseAdmin.from('ai_usage_logs').insert({
+      user_id: userId || null,
+      endpoint,
+      model: config.gemini.model,
+      input_tokens: tokenCost.input || 0,
+      output_tokens: tokenCost.output || 0,
+      thinking_tokens: tokenCost.thinking || 0,
+      cached_tokens: tokenCost.cached || 0,
+      total_tokens: tokenCost.total || 0,
+      cost_usd: tokenCost.totalCost || 0,
+      duration_ms: durationMs || null,
+    });
+  } catch (err) {
+    logger.warn('AI 사용량 로그 저장 실패', { error: err.message });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Streak Calculator
 // ---------------------------------------------------------------------------
@@ -672,7 +692,7 @@ const routeDeps = {
   authMiddleware, optionalAuth,
   config, GEMINI_URL, GEMINI_API_KEY,
   ontologyEngine: () => ontologyEngine, SYSTEM_PROMPT,
-  callGeminiAPI, GeminiAPIError, calculateTokenCost,
+  callGeminiAPI, GeminiAPIError, calculateTokenCost, logAiUsage,
   parseGeminiResponse,
   validateEmail, validatePassword, validateEntryText, validateConfidenceScore,
   validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone, validateResponseLength, validateAdviceStyle, validatePersonaPreset, validatePagination,

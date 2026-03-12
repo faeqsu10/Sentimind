@@ -14,6 +14,7 @@ module.exports = function (deps) {
     callGeminiAPI, GeminiAPIError,
     validateEntryText,
     analyzeLimiter,
+    logAiUsage,
   } = deps;
 
   // 그림일기 전용 시스템 프롬프트
@@ -104,6 +105,13 @@ module.exports = function (deps) {
       const result = parseIllustratedResponse(content);
 
       const duration = Date.now() - startTime;
+      logAiUsage({
+        userId: req.user?.id,
+        endpoint: 'illustrated-diary',
+        tokenCost,
+        durationMs: duration,
+      });
+
       logger.info('그림일기 생성 완료', {
         requestId: rid,
         duration: `${duration}ms`,

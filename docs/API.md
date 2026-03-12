@@ -172,14 +172,14 @@ Google OAuth 시작 URL을 반환합니다.
 헤더:
 - `Authorization: Bearer {access_token}`
 
-지원 예시:
+북마크 설정:
 ```json
 {
   "is_bookmarked": true
 }
 ```
 
-또는 본문 수정:
+또는 본문 수정 (text, emotion, message 지원):
 ```json
 {
   "text": "수정된 일기",

@@ -14,6 +14,7 @@ module.exports = function (deps) {
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
     analyzeLimiter,
+    logAiUsage,
   } = deps;
 
   /**
@@ -176,6 +177,13 @@ module.exports = function (deps) {
       };
 
       const duration = Date.now() - startTime;
+      logAiUsage({
+        userId: req.user?.id,
+        endpoint: 'report',
+        tokenCost,
+        durationMs: duration,
+      });
+
       logger.info('리포트 생성 완료', {
         requestId: rid,
         period,

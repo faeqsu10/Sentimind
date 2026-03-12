@@ -28,6 +28,7 @@ module.exports = function (deps) {
     validateEntryText,
     parseGeminiResponse,
     analyzeLimiter,
+    logAiUsage,
   } = deps;
 
   // POST /analyze - 감정 분석 (인증 선택 — 게스트 모드 지원)
@@ -138,6 +139,13 @@ module.exports = function (deps) {
         : result;
 
       const duration = Date.now() - startTime;
+      logAiUsage({
+        userId: req.user?.id,
+        endpoint: 'analyze',
+        tokenCost,
+        durationMs: duration,
+      });
+
       logger.info('감정 분석 완료', {
         requestId: rid,
         emotion: enrichedResult.emotion,

@@ -30,7 +30,7 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - **routes/illustrated-diary.js**: POST /api/illustrated-diary — 3컷 그림일기 장면 생성 (Gemini API)
 - **routes/emotion-graph.js**: GET /api/stats/emotion-graph — 감정 별자리 그래프 데이터 (노드/엣지/별자리 패턴)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
-- **migrations/001~018**: Supabase 마이그레이션 (017: user_reports 리포트 저장, 018: entries.crisis_detected 추가)
+- **migrations/001~019**: Supabase 마이그레이션 (017: user_reports 리포트 저장, 018: entries.crisis_detected 추가, 019: ai_usage_logs 사용량 추적)
 
 ## Key Technical Decisions
 
