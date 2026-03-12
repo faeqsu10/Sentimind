@@ -104,8 +104,8 @@ module.exports = function (deps) {
         if (styleResult.data && styleResult.data.persona_preset) {
           userPersonaPreset = styleResult.data.persona_preset;
         }
-      } catch {
-        // 맥락/톤 조회 실패 시 기존대로 분석 (비차단)
+      } catch (profileErr) {
+        req.log?.warn?.({ err: profileErr.message }, 'user_profiles 조회 실패 — 기본 톤 사용');
       }
     }
 

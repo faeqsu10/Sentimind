@@ -1892,11 +1892,12 @@
 
 /* Calendar: monthly summary */
 .cal-monthly-summary {
-  margin-top: 1.25rem; padding: 1rem;
+  margin-top: 0.75rem; padding: 1rem;
   background: var(--gradient-response);
   border-radius: var(--radius-md);
   animation: fadeInUp 300ms ease both;
 }
+.cal-monthly-summary.hidden { display: none; }
 .cal-summary-title {
   font-family: var(--font-diary); font-size: 0.85rem;
   font-weight: 600; color: var(--color-text);

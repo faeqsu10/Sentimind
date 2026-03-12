@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { emotionColor, escapeHtml, toLocalDateStr, todayLocalStr } from './utils.js';
+import { emotionColor, escapeHtml, safeEmoji, toLocalDateStr, todayLocalStr } from './utils.js';
 
 function buildCalEntryMap() {
   const entryMap = {};
@@ -104,7 +104,7 @@ function showCalDayEntries(dateStr, entries) {
       '<div class="cal-entry-card">' +
         '<p class="cal-entry-text">' + escapeHtml(e.text) + '</p>' +
         '<div class="cal-entry-meta">' +
-          '<span>' + escapeHtml(e.emoji || '') + '</span>' +
+          '<span>' + safeEmoji(e.emoji) + '</span>' +
           '<span class="cal-entry-emotion">' + escapeHtml(e.emotion || '') + '</span>' +
         '</div>' +
         (e.message ? '<p class="cal-entry-message">' + escapeHtml(e.message) + '</p>' : '') +
@@ -134,9 +134,11 @@ function renderMonthlySummary(entryMap, daysInMonth) {
   }
 
   if (totalEntries === 0) {
-    container.innerHTML = '<p class="sidebar-empty">이 달의 첫 이야기를 들려주세요</p>';
+    container.classList.add('hidden');
+    container.innerHTML = '';
     return;
   }
+  container.classList.remove('hidden');
 
   const topEmotion = Object.entries(emotionCount).sort((a, b) => b[1] - a[1])[0];
   const topEmoji = topEmotion ? (Object.values(entryMap).flat().find(e => e.emotion === topEmotion[0])?.emoji || '') : '';

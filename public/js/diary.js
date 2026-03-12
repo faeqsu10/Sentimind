@@ -1,5 +1,5 @@
 import { state, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, safeEmoji, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup, fetchIllustratedDiary } from './api.js';
 import { enqueueOfflineDraft, flushOfflineDraftQueue, getOfflineDraftQueueCount } from './offline-drafts.js';
 import { track } from './analytics.js';
@@ -285,7 +285,7 @@ export function showResponse(result) {
     myDiaryText.hidden = true;
   }
 
-  responseEmoji.textContent = result.emoji;
+  responseEmoji.textContent = safeEmoji(result.emoji);
   responseEmotion.textContent = '지금 느끼고 있는 ' + result.emotion;
   responseMessage.textContent = result.message;
   responseAdvice.textContent = result.advice;
@@ -384,7 +384,7 @@ export function showResponse(result) {
         ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(e.date))
         : '';
       return `<li class="similar-entry-item" tabindex="0" role="button" aria-label="${escapeHtml(e.text)}">
-        <span class="similar-entry-emoji" aria-hidden="true">${escapeHtml(e.emoji || '')}</span>
+        <span class="similar-entry-emoji" aria-hidden="true">${safeEmoji(e.emoji)}</span>
         <div class="similar-entry-body">
           <p class="similar-entry-text">${escapeHtml(e.text)}</p>
           <p class="similar-entry-date">${escapeHtml(dateStr)}</p>
@@ -468,7 +468,7 @@ function renderIllustratedCard(data) {
 
     const emojiEl = document.createElement('span');
     emojiEl.className = 'illust-panel-emoji';
-    emojiEl.textContent = panel.emoji;
+    emojiEl.textContent = safeEmoji(panel.emoji);
     emojiEl.setAttribute('aria-hidden', 'true');
 
     const numEl = document.createElement('span');

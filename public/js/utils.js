@@ -7,6 +7,19 @@ export function escapeHtml(str) {
   return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/**
+ * DB에 텍스트로 저장된 이모지 값(예: "perplexed")을 안전하게 처리.
+ * 실제 이모지/한글이 아닌 영문 텍스트면 폴백 이모지를 반환한다.
+ */
+export function safeEmoji(emoji, fallback = '\uD83D\uDCAD') {
+  if (!emoji || typeof emoji !== 'string') return fallback;
+  const trimmed = emoji.trim();
+  if (!trimmed) return fallback;
+  // 순수 ASCII 영문자로만 이뤄진 경우 (깨진 텍스트)
+  if (/^[a-zA-Z_\s-]+$/.test(trimmed)) return fallback;
+  return trimmed;
+}
+
 export function emotionColor(emotion) {
   const e = (emotion || '').trim();
   const map = {

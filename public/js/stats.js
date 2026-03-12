@@ -1,5 +1,5 @@
 import { state, PERIOD_MAP } from './state.js';
-import { escapeHtml, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr, showToast } from './utils.js';
+import { escapeHtml, safeEmoji, emotionColor, emotionScore, showSkeleton, hideSkeleton, toLocalDateStr, showToast } from './utils.js';
 import { fetchWithAuth } from './api.js';
 import { track } from './analytics.js';
 import { loadEmotionGraph } from './emotion-graph.js';
@@ -105,7 +105,7 @@ function renderDashboard(stats) {
           ? new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(e.date))
           : '';
         return '<div class="recent-entry">' +
-          '<span class="recent-entry-emoji">' + escapeHtml(e.emoji || '') + '</span>' +
+          '<span class="recent-entry-emoji">' + safeEmoji(e.emoji) + '</span>' +
           '<div class="recent-entry-body">' +
             '<p class="recent-entry-text">' + escapeHtml(e.text || '') + '</p>' +
             '<span class="recent-entry-date">' + dateStr + '</span>' +
