@@ -1,0 +1,41 @@
+name: Supabase Prod Migrate
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "migrations/**"
+      - "supabase/**"
+      - "scripts/sync-supabase-migrations.sh"
+      - ".github/workflows/supabase-prod-migrate.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate-production:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Sync local migrations into Supabase format
+        run: bash scripts/sync-supabase-migrations.sh
+
+      - name: Authenticate Supabase CLI
+        run: supabase login --token "$SUPABASE_ACCESS_TOKEN"
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Push pending migrations to production
+        run: supabase db push --linked --yes
