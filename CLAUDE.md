@@ -30,7 +30,7 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - **routes/illustrated-diary.js**: POST /api/illustrated-diary — 3컷 그림일기 장면 생성 (Gemini API)
 - **routes/emotion-graph.js**: GET /api/stats/emotion-graph — 감정 별자리 그래프 데이터 (노드/엣지/별자리 패턴)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
-- **migrations/001~019**: Supabase 마이그레이션 (017: user_reports 리포트 저장, 018: entries.crisis_detected 추가, 019: ai_usage_logs 사용량 추적)
+- **migrations/001~023**: Supabase 마이그레이션 (017: user_reports 리포트 저장, 018: entries.crisis_detected 추가, 019: ai_usage_logs 사용량 추적, 023: Anonymous Auth — user_profiles.is_anonymous + handle_new_user 트리거)
 
 ## Key Technical Decisions
 
@@ -38,6 +38,7 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - Gemini 응답이 `` ```json `` 코드블록으로 감싸질 수 있어 `parseGeminiResponse()`에서 정규식으로 추출
 - `express.static`은 `public/` 디렉토리만 서빙 (server.js, .env, data/ 노출 방지)
 - 프런트엔드 폰트: Google Fonts의 Gowun Batang(일기 텍스트) + Gowun Dodum(UI)
+- Supabase Anonymous Auth로 게스트 체험 DB 저장 (signInAnonymously → 회원가입 시 linkAccount로 데이터 자동 이어짐). 실패 시 localStorage 폴백
 
 ## Environment Variables (.env)
 

@@ -1,7 +1,10 @@
 import { state, GUEST_STORAGE_KEY, GUEST_MAX_ENTRIES, GUEST_MAX_DAYS, DOMAIN_EMOJI } from './state.js';
 import { escapeHtml, showError, getEmotionGroup, emotionColor, calculateStreak, toLocalDateStr, openModalFocus, closeModalFocus } from './utils.js';
-import { fetchWithAuth, analyzeEmotion, fetchFollowup } from './api.js';
+import { fetchWithAuth, analyzeEmotion, saveEntry, fetchFollowup } from './api.js';
 import { track } from './analytics.js';
+
+// Module-level entries cache (works for both DB and localStorage modes)
+let _demoEntries = [];
 
 // Dependencies injected from app.js
 let deps = {};
@@ -28,13 +31,40 @@ export function clearGuestData() {
 }
 
 export function getGuestRemaining() {
+  // Anonymous auth mode: use cached entries
+  if (state.isAnonymous) {
+    return Math.max(0, GUEST_MAX_ENTRIES - _demoEntries.length);
+  }
   return Math.max(0, GUEST_MAX_ENTRIES - loadGuestEntries().length);
 }
 
-export function initDemoScreen() {
-  const entries = loadGuestEntries();
+export async function initDemoScreen() {
+  // Load entries from DB (anonymous auth) or localStorage (fallback)
+  if (state.accessToken && state.isAnonymous) {
+    try {
+      const res = await fetchWithAuth('/api/entries');
+      if (res.ok) {
+        const dbEntries = await res.json();
+        _demoEntries = dbEntries.map(e => ({
+          id: e.id,
+          text: e.text,
+          emotion: e.emotion,
+          emoji: e.emoji,
+          message: e.message,
+          timestamp: new Date(e.created_at || e.date).getTime(),
+        }));
+      } else {
+        _demoEntries = loadGuestEntries();
+      }
+    } catch {
+      _demoEntries = loadGuestEntries();
+    }
+  } else {
+    _demoEntries = loadGuestEntries();
+  }
+
   updateDemoCounter();
-  renderDemoHistory(entries);
+  renderDemoHistory(_demoEntries);
   document.getElementById('demoResponse').hidden = true;
   document.getElementById('demoSkeleton').hidden = true;
   const textarea = document.getElementById('demoTextarea');
@@ -110,17 +140,31 @@ async function analyzeDemo(text) {
     // Scroll to response
     setTimeout(() => response.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
 
-    // Save entry
-    const entries = loadGuestEntries();
-    entries.push({
-      text,
-      emotion: result.emotion,
-      emoji: result.emoji,
-      message: result.message,
-      timestamp: Date.now(),
-    });
-    saveGuestEntries(entries);
-    renderDemoHistory(entries);
+    // Save entry to DB (anonymous auth) or localStorage (fallback)
+    if (state.accessToken && state.isAnonymous) {
+      try {
+        await saveEntry(text, result, []);
+        _demoEntries.push({
+          text,
+          emotion: result.emotion,
+          emoji: result.emoji,
+          message: result.message,
+          timestamp: Date.now(),
+        });
+      } catch {
+        // DB save failed — fallback to localStorage
+        const entries = loadGuestEntries();
+        entries.push({ text, emotion: result.emotion, emoji: result.emoji, message: result.message, timestamp: Date.now() });
+        saveGuestEntries(entries);
+        _demoEntries = entries;
+      }
+    } else {
+      const entries = loadGuestEntries();
+      entries.push({ text, emotion: result.emotion, emoji: result.emoji, message: result.message, timestamp: Date.now() });
+      saveGuestEntries(entries);
+      _demoEntries = entries;
+    }
+    renderDemoHistory(_demoEntries);
     updateDemoCounter();
 
     document.getElementById('demoTextarea').value = '';
@@ -131,7 +175,7 @@ async function analyzeDemo(text) {
     initDemoFollowup(result.emotion, text);
 
     // Show feature preview after first analysis (1.5s delay)
-    showFeaturePreview(entries);
+    showFeaturePreview(_demoEntries);
 
     // Check if should show nudge (5회로 변경 — 가치 충분히 체험 후)
     const used = GUEST_MAX_ENTRIES - getGuestRemaining();

@@ -81,6 +81,9 @@ module.exports = function (deps) {
     }
   });
 
+  // Anonymous user entry limit
+  const ANON_MAX_ENTRIES = parseInt(process.env.ANON_MAX_ENTRIES, 10) || 10;
+
   // POST /entries - 일기 저장
   router.post('/entries', authMiddleware, async (req, res) => {
     const rid = requestId();
@@ -101,6 +104,22 @@ module.exports = function (deps) {
     try {
       // Supabase path
       if (USE_SUPABASE && req.supabaseClient) {
+        // Anonymous user entry limit check
+        if (req.user?.is_anonymous) {
+          const { count, error: countErr } = await req.supabaseClient
+            .from('entries')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', req.user.id)
+            .is('deleted_at', null);
+
+          if (!countErr && count >= ANON_MAX_ENTRIES) {
+            return res.status(403).json({
+              error: `체험 모드에서는 최대 ${ANON_MAX_ENTRIES}건까지 저장할 수 있어요. 회원가입하면 무제한으로 이용할 수 있어요!`,
+              code: 'ANON_LIMIT_EXCEEDED',
+              remaining: 0,
+            });
+          }
+        }
         const entryData = {
           id: generateId(),
           user_id: req.user.id,

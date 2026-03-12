@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { showError, isValidEmail, getPasswordStrength } from './utils.js';
 import { fetchWithAuth, tryRefreshToken, loadProfile } from './api.js';
-import { track } from './analytics.js';
+import { track, setAnalyticsAnonymous } from './analytics.js';
 
 // Dependencies injected from app.js
 let deps = {};
@@ -82,6 +82,17 @@ export async function checkAuth() {
       if (res.ok) {
         const result = await res.json();
         if (result.data && result.data.id) {
+          // Anonymous user → restore demo mode
+          if (result.data.is_anonymous) {
+            state.currentUser = result.data;
+            state.accessToken = token;
+            state.refreshToken = refresh;
+            state.isAnonymous = true;
+            state.guestMode = true;
+            setAnalyticsAnonymous(true);
+            deps.showDemo();
+            return;
+          }
           state.currentUser = result.data;
           state.accessToken = token;
           state.refreshToken = refresh;
@@ -105,6 +116,14 @@ export async function checkAuth() {
           if (retryRes.ok) {
             const retryResult = await retryRes.json();
             if (retryResult.data && retryResult.data.id) {
+              if (retryResult.data.is_anonymous) {
+                state.currentUser = retryResult.data;
+                state.isAnonymous = true;
+                state.guestMode = true;
+                setAnalyticsAnonymous(true);
+                deps.showDemo();
+                return;
+              }
               state.currentUser = retryResult.data;
               await loadProfile();
               if (state.userProfile && !state.userProfile.onboarding_completed) {
@@ -124,6 +143,61 @@ export async function checkAuth() {
     localStorage.removeItem('sb-refresh-token');
   }
   deps.showLanding();
+}
+
+// Anonymous auth: 게스트 체험용 익명 로그인
+export async function signInAnonymously() {
+  try {
+    const res = await fetch('/api/auth/anonymous', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) return false;
+
+    const result = await res.json();
+    if (!result.data?.session) return false;
+
+    state.currentUser = result.data.user;
+    state.accessToken = result.data.session.access_token;
+    state.refreshToken = result.data.session.refresh_token;
+    state.isAnonymous = true;
+    setAnalyticsAnonymous(true);
+    localStorage.setItem('sb-access-token', state.accessToken);
+    localStorage.setItem('sb-refresh-token', state.refreshToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Anonymous → 정식 회원 전환
+export async function linkAnonymousAccount(email, password, nickname) {
+  const res = await fetch('/api/auth/link-account', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + state.accessToken,
+    },
+    body: JSON.stringify({ email, password, nickname: nickname || undefined }),
+  });
+  const result = await res.json();
+  if (!res.ok) {
+    throw { userMessage: result.error || '계정 연결에 실패했습니다.' };
+  }
+
+  // Update state
+  state.isAnonymous = false;
+  setAnalyticsAnonymous(false);
+  state.currentUser = result.data.user;
+
+  if (result.data.session) {
+    state.accessToken = result.data.session.access_token;
+    state.refreshToken = result.data.session.refresh_token;
+    localStorage.setItem('sb-access-token', state.accessToken);
+    localStorage.setItem('sb-refresh-token', state.refreshToken);
+  }
+
+  return result;
 }
 
 export function initAuthForms() {
@@ -256,6 +330,43 @@ export function initAuthForms() {
     signupBtn.textContent = '일기장 만드는 중...';
 
     try {
+      // Anonymous user → link account (기존 데이터 유지)
+      if (state.isAnonymous && state.accessToken) {
+        try {
+          const linkResult = await linkAnonymousAccount(
+            emailInput.value.trim(),
+            passwordInput.value,
+            nicknameInput.value.trim(),
+          );
+
+          // E-06: signup_completed (from anonymous)
+          track('signup_completed', {
+            has_nickname: !!(nicknameInput.value.trim()),
+            had_guest_data: true,
+            from_anonymous: true,
+            email_verification_required: !linkResult.data.session,
+          });
+
+          state.guestMode = false;
+
+          if (linkResult.data.session) {
+            await loadProfile();
+            deps.showOnboarding();
+          } else {
+            signupMessage.textContent = linkResult.message || '인증 이메일을 보내드렸어요. 메일함을 확인해주세요.';
+            signupMessage.className = 'auth-message success';
+            signupMessage.hidden = false;
+          }
+          return;
+        } catch (linkErr) {
+          track('auth_error_shown', { form_type: 'signup', error_code: 'LINK_FAILED' });
+          signupMessage.textContent = linkErr.userMessage || '계정 연결에 실패했습니다.';
+          signupMessage.className = 'auth-message error';
+          signupMessage.hidden = false;
+          return;
+        }
+      }
+
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

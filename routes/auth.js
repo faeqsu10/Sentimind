@@ -310,6 +310,137 @@ module.exports = function (deps) {
     }
   });
 
+  // POST /anonymous - 익명 로그인 (게스트 체험)
+  router.post('/anonymous', loginLimiter, async (req, res) => {
+    const rid = requestId();
+    logger.info('POST /api/auth/anonymous', { requestId: rid });
+
+    if (!USE_SUPABASE) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+
+      if (error) {
+        logger.warn('익명 로그인 실패', { requestId: rid, error: error.message });
+        return res.status(400).json({ error: '체험 모드를 시작할 수 없습니다.', code: 'ANON_LOGIN_ERROR' });
+      }
+
+      if (!data.session || !data.user) {
+        return res.status(400).json({ error: '체험 모드를 시작할 수 없습니다.', code: 'ANON_LOGIN_ERROR' });
+      }
+
+      logger.info('익명 로그인 성공', { requestId: rid, userId: data.user.id });
+      recordAuthEvent('anonymous_login', {
+        userId: data.user.id,
+        provider: 'anonymous',
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
+      res.json({
+        data: {
+          user: {
+            id: data.user.id,
+            is_anonymous: true,
+          },
+          session: {
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_in: data.session.expires_in,
+            token_type: data.session.token_type,
+          },
+        },
+      });
+    } catch (err) {
+      logger.error('익명 로그인 오류', { requestId: rid, error: err.message });
+      res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // POST /link-account - 익명→정식 회원 전환
+  router.post('/link-account', authMiddleware, async (req, res) => {
+    const rid = requestId();
+    logger.info('POST /api/auth/link-account', { requestId: rid, userId: req.user?.id });
+
+    if (!USE_SUPABASE) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    const emailV = validateEmail(req.body?.email);
+    if (!emailV.valid) return res.status(400).json({ error: emailV.error, code: 'VALIDATION_ERROR' });
+
+    const passV = validatePassword(req.body?.password);
+    if (!passV.valid) return res.status(400).json({ error: passV.error, code: 'VALIDATION_ERROR' });
+
+    try {
+      // Link anonymous user to email+password identity
+      const { data, error } = await req.supabaseClient.auth.updateUser({
+        email: emailV.value,
+        password: req.body.password,
+        data: {
+          nickname: req.body.nickname || null,
+        },
+      });
+
+      if (error) {
+        logSecurityEvent('LINK_ACCOUNT_FAILED', {
+          requestId: rid,
+          userId: req.user?.id,
+          email: maskEmail(emailV.value),
+          ip: req.ip,
+          reason: error.message,
+        });
+
+        if (error.message.includes('already registered') || error.status === 422) {
+          return res.status(409).json({ error: '이미 등록된 이메일입니다.', code: 'CONFLICT' });
+        }
+        logger.warn('계정 연결 실패', { requestId: rid, error: error.message });
+        return res.status(400).json({ error: '계정 연결에 실패했습니다.', code: 'LINK_ERROR' });
+      }
+
+      // Update user_profiles: is_anonymous = false, nickname
+      if (supabaseAdmin) {
+        const profileUpdate = { is_anonymous: false };
+        if (req.body.nickname) {
+          profileUpdate.nickname = req.body.nickname.slice(0, 30);
+        }
+        await supabaseAdmin
+          .from('user_profiles')
+          .update(profileUpdate)
+          .eq('id', req.user.id);
+      }
+
+      logger.info('계정 연결 성공', { requestId: rid, userId: req.user.id });
+      recordAuthEvent('account_linked', {
+        userId: req.user.id,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { has_nickname: !!req.body.nickname },
+      });
+
+      res.json({
+        data: {
+          user: {
+            id: data.user?.id,
+            email: data.user?.email,
+          },
+          session: data.session ? {
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_in: data.session.expires_in,
+            token_type: data.session.token_type,
+          } : null,
+        },
+        message: data.session ? '계정 연결 완료' : '인증 이메일이 발송되었습니다. 메일함을 확인해주세요.',
+      });
+    } catch (err) {
+      logger.error('계정 연결 오류', { requestId: rid, error: err.message });
+      res.status(500).json({ error: '서버 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   // GET /me - 현재 사용자 정보
   router.get('/me', authMiddleware, async (req, res) => {
     if (!req.user) {
@@ -319,7 +450,8 @@ module.exports = function (deps) {
     res.json({
       data: {
         id: req.user.id,
-        email: req.user.email,
+        email: req.user.email || null,
+        is_anonymous: !!req.user.is_anonymous,
       },
     });
   });

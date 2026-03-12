@@ -14,6 +14,7 @@ export const state = {
 
   // Guest mode
   guestMode: false,
+  isAnonymous: false,
 
   // UI
   latestAnalysisResult: null,

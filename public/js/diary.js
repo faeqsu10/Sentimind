@@ -207,7 +207,7 @@ export async function handleSubmit(e) {
     showResponse(result);
 
     let savedEntry = null;
-    if (!state.guestMode) {
+    if (state.accessToken) {
       savedEntry = await saveEntry(text, result, activityTags);
     }
 

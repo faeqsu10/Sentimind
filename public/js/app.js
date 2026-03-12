@@ -2,7 +2,7 @@
 import { state } from './state.js';
 import { showToast, showError, showSkeleton, autoResize, openModalFocus, closeModalFocus } from './utils.js';
 import { setAuthExpiredHandler, fetchWithAuth, fetchEntries, loadProfile } from './api.js';
-import { setupAuth, checkAuth, initAuthForms } from './auth.js';
+import { setupAuth, checkAuth, initAuthForms, signInAnonymously } from './auth.js';
 import { setupGuest, initDemoScreen, initDemoEventListeners, migrateGuestData } from './guest.js';
 import { setupDiary, handleSubmit, processOfflineDraftQueue } from './diary.js';
 import { setupHistory, renderHistory, showHistoryDetail, initHistoryEventListeners } from './history.js';
@@ -10,7 +10,7 @@ import { renderCalendar, setupCalendar } from './calendar.js';
 import { loadDashboard, setupStats } from './stats.js';
 import { updateSidebar, createConfetti, renderProfileBadges } from './sidebar.js';
 import { setupProfile, renderProfileScreen, initProfileEventListeners } from './profile.js';
-import { track } from './analytics.js';
+import { track, setAnalyticsAnonymous } from './analytics.js';
 import { loadEmotionGraph } from './emotion-graph.js';
 import { initReminder, requestNotificationPermission, scheduleReminder } from './reminder.js';
 
@@ -73,7 +73,7 @@ function showAuthScreen(pushHistory = true) {
   track('auth_form_started', { form_type: 'login', entry_source: state.guestMode ? 'guest_modal' : 'landing_cta' });
 }
 
-function showDemo(pushHistory = true) {
+async function showDemo(pushHistory = true) {
   state.guestMode = true;
   setScreen('demo');
   if (pushHistory) pushScreen('demo');
@@ -82,6 +82,13 @@ function showDemo(pushHistory = true) {
     ? 'landing_btn'
     : (history.state?.prevScreen === 'landing' ? 'landing_btn' : 'direct');
   track('guest_demo_started', { entry_point: entryPoint });
+
+  // Anonymous auth: 토큰이 없으면 익명 로그인 시도
+  if (!state.accessToken) {
+    const ok = await signInAnonymously();
+    track('anonymous_auth_attempted', { success: ok });
+  }
+
   initDemoScreen();
 }
 
@@ -94,6 +101,8 @@ function showOnboarding(pushHistory = true) {
 
 function showApp(pushHistory = true) {
   state.guestMode = false;
+  state.isAnonymous = false;
+  setAnalyticsAnonymous(false);
   setScreen('app');
   if (pushHistory) pushScreen('app');
   updateUserMenu();

@@ -29,7 +29,7 @@
 - **구조**: `public/index.html` + `public/js/*.js` ES 모듈 + `public/css/*.css`
 - **스타일**: CSS Grid/Flexbox (반응형, 다크모드 지원)
 - **폰트**: Google Fonts (Gowun Batang 일기, Gowun Dodum UI)
-- **상태 관리**: 인증 상태는 서버+localStorage 혼합, 게스트 데이터는 localStorage 기반
+- **상태 관리**: 인증 상태는 서버+localStorage 혼합, 게스트 데이터는 Supabase Anonymous Auth(DB 저장, localStorage 폴백)
 - **PWA**: Service Worker (설치 가능, 일부 요청 오프라인 큐잉)
 
 ### 온톨로지
@@ -162,10 +162,11 @@ Sentimind/
   - 🏥 건강 (질병, 운동, 수면)
   - 🪞 자기반성 (목표, 성장, 가치관)
 
-### 4. 게스트 모드
+### 4. 게스트 모드 (Anonymous Auth)
 - 회원가입 없이 AI 분석 10회 체험
-- 게스트 일기는 브라우저 localStorage에 임시 저장
-- 회원 가입 시 저장된 게스트 일기를 계정으로 마이그레이션
+- Supabase Anonymous Auth로 게스트 일기도 DB에 저장 (브라우저 초기화해도 유지)
+- 회원가입 시 동일 user_id 유지 — 별도 마이그레이션 없이 데이터 자동 이어짐
+- Anonymous Auth 실패 시 localStorage 폴백
 
 ### 5. 통계 대시보드
 - 📊 감정 분포 (상위 5개)
@@ -245,6 +246,14 @@ Authorization: Bearer {token}
 PUT /api/auth/password
 Authorization: Bearer {token}
 {"currentPassword": "old", "newPassword": "new"}
+
+# 익명 로그인 (게스트 체험)
+POST /api/auth/anonymous
+
+# 익명→정식 회원 전환
+POST /api/auth/link-account
+Authorization: Bearer {anonymous_token}
+{"email": "user@example.com", "password": "password123"}
 
 # 계정 삭제
 DELETE /api/auth/account

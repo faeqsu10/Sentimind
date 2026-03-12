@@ -7,12 +7,14 @@ const MAX_BATCH_SIZE = 20;
 
 let eventQueue = [];
 let flushTimer = null;
+let _isAnonymous = false;
+
+export function setAnalyticsAnonymous(isAnon) { _isAnonymous = isAnon; }
 
 function getCommonProps() {
-  const token = localStorage.getItem('sb-access-token');
   return {
     session_id: SESSION_ID,
-    is_guest: !token,
+    is_guest: _isAnonymous,
     timestamp: new Date().toISOString(),
     platform: 'web',
     theme: document.documentElement.getAttribute('data-theme') || 'light',
