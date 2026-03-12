@@ -33,6 +33,8 @@ export async function loadDashboard(period, forceReload = false) {
       total_entries_in_period: stats.total_entries || 0,
     });
     _lastDashboardKey = cacheKey;
+    // 대시보드 로딩 시 지난 리포트 히스토리도 함께 로드
+    loadReportHistory();
   } catch {
     hideSkeleton('stats');
     const summaryEl = document.getElementById('dashboardSummary');
