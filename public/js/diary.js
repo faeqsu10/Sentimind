@@ -1,6 +1,6 @@
 import { state, DOMAIN_EMOJI } from './state.js';
 import { escapeHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
-import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup } from './api.js';
+import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup, fetchIllustratedDiary } from './api.js';
 import { enqueueOfflineDraft, flushOfflineDraftQueue, getOfflineDraftQueueCount } from './offline-drafts.js';
 import { track } from './analytics.js';
 
@@ -409,7 +409,118 @@ export function showResponse(result) {
   if (!state.guestMode) {
     initFollowupConversation(result.emotion, state._lastDiaryText || '');
   }
+
+  // 그림일기 버튼 표시
+  const illustBtn = document.getElementById('illustratedDiaryBtn');
+  if (illustBtn) {
+    illustBtn.hidden = false;
+    illustBtn.disabled = false;
+    illustBtn.textContent = '그림일기 보기 🎨';
+  }
+  // 이전 그림일기 카드 숨기기
+  const illustCard = document.getElementById('illustratedDiaryCard');
+  if (illustCard) illustCard.hidden = true;
 }
+
+// ---------------------------------------------------------------------------
+// Illustrated Diary (그림일기 3컷 카드)
+// ---------------------------------------------------------------------------
+
+const MOOD_GRADIENTS = {
+  joyful: ['#FFE066', '#FFD700'],
+  warm: ['#FFCBA4', '#FF8C42'],
+  calm: ['#B5EAD7', '#7BC8A4'],
+  hopeful: ['#C3F0CA', '#70C1B3'],
+  tense: ['#FFB4B4', '#FF6B6B'],
+  anxious: ['#D4A5FF', '#9B59B6'],
+  sad: ['#A0C4FF', '#5B8DEF'],
+  tired: ['#D5CABD', '#A89F91'],
+  angry: ['#FF9A9A', '#E74C3C'],
+  relief: ['#B8F0E0', '#48C9B0'],
+  lonely: ['#C8B6FF', '#7F6FBF'],
+  excited: ['#FFD166', '#F77F00'],
+  grateful: ['#FFE5EC', '#FFAFC5'],
+  nostalgic: ['#E8D5B7', '#C9A96E'],
+};
+
+function getMoodGradient(mood) {
+  const entry = MOOD_GRADIENTS[mood] || MOOD_GRADIENTS.calm;
+  return `linear-gradient(135deg, ${entry[0]}, ${entry[1]})`;
+}
+
+function renderIllustratedCard(data) {
+  const card = document.getElementById('illustratedDiaryCard');
+  const titleEl = document.getElementById('illustTitle');
+  const panelsEl = document.getElementById('illustPanels');
+  const closingEl = document.getElementById('illustClosing');
+
+  if (!card || !titleEl || !panelsEl || !closingEl) return;
+
+  titleEl.textContent = data.title;
+  closingEl.textContent = data.closing;
+
+  panelsEl.innerHTML = '';
+  data.panels.forEach((panel, i) => {
+    const panelEl = document.createElement('div');
+    panelEl.className = 'illust-panel';
+    panelEl.style.background = getMoodGradient(panel.mood);
+    panelEl.style.animationDelay = (i * 150) + 'ms';
+
+    const emojiEl = document.createElement('span');
+    emojiEl.className = 'illust-panel-emoji';
+    emojiEl.textContent = panel.emoji;
+    emojiEl.setAttribute('aria-hidden', 'true');
+
+    const numEl = document.createElement('span');
+    numEl.className = 'illust-panel-num';
+    numEl.textContent = (i + 1);
+
+    const captionEl = document.createElement('p');
+    captionEl.className = 'illust-panel-caption';
+    captionEl.textContent = panel.caption;
+
+    panelEl.appendChild(emojiEl);
+    panelEl.appendChild(numEl);
+    panelEl.appendChild(captionEl);
+    panelsEl.appendChild(panelEl);
+  });
+
+  card.hidden = false;
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function setupIllustratedDiary() {
+  const btn = document.getElementById('illustratedDiaryBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const result = state.latestAnalysisResult;
+    if (!result || !state._lastDiaryText) return;
+
+    btn.disabled = true;
+    btn.textContent = '그림일기 그리는 중...';
+
+    try {
+      const data = await fetchIllustratedDiary(
+        state._lastDiaryText,
+        result.emotion,
+        result.emoji,
+      );
+      renderIllustratedCard(data);
+      track('illustrated_diary_generated', { emotion: result.emotion });
+    } catch (err) {
+      showToast(err.userMessage || '그림일기를 만들지 못했어요.', 'error');
+      track('illustrated_diary_error', { emotion: result.emotion });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '그림일기 보기 🎨';
+    }
+  });
+}
+
+setupIllustratedDiary();
 
 function renderConfidenceBadge(confidence) {
   const confidenceBadgeFill = document.getElementById('confidenceBadgeFill');

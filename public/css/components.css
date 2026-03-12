@@ -4111,3 +4111,158 @@ kbd {
 @media (max-width: 480px) {
   .constellation-star-label { display: none; }
 }
+
+/* ======================================================
+   Illustrated Diary Card (그림일기 3컷 카드)
+   ====================================================== */
+.illustrated-diary-btn {
+  display: block;
+  margin: 1.2rem auto 0;
+  padding: 0.7rem 1.6rem;
+  border: 2px dashed var(--accent, #8b7ec8);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--accent, #8b7ec8);
+  font-family: 'Gowun Dodum', sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.illustrated-diary-btn:hover:not(:disabled) {
+  background: var(--accent, #8b7ec8);
+  color: #fff;
+  border-style: solid;
+}
+.illustrated-diary-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.illustrated-diary-card {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  animation: fadeInUp 0.5s ease-out;
+  overflow: hidden;
+}
+
+.illust-title {
+  text-align: center;
+  font-family: 'Gowun Batang', serif;
+  font-size: 1.2rem;
+  color: var(--text-primary, #2c2c2c);
+  margin: 0 0 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.illust-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.illust-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  animation: fadeInUp 0.4s ease-out both;
+  position: relative;
+  overflow: hidden;
+}
+
+.illust-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.3);
+  pointer-events: none;
+}
+
+.illust-panel-emoji {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.illust-panel-num {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(0,0,0,0.15);
+  font-family: 'Gowun Dodum', sans-serif;
+  z-index: 1;
+}
+
+.illust-panel-caption {
+  font-family: 'Gowun Batang', serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(0,0,0,0.75);
+  margin: 0;
+  z-index: 1;
+}
+
+.illust-closing {
+  text-align: center;
+  font-family: 'Gowun Batang', serif;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  margin: 1.2rem 0 0.5rem;
+  font-style: italic;
+}
+
+.illust-brand {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--text-muted, #aaa);
+  margin: 0.3rem 0 0;
+  letter-spacing: 0.05em;
+}
+
+/* 다크모드 */
+@media (prefers-color-scheme: dark) {
+  .illustrated-diary-card {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .illust-panel::before {
+    background: rgba(0,0,0,0.15);
+  }
+  .illust-panel-caption {
+    color: rgba(255,255,255,0.85);
+  }
+  .illust-panel-num {
+    color: rgba(255,255,255,0.2);
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .illustrated-diary-card {
+    padding: 1rem;
+  }
+  .illust-panel {
+    padding: 0.8rem 1rem;
+  }
+  .illust-panel-emoji {
+    font-size: 1.5rem;
+  }
+  .illust-panel-caption {
+    font-size: 0.88rem;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .illust-panel {
+    animation: none;
+  }
+  .illustrated-diary-card {
+    animation: none;
+  }
+}

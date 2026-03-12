@@ -692,6 +692,7 @@ app.use('/api', require('./routes/report')(routeDeps));
 app.use('/api', require('./routes/migrate')(routeDeps));
 app.use('/api', require('./routes/followup')(routeDeps));
 app.use('/api', require('./routes/emotion-graph')(routeDeps));
+app.use('/api', require('./routes/illustrated-diary')(routeDeps));
 const analyticsLimiter = rateLimit({
   windowMs: config.rateLimits.analytics.windowMs,
   max: config.rateLimits.analytics.max,

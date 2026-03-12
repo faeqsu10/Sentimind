@@ -341,6 +341,41 @@ Google OAuth 시작 URL을 반환합니다.
 }
 ```
 
+## 그림일기 3컷 카드
+
+### `POST /api/illustrated-diary`
+게스트/로그인 사용자 모두 호출할 수 있습니다.
+
+요청:
+```json
+{
+  "text": "일기 텍스트",
+  "emotion": "감정명",
+  "emoji": "이모지"
+}
+```
+
+응답:
+```json
+{
+  "title": "긴장이 풀리던 저녁",
+  "panels": [
+    { "scene": 1, "caption": "발표 직전, 심장이 빠르게 뛰었어요", "mood": "tense", "emoji": "🫀" },
+    { "scene": 2, "caption": "준비한 말을 끝내고 어깨 힘이 풀렸어요", "mood": "relief", "emoji": "😮‍💨" },
+    { "scene": 3, "caption": "집으로 돌아오며 오늘의 나를 응원했어요", "mood": "warm", "emoji": "🌅" }
+  ],
+  "closing": "오늘은 끝까지 해낸 힘이 남는 하루였어요"
+}
+```
+
+오류:
+- `400 VALIDATION_ERROR`: 요청 본문 누락 또는 형식 오류
+- `500 INTERNAL_ERROR`: Gemini API 호출 실패
+
+환경변수:
+- `ILLUSTRATED_MAX_TOKENS`: 응답 최대 토큰 수 (기본 512)
+- `ILLUSTRATED_TEMPERATURE`: 생성 온도 (기본 0.8)
+
 ## 이벤트 수집
 
 ### `POST /api/analytics`

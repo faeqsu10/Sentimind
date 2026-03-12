@@ -210,3 +210,16 @@ export async function exportData(format) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export async function fetchIllustratedDiary(text, emotion, emoji) {
+  const response = await fetchWithAuth('/api/illustrated-diary', {
+    method: 'POST',
+    body: JSON.stringify({ text, emotion, emoji }),
+    timeout: 60000,
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw { userMessage: data.error || '그림일기를 만들지 못했어요.' };
+  }
+  return await response.json();
+}
