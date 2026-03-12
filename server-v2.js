@@ -284,7 +284,7 @@ const SYSTEM_PROMPT = `당신은 따뜻하고 공감 능력이 뛰어난 감정 
 반드시 아래 JSON 형식으로만 응답하세요. JSON 외의 텍스트는 절대 포함하지 마세요:
 {
   "emotion": "감정 이름 (예: 만족감, 기쁨, 불안, 긴장, 설렘 등)",
-  "emoji": "감정을 나타내는 이모지 1개",
+  "emoji": "감정을 나타내는 유니코드 이모지 문자 1개 (예: 😊, 😢, 😤, 😰). 반드시 실제 이모지 문자만 사용하고 영어 단어(happy, sad, perplexed 등)는 절대 금지",
   "message": "2~3문장의 공감 및 위로 메시지",
   "advice": "1문장의 간단한 행동 제안"
 }
@@ -327,17 +327,44 @@ function generateId(size = 21) {
   return id;
 }
 
+// Emotion → emoji fallback map (Gemini가 텍스트를 반환할 때 사용)
+const EMOTION_EMOJI_FALLBACK = {
+  '기쁨': '😊', '행복': '😄', '만족': '😌', '만족감': '😌', '감사': '🙏', '뿌듯': '🥰',
+  '설렘': '💓', '사랑': '❤️', '희망': '🌟', '자신감': '💪', '즐거움': '😆',
+  '평온': '😌', '편안': '☺️', '안도': '😮‍💨', '여유': '🍃',
+  '슬픔': '😢', '우울': '😞', '외로움': '🥺', '그리움': '💫', '허전': '🫥',
+  '불안': '😰', '걱정': '😟', '긴장': '😬', '두려움': '😨', '초조': '😥',
+  '분노': '😤', '짜증': '😠', '답답': '😩', '실망': '😔', '화남': '🔥',
+  '놀라움': '😲', '당황': '😳', '혼란': '🤔', '당황감': '😳', '황당': '😦',
+  '피곤': '😫', '지침': '😴', '무기력': '😶', '지루함': '🥱',
+  '질투': '😒', '수치심': '😣', '죄책감': '😞', '공허': '🫥',
+  '절망': '😭', '자기혐오': '😖', '극심한 우울': '😭',
+};
+
+function isActualEmoji(str) {
+  if (!str || str.length === 0) return false;
+  // ASCII 영문자/숫자/공백만으로 이루어져 있으면 이모지가 아님
+  if (/^[a-zA-Z0-9\s]+$/.test(str)) return false;
+  // 한글만으로 이루어져 있으면 이모지가 아님
+  if (/^[\uAC00-\uD7AF\s]+$/.test(str)) return false;
+  return true;
+}
+
 function parseGeminiResponse(text) {
   let jsonStr = text.trim();
   const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlock) jsonStr = codeBlock[1].trim();
   const parsed = JSON.parse(jsonStr);
-  return {
-    emotion: typeof parsed.emotion === 'string' ? parsed.emotion : '알 수 없음',
-    emoji: typeof parsed.emoji === 'string' ? parsed.emoji : '💭',
-    message: typeof parsed.message === 'string' ? parsed.message : '',
-    advice: typeof parsed.advice === 'string' ? parsed.advice : '',
-  };
+
+  const emotion = typeof parsed.emotion === 'string' ? parsed.emotion : '알 수 없음';
+  let emoji = typeof parsed.emoji === 'string' ? parsed.emoji : '';
+
+  // Gemini가 이모지 대신 텍스트를 반환한 경우 fallback
+  if (!isActualEmoji(emoji)) {
+    emoji = EMOTION_EMOJI_FALLBACK[emotion] || '💭';
+  }
+
+  return { emotion, emoji, message: typeof parsed.message === 'string' ? parsed.message : '', advice: typeof parsed.advice === 'string' ? parsed.advice : '' };
 }
 
 function calculateBackoffDelay(attempt) {
