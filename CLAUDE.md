@@ -28,6 +28,7 @@ public/              ──fetch──▸  server.js (Express :3000)  ──fetc
 - **routes/analytics.js**: POST /api/analytics — 이벤트 배치 수집 (최대 50개/요청, sendBeacon 호환)
 - **routes/emotion-graph.js**: GET /api/stats/emotion-graph — 감정 별자리 그래프 데이터 (노드/엣지/별자리 패턴)
 - **data/entries.json**: 일기 항목 저장소. 비동기 I/O + write lock으로 동시성 처리.
+- **migrations/001~018**: Supabase 마이그레이션 (017: user_reports 리포트 저장, 018: entries.crisis_detected 추가)
 
 ## Key Technical Decisions
 

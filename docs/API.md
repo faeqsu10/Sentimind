@@ -163,6 +163,7 @@ Google OAuth 시작 URL을 반환합니다.
   "confidence_score": 84,
   "related_emotions": [],
   "activity_tags": ["발표"],
+  "crisis_detected": false,
   "tz_offset": -540
 }
 ```
@@ -229,9 +230,15 @@ Google OAuth 시작 URL을 반환합니다.
 
 ## AI 리포트
 
-### `GET /api/report?period=weekly|monthly`
+### `GET /api/report?period=weekly|monthly&regenerate=true`
 헤더:
 - `Authorization: Bearer {access_token}`
+
+쿼리:
+- `period`: `weekly` 또는 `monthly` (필수)
+- `regenerate`: `true`일 때 기존 리포트 삭제 후 재생성 (선택)
+
+리포트는 `user_reports` 테이블에 영구 저장됩니다. 같은 기간의 리포트가 이미 존재하면 DB에서 즉시 반환 (Gemini API 호출 없음).
 
 응답:
 ```json
@@ -244,6 +251,10 @@ Google OAuth 시작 URL을 반환합니다.
   "encouragement": "이번 주처럼 자신을 잘 돌보는 흐름을 이어가보세요."
 }
 ```
+
+헤더:
+- `X-Cache: HIT` — DB에서 조회됨
+- `X-Cache: MISS` — Gemini API로 새로 생성됨
 
 오류:
 - `400 INSUFFICIENT_DATA`: 최소 일기 수 부족

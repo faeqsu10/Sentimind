@@ -116,6 +116,7 @@ module.exports = function (deps) {
           activity_tags: Array.isArray(req.body.activity_tags)
             ? req.body.activity_tags.filter(t => typeof t === 'string').map(t => sanitizeString(t, 30)).slice(0, 10)
             : [],
+          crisis_detected: req.body.crisis_detected === true,
         };
 
         const { data, error } = await req.supabaseClient

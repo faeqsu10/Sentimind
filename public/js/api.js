@@ -124,6 +124,7 @@ export async function saveEntry(text, result, activityTags = []) {
       confidence_score: result.ontology?.confidence ?? 0,
       related_emotions: result.ontology?.related_emotions || [],
       activity_tags: activityTags,
+      crisis_detected: result.crisis_detected || false,
       tz_offset: new Date().getTimezoneOffset(),
     }),
   });

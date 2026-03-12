@@ -58,7 +58,7 @@ Sentimind/
 ├── lib/
 │   ├── auth-middleware.js      # JWT 인증 미들웨어
 │   └── validators.js           # 입력 검증 유틸리티
-├── migrations/                 # Supabase 마이그레이션 (001~010)
+├── migrations/                 # Supabase 마이그레이션 (001~018)
 ├── public/
 │   ├── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 │   ├── sw.js                   # Service Worker (오프라인 동기화)

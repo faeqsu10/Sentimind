@@ -4,33 +4,6 @@
 
 const express = require('express');
 
-// 메모리 캐시: 키 = `${userId}_${period}_${dateKey}`, 값 = { data, expiresAt }
-const reportCache = new Map();
-
-function getCacheKey(userId, period) {
-  const now = new Date();
-  let dateKey;
-  if (period === 'weekly') {
-    // 이번 주 월요일 (YYYY-MM-DD)
-    const day = now.getDay(); // 0=일, 1=월 ... 6=토
-    const diff = (day === 0 ? -6 : 1 - day); // 월요일까지의 오프셋
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diff);
-    dateKey = monday.toISOString().slice(0, 10);
-  } else {
-    // 이번 달 1일 (YYYY-MM-01)
-    dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  }
-  return `${userId}_${period}_${dateKey}`;
-}
-
-function pruneCache(maxSize) {
-  if (reportCache.size <= maxSize) return;
-  // 가장 오래된 항목 삭제 (삽입 순서 기준)
-  const firstKey = reportCache.keys().next().value;
-  reportCache.delete(firstKey);
-}
-
 module.exports = function (deps) {
   const router = express.Router();
 
@@ -43,9 +16,39 @@ module.exports = function (deps) {
     analyzeLimiter,
   } = deps;
 
+  /**
+   * 주어진 period에 대한 period_start(Date)와 period_end(Date)를 계산.
+   * weekly: 이번 주 월요일 ~ 일요일
+   * monthly: 이번 달 1일 ~ 말일
+   */
+  function getPeriodRange(period) {
+    const now = new Date();
+    if (period === 'weekly') {
+      const day = now.getDay(); // 0=일, 1=월 ... 6=토
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diff);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return {
+        start: monday.toISOString().slice(0, 10),
+        end: sunday.toISOString().slice(0, 10),
+      };
+    }
+    // monthly
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return {
+      start: firstDay.toISOString().slice(0, 10),
+      end: lastDay.toISOString().slice(0, 10),
+    };
+  }
+
   // GET /report - 주간/월간 AI 감정 리포트
   router.get('/report', authMiddleware, analyzeLimiter, async (req, res) => {
-    const rid = requestId();
+    const rid = req.rid || requestId();
     const startTime = Date.now();
 
     const period = req.query.period;
@@ -53,27 +56,59 @@ module.exports = function (deps) {
       return res.status(400).json({ error: "period 파라미터는 'weekly' 또는 'monthly'여야 합니다.", code: 'VALIDATION_ERROR' });
     }
 
+    const regenerate = req.query.regenerate === 'true';
     const days = period === 'weekly' ? 7 : 30;
     const periodLabel = period === 'weekly' ? '7일' : '30일';
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    logger.info(`GET /api/report (${period})`, { requestId: rid, userId: req.user?.id });
+    logger.info(`GET /api/report (${period})`, { requestId: rid, userId: req.user?.id, regenerate });
 
     if (!USE_SUPABASE || !req.supabaseClient || !req.user) {
       return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
     }
 
-    // 캐시 조회
-    const cacheKey = getCacheKey(req.user.id, period);
-    const cached = reportCache.get(cacheKey);
-    if (cached && cached.expiresAt <= Date.now()) {
-      reportCache.delete(cacheKey);
-    }
-    if (cached && cached.expiresAt > Date.now()) {
-      logger.info('리포트 캐시 HIT', { requestId: rid, cacheKey });
-      res.set('Cache-Control', 'private, max-age=3600');
-      res.set('X-Cache', 'HIT');
-      return res.json(cached.data);
+    const { start: periodStart, end: periodEnd } = getPeriodRange(period);
+
+    // ── DB 캐시 조회 ──
+    if (!regenerate) {
+      try {
+        const { data: existing } = await req.supabaseClient
+          .from('user_reports')
+          .select('*')
+          .eq('user_id', req.user.id)
+          .eq('period', period)
+          .eq('period_start', periodStart)
+          .maybeSingle();
+
+        if (existing) {
+          logger.info('리포트 DB HIT', { requestId: rid, reportId: existing.id });
+          res.set('Cache-Control', 'private, max-age=3600');
+          res.set('X-Cache', 'HIT');
+          return res.json({
+            period: existing.period,
+            entryCount: existing.entry_count,
+            summary: existing.summary,
+            emotionTrend: existing.emotion_trend,
+            insight: existing.insight,
+            encouragement: existing.encouragement,
+          });
+        }
+      } catch (dbErr) {
+        // user_reports 테이블이 아직 없을 수 있음 — 무시하고 생성 진행
+        logger.warn('리포트 DB 조회 실패 (테이블 미존재 가능)', { requestId: rid, error: dbErr.message });
+      }
+    } else {
+      // regenerate: 기존 리포트 삭제
+      try {
+        await req.supabaseClient
+          .from('user_reports')
+          .delete()
+          .eq('user_id', req.user.id)
+          .eq('period', period)
+          .eq('period_start', periodStart);
+      } catch {
+        // 삭제 실패 무시
+      }
     }
 
     if (!GEMINI_API_KEY) {
@@ -119,7 +154,7 @@ module.exports = function (deps) {
 
       const { content, tokenCost } = await callGeminiAPI(requestBody, { rid, label: '리포트' });
 
-      // JSON 파싱 (parseGeminiResponse는 emotion/emoji 필드를 강제하므로 직접 파싱)
+      // JSON 파싱
       let jsonStr = content.trim();
       const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (codeBlock) jsonStr = codeBlock[1].trim();
@@ -152,9 +187,25 @@ module.exports = function (deps) {
         }),
       });
 
-      // 캐시 저장
-      reportCache.set(cacheKey, { data: report, expiresAt: Date.now() + config.report.cacheTtl });
-      pruneCache(config.report.cacheMaxSize);
+      // ── DB 저장 (INSERT ... ON CONFLICT DO NOTHING) ──
+      try {
+        await req.supabaseClient
+          .from('user_reports')
+          .upsert({
+            user_id: req.user.id,
+            period,
+            period_start: periodStart,
+            period_end: periodEnd,
+            entry_count: report.entryCount,
+            summary: report.summary,
+            emotion_trend: report.emotionTrend,
+            insight: report.insight,
+            encouragement: report.encouragement,
+          }, { onConflict: 'user_id,period,period_start' });
+      } catch (saveErr) {
+        // DB 저장 실패해도 응답은 정상 반환
+        logger.warn('리포트 DB 저장 실패', { requestId: rid, error: saveErr.message });
+      }
 
       res.set('Cache-Control', 'private, max-age=3600');
       res.set('X-Cache', 'MISS');
