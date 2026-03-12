@@ -221,5 +221,54 @@ module.exports = function (deps) {
     }
   });
 
+  // GET /reports - 리포트 히스토리 목록
+  router.get('/reports', authMiddleware, async (req, res) => {
+    const rid = req.rid || requestId();
+
+    if (!USE_SUPABASE || !req.supabaseClient || !req.user) {
+      return res.status(501).json({ error: 'Supabase가 설정되지 않았습니다.', code: 'NOT_IMPLEMENTED' });
+    }
+
+    const period = req.query.period; // optional filter
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+
+    try {
+      let query = req.supabaseClient
+        .from('user_reports')
+        .select('*', { count: 'exact' })
+        .eq('user_id', req.user.id)
+        .order('period_start', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (period === 'weekly' || period === 'monthly') {
+        query = query.eq('period', period);
+      }
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      const reports = (data || []).map(r => ({
+        id: r.id,
+        period: r.period,
+        periodStart: r.period_start,
+        periodEnd: r.period_end,
+        entryCount: r.entry_count,
+        summary: r.summary,
+        emotionTrend: r.emotion_trend,
+        insight: r.insight,
+        encouragement: r.encouragement,
+        createdAt: r.created_at,
+      }));
+
+      res.set('X-Total-Count', String(count || 0));
+      res.set('Cache-Control', 'private, max-age=60');
+      return res.json(reports);
+    } catch (err) {
+      logger.error('리포트 히스토리 조회 오류', { requestId: rid, error: err.message });
+      return res.status(500).json({ error: '리포트 목록 조회에 실패했습니다.', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   return router;
 };

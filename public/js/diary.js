@@ -324,6 +324,9 @@ export function showResponse(result) {
 
   deps.createConfetti(result.emotion);
 
+  // Personalization badge
+  renderPersonalizationBadge(result.personalization);
+
   responseCard.classList.remove('pulse-bg');
   requestAnimationFrame(() => { responseCard.classList.add('pulse-bg'); });
   setTimeout(() => responseCard.classList.remove('pulse-bg'), 1500);
@@ -640,6 +643,41 @@ function getRetentionMessage() {
 }
 
 // ---------------------------------------------------------------------------
+// Personalization Badge
+// ---------------------------------------------------------------------------
+
+const TONE_LABELS = { warm: '따뜻한', professional: '차분한', friendly: '다정한', poetic: '시적인', calm: '평온한', direct: '솔직한', playful: '유쾌한' };
+const LENGTH_LABELS = { short: '짧게', balanced: '적당히', detailed: '자세히' };
+const STYLE_LABELS = { comfort: '위로', balanced: '균형', actionable: '실천' };
+
+function renderPersonalizationBadge(personalization) {
+  const badge = document.getElementById('personalizationBadge');
+  if (!badge) return;
+
+  if (!personalization || !state.currentUser) {
+    badge.hidden = true;
+    return;
+  }
+
+  const tone = personalization.applied_tone;
+  const length = personalization.applied_response_length;
+  const style = personalization.applied_advice_style;
+
+  const tags = [];
+  if (tone && TONE_LABELS[tone]) tags.push(TONE_LABELS[tone] + ' 말투');
+  if (length && LENGTH_LABELS[length] && length !== 'balanced') tags.push(LENGTH_LABELS[length]);
+  if (style && STYLE_LABELS[style] && style !== 'balanced') tags.push(STYLE_LABELS[style]);
+
+  if (tags.length === 0) {
+    badge.hidden = true;
+    return;
+  }
+
+  badge.textContent = tags.join(' · ');
+  badge.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
 // Crisis Safety Modal
 // ---------------------------------------------------------------------------
 
@@ -763,11 +801,12 @@ async function requestFollowup(userReply) {
       _followupState.completed = true;
       inputRow.hidden = true;
 
-      const doneEl = document.createElement('p');
-      doneEl.className = 'followup-done';
-      doneEl.textContent = '마음 돌봄 대화가 끝났어요';
-      messages.appendChild(doneEl);
+      // Show completion UI
+      const completeEl = document.getElementById('followupComplete');
+      if (completeEl) completeEl.hidden = false;
       messages.scrollTop = messages.scrollHeight;
+
+      track('followup_completed', { emotion: _followupState.emotion, turns: _followupState.context.length });
     }
   } catch (err) {
     loadingEl.remove();
@@ -787,6 +826,19 @@ function appendFollowupMessage(role, text) {
 // Wire up follow-up input
 const _followupInput = document.getElementById('followupInput');
 const _followupSend = document.getElementById('followupSend');
+
+// Follow-up restart button
+const _followupRestart = document.getElementById('followupRestart');
+if (_followupRestart) {
+  _followupRestart.addEventListener('click', () => {
+    if (!_followupState) return;
+    const { emotion, originalText } = _followupState;
+    const completeEl = document.getElementById('followupComplete');
+    if (completeEl) completeEl.hidden = true;
+    track('followup_restarted', { emotion });
+    initFollowupConversation(emotion, originalText);
+  });
+}
 
 if (_followupInput && _followupSend) {
   _followupInput.addEventListener('input', () => {

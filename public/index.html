@@ -758,6 +758,9 @@
           <p class="empathy-message" id="responseMessage"></p>
           <p class="advice-message" id="responseAdvice"></p>
 
+          <!-- Personalization Badge -->
+          <div class="personalization-badge" id="personalizationBadge" hidden></div>
+
           <!-- Detailed Analysis (collapsed by default) -->
           <details class="analysis-details" id="analysisDetails" hidden>
             <summary class="analysis-details-summary">마음의 결 살펴보기</summary>
@@ -817,6 +820,10 @@
             <button type="button" class="followup-send" id="followupSend" disabled aria-label="답변 보내기">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
+          </div>
+          <div class="followup-complete" id="followupComplete" hidden>
+            <p class="followup-complete-text">오늘의 마음 돌봄 대화를 마쳤어요</p>
+            <button type="button" class="followup-restart-btn" id="followupRestart">다시 대화하기</button>
           </div>
         </div>
 
@@ -974,6 +981,10 @@
               <p class="report-loading-text">마음의 흐름을 정리하고 있어요...</p>
             </div>
             <div id="reportResult" hidden></div>
+            <div class="report-history" id="reportHistory" hidden>
+              <p class="report-history-title" id="reportHistoryToggle">지난 리포트</p>
+              <ul class="report-history-list" id="reportHistoryList" hidden></ul>
+            </div>
           </div>
         </div>
       </div>

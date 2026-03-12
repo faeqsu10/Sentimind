@@ -601,6 +601,8 @@ export async function fetchReport(period) {
     resultEl.hidden = false;
     // E-16: report_generated
     track('report_generated', { period });
+    // Load report history after generating
+    loadReportHistory();
   } catch (err) {
     const msg = err.userMessage || '리포트를 만드는 중에 문제가 생겼어요.';
     resultEl.innerHTML = '<p class="dashboard-empty">' + escapeHtml(msg) + '</p>';
@@ -609,6 +611,52 @@ export async function fetchReport(period) {
     loadingEl.hidden   = true;
     btnWeekly.disabled  = false;
     btnMonthly.disabled = false;
+  }
+}
+
+async function loadReportHistory() {
+  const historyEl = document.getElementById('reportHistory');
+  const listEl = document.getElementById('reportHistoryList');
+  const toggleEl = document.getElementById('reportHistoryToggle');
+  if (!historyEl || !listEl) return;
+
+  try {
+    const res = await fetchWithAuth('/api/reports?limit=10');
+    if (!res.ok) { historyEl.hidden = true; return; }
+    const reports = await res.json();
+
+    if (!Array.isArray(reports) || reports.length === 0) {
+      historyEl.hidden = true;
+      return;
+    }
+
+    listEl.innerHTML = reports.map(r => {
+      const periodLabel = r.period === 'weekly' ? '주간' : '월간';
+      const dateStr = r.periodStart
+        ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(r.periodStart))
+        : '';
+      return '<li class="report-history-item">' +
+        '<div class="report-history-item-header">' +
+          '<span class="report-history-period">' + periodLabel + ' 리포트</span>' +
+          '<span class="report-history-date">' + escapeHtml(dateStr) + '</span>' +
+        '</div>' +
+        '<p class="report-history-summary">' + escapeHtml(r.summary || '') + '</p>' +
+      '</li>';
+    }).join('');
+
+    historyEl.hidden = false;
+
+    // Toggle accordion
+    if (toggleEl && !toggleEl._bound) {
+      toggleEl._bound = true;
+      toggleEl.addEventListener('click', () => {
+        const isExpanded = !listEl.hidden;
+        listEl.hidden = isExpanded;
+        toggleEl.classList.toggle('expanded', !isExpanded);
+      });
+    }
+  } catch {
+    // Silently fail — history is supplementary
   }
 }
 

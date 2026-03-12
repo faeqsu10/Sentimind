@@ -260,6 +260,38 @@ Google OAuth 시작 URL을 반환합니다.
 - `400 INSUFFICIENT_DATA`: 최소 일기 수 부족
 - `501 NOT_IMPLEMENTED`: Supabase 미설정 환경
 
+### `GET /api/reports?period=weekly|monthly&limit=10&offset=0`
+헤더:
+- `Authorization: Bearer {access_token}`
+
+쿼리:
+- `period`: `weekly` 또는 `monthly` (선택, 미지정 시 전체)
+- `limit`: 최대 50 (기본 10)
+- `offset`: 페이지네이션 (기본 0)
+
+과거 리포트 목록을 최신순으로 반환합니다.
+
+응답:
+```json
+[
+  {
+    "id": "uuid",
+    "period": "weekly",
+    "periodStart": "2026-03-09",
+    "periodEnd": "2026-03-15",
+    "entryCount": 5,
+    "summary": "이번 주는 전반적으로...",
+    "emotionTrend": "...",
+    "insight": "...",
+    "encouragement": "...",
+    "createdAt": "2026-03-12T12:00:00Z"
+  }
+]
+```
+
+헤더:
+- `X-Total-Count`: 전체 리포트 수
+
 ## 후속 대화
 
 ### `POST /api/followup`
