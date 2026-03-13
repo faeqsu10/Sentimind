@@ -105,6 +105,7 @@ module.exports = function (deps) {
       let query = req.supabaseClient
         .from('entries')
         .select('emotion, emoji, emotion_hierarchy, related_emotions, confidence_score, created_at')
+        .eq('user_id', req.user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
 

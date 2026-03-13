@@ -160,12 +160,24 @@ export async function submitFeedback(entryId, rating) {
 }
 
 export async function fetchEntries() {
-  const response = await fetchWithAuth('/api/entries');
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw { userMessage: data.error || '일기 목록을 불러오지 못했습니다.' };
+  // 모든 항목을 가져오기 위해 페이지네이션 루프 (기본 limit=20이므로 누락 방지)
+  const PAGE_LIMIT = 100;
+  let allEntries = [];
+  let offset = 0;
+
+  while (true) {
+    const response = await fetchWithAuth(`/api/entries?limit=${PAGE_LIMIT}&offset=${offset}`);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw { userMessage: data.error || '일기 목록을 불러오지 못했습니다.' };
+    }
+    const entries = await response.json(); // 백엔드가 배열 직접 반환
+    allEntries = allEntries.concat(entries);
+    if (entries.length < PAGE_LIMIT) break; // 마지막 페이지
+    offset += PAGE_LIMIT;
   }
-  return await response.json();
+
+  return allEntries;
 }
 
 export async function toggleBookmarkAPI(entryId, newState) {

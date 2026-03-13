@@ -53,6 +53,30 @@ export const STREAK_MILESTONES = [
   { days: 100, label: '100일 연속', badge: '👑', desc: '100일의 왕관을 씌워드려요' },
 ];
 
+/** 로그아웃 등에서 state 전체를 초기값으로 리셋 */
+export function resetState() {
+  state.currentUser = null;
+  state.accessToken = null;
+  state.refreshToken = null;
+  state.userProfile = null;
+  state.allEntries = [];
+  state.activeFilters = new Set();
+  state.currentPage = 1;
+  state.filteredEntries = [];
+  state.guestMode = false;
+  state.isAnonymous = false;
+  state.latestAnalysisResult = null;
+  state.appInitialized = false;
+  state.lastFocusedElement = null;
+  const now = new Date();
+  state.calYear = now.getFullYear();
+  state.calMonth = now.getMonth();
+  state.calSelectedDate = null;
+  state.activePeriod = 'all';
+  state.onboardingStep = 1;
+  state.selectedNotificationTime = null;
+}
+
 export const DOMAIN_EMOJI = {
   '\uB300\uC778\uAD00\uACC4': '\u{1F465}',
   '\uC9C1\uC7A5': '\u{1F4BC}',

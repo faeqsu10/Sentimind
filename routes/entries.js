@@ -397,7 +397,7 @@ module.exports = function (deps) {
           event: 'data_exported',
           properties: { format, entry_count: entries.length },
           created_at: new Date().toISOString(),
-        }).catch(() => {});
+        }).catch(err => logger.warn('data_exported 이벤트 기록 실패', { error: err.message }));
       }
 
       if (format === 'json') {

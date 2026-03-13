@@ -13,6 +13,7 @@ module.exports = function (deps) {
     optionalAuth,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
+    parseGeminiResponse,
     analyzeLimiter,
   } = deps;
 
@@ -130,11 +131,12 @@ module.exports = function (deps) {
     try {
       const { content } = await callGeminiAPI(requestBody, { rid, label: '후속 질문 (' + stageConfig.label + ')' });
 
-      // Parse JSON response
+      // Parse JSON response — 코드블록 제거는 parseGeminiResponse와 동일한 패턴 사용
       let parsed;
       try {
-        const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
+        let jsonStr = content.trim();
+        const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlock) jsonStr = codeBlock[1].trim();
         parsed = JSON.parse(jsonStr);
       } catch {
         // Fallback: treat as plain text

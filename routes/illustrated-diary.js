@@ -12,6 +12,7 @@ module.exports = function (deps) {
     optionalAuth,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
+    parseGeminiResponse,
     validateEntryText,
     analyzeLimiter,
     logAiUsage,
@@ -42,12 +43,13 @@ module.exports = function (deps) {
 }`;
 
   function parseIllustratedResponse(text) {
+    // 코드블록 제거 + JSON 파싱은 parseGeminiResponse와 동일한 로직으로 처리
     let jsonStr = text.trim();
     const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlock) jsonStr = codeBlock[1].trim();
     const parsed = JSON.parse(jsonStr);
 
-    // Validate structure
+    // Validate illustrated-diary-specific structure
     if (!parsed.title || !Array.isArray(parsed.panels) || parsed.panels.length !== 3) {
       throw new Error('Invalid illustrated diary response structure');
     }

@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state, resetState } from './state.js';
 import { showError, showToast, getPasswordStrength, calculateStreak } from './utils.js';
 import { fetchWithAuth, exportData } from './api.js';
 import { requestNotificationPermission, scheduleReminder } from './reminder.js';
@@ -112,14 +112,7 @@ export function renderProfileScreen() {
 function resetSessionAndUI() {
   localStorage.removeItem('sb-access-token');
   localStorage.removeItem('sb-refresh-token');
-  state.currentUser = null;
-  state.accessToken = null;
-  state.refreshToken = null;
-  state.userProfile = null;
-  state.allEntries = [];
-  state.filteredEntries = [];
-  state.latestAnalysisResult = null;
-  state.appInitialized = false;
+  resetState();
   document.getElementById('historyList').innerHTML = '';
   document.getElementById('responseCard').hidden = true;
   document.getElementById('similarEntries').hidden = true;

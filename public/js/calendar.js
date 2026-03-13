@@ -61,17 +61,7 @@ export function renderCalendar() {
 
   grid.innerHTML = html;
 
-  grid.querySelectorAll('.cal-day.clickable').forEach(el => {
-    const handler = () => {
-      state.calSelectedDate = el.dataset.date;
-      grid.querySelectorAll('.cal-day.selected').forEach(s => s.classList.remove('selected'));
-      el.classList.add('selected');
-      const dayEntries = entryMap[el.dataset.date] || [];
-      showCalDayEntries(el.dataset.date, dayEntries);
-    };
-    el.addEventListener('click', handler);
-    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); } });
-  });
+  // Event delegation — 2 listeners on grid instead of 84 per-element listeners
 
   renderMonthlySummary(entryMap, daysInMonth);
 
@@ -151,6 +141,32 @@ function renderMonthlySummary(entryMap, daysInMonth) {
 }
 
 export function setupCalendar() {
+  const grid = document.getElementById('calendarGrid');
+
+  // Event delegation for calendar day clicks (replaces per-element listeners)
+  function handleCalDaySelect(el) {
+    if (!el || !el.classList.contains('clickable')) return;
+    state.calSelectedDate = el.dataset.date;
+    grid.querySelectorAll('.cal-day.selected').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const entryMap = buildCalEntryMap();
+    const dayEntries = entryMap[el.dataset.date] || [];
+    showCalDayEntries(el.dataset.date, dayEntries);
+  }
+
+  grid.addEventListener('click', (e) => {
+    handleCalDaySelect(e.target.closest('.cal-day'));
+  });
+  grid.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const el = e.target.closest('.cal-day');
+      if (el && el.classList.contains('clickable')) {
+        e.preventDefault();
+        handleCalDaySelect(el);
+      }
+    }
+  });
+
   document.getElementById('calPrev').addEventListener('click', () => {
     state.calMonth--;
     if (state.calMonth < 0) { state.calMonth = 11; state.calYear--; }

@@ -520,47 +520,25 @@ async function updateStreak(supabaseClient, userId, tzOffsetMinutes) {
     const today = localNow.toISOString().split('T')[0];
     const todayDate = new Date(today + "T00:00:00Z");
 
-    // Already wrote today
+    // Determine new streak value
+    let newStreak = 1;
     if (profile.last_entry_date) {
       const lastDate = new Date(profile.last_entry_date);
       const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
 
-      if (diffDays === 0) {
-        // Already counted today
-        return;
-      } else if (diffDays === 1) {
-        // Consecutive day: increment streak
-        const newStreak = profile.current_streak + 1;
-        await supabaseClient
-          .from('user_profiles')
-          .update({
-            current_streak: newStreak,
-            max_streak: Math.max(profile.max_streak, newStreak),
-            last_entry_date: todayDate.toISOString().split('T')[0],
-          })
-          .eq('id', userId);
-      } else {
-        // Streak broken: reset to 1
-        await supabaseClient
-          .from('user_profiles')
-          .update({
-            current_streak: 1,
-            max_streak: Math.max(profile.max_streak, 1),
-            last_entry_date: todayDate.toISOString().split('T')[0],
-          })
-          .eq('id', userId);
-      }
-    } else {
-      // First entry ever
-      await supabaseClient
-        .from('user_profiles')
-        .update({
-          current_streak: 1,
-          max_streak: Math.max(profile.max_streak, 1),
-          last_entry_date: todayDate.toISOString().split('T')[0],
-        })
-        .eq('id', userId);
+      if (diffDays === 0) return; // Already counted today
+      if (diffDays === 1) newStreak = profile.current_streak + 1; // Consecutive
+      // diffDays > 1: streak broken, newStreak stays 1
     }
+
+    await supabaseClient
+      .from('user_profiles')
+      .update({
+        current_streak: newStreak,
+        max_streak: Math.max(profile.max_streak, newStreak),
+        last_entry_date: todayDate.toISOString().split('T')[0],
+      })
+      .eq('id', userId);
   } catch (err) {
     logger.warn('Streak 업데이트 실패', { error: err.message, userId });
   }

@@ -13,6 +13,7 @@ module.exports = function (deps) {
     authMiddleware,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
+    parseGeminiResponse,
     analyzeLimiter,
     logAiUsage,
   } = deps;
@@ -155,15 +156,15 @@ module.exports = function (deps) {
 
       const { content, tokenCost } = await callGeminiAPI(requestBody, { rid, label: '리포트' });
 
-      // JSON 파싱
-      let jsonStr = content.trim();
-      const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (codeBlock) jsonStr = codeBlock[1].trim();
+      // JSON 파싱 — 코드블록 제거는 parseGeminiResponse와 동일한 로직 사용
       let parsed;
       try {
+        let jsonStr = content.trim();
+        const codeBlock = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlock) jsonStr = codeBlock[1].trim();
         parsed = JSON.parse(jsonStr);
       } catch {
-        logger.warn('리포트 JSON 파싱 실패', { requestId: rid, raw: jsonStr.slice(0, 200) });
+        logger.warn('리포트 JSON 파싱 실패', { requestId: rid, raw: content.slice(0, 200) });
         return res.status(502).json({ error: 'AI 응답을 해석할 수 없습니다. 다시 시도해주세요.', code: 'AI_PARSE_ERROR' });
       }
 

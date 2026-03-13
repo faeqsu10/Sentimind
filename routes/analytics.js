@@ -1,35 +1,22 @@
 const express = require('express');
 
-// JWT에서 payload를 디코딩하여 user_id 추출 (검증 불필요 — analytics용)
-function extractUserIdFromJwt(authHeader) {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  try {
-    const token = authHeader.split(' ')[1];
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    return payload.sub || null;
-  } catch {
-    return null;
-  }
-}
-
-module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger, config }) {
+module.exports = function createAnalyticsRouter({ supabaseAdmin, USE_SUPABASE, logger, config, optionalAuth }) {
   const router = express.Router();
 
   // POST /api/analytics — batch event ingestion
-  router.post('/', async (req, res) => {
+  router.post('/', optionalAuth, async (req, res) => {
     const rid = req.rid;
     const { events } = req.body;
 
     if (!Array.isArray(events) || events.length === 0) {
-      return res.status(400).json({ error: 'events array required' });
+      return res.status(400).json({ error: 'events array required', code: 'VALIDATION_ERROR' });
     }
 
     // Cap batch size
     const batchMaxSize = config?.analytics?.batchMaxSize || 50;
     const batch = events.slice(0, batchMaxSize);
 
-    // Extract user_id from JWT payload (no remote validation needed for analytics)
-    const userId = extractUserIdFromJwt(req.headers.authorization);
+    const userId = req.user?.id || null;
 
     const rows = batch.map(evt => ({
       event: String(evt.event || '').slice(0, 100),

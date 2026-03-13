@@ -7,14 +7,7 @@ const {
   DEFAULT_PERSONALIZATION,
   buildPersonalizationPrompt,
 } = require('../config/ai-personalization');
-
-function isMissingColumnError(error, columns) {
-  const message = error?.message || '';
-  return columns.some(column =>
-    message.includes(column) &&
-    (message.includes('does not exist') || message.includes('schema cache'))
-  );
-}
+const { isMissingColumnError } = require('../lib/db-utils');
 
 module.exports = function (deps) {
   const router = express.Router();
@@ -58,7 +51,7 @@ module.exports = function (deps) {
     let userPersonaPreset = DEFAULT_PERSONALIZATION.personaPreset;
     if (req.user && req.supabaseClient) {
       try {
-        const [entriesResult, toneResult, styleResult] = await Promise.all([
+        const [entriesResult, profileResult] = await Promise.all([
           req.supabaseClient
             .from('entries')
             .select('emotion, text, created_at')
@@ -68,12 +61,7 @@ module.exports = function (deps) {
             .limit(3),
           req.supabaseClient
             .from('user_profiles')
-            .select('ai_tone')
-            .eq('id', req.user.id)
-            .single(),
-          req.supabaseClient
-            .from('user_profiles')
-            .select('response_length, advice_style, persona_preset')
+            .select('ai_tone, response_length, advice_style, persona_preset')
             .eq('id', req.user.id)
             .single(),
         ]);
@@ -88,24 +76,18 @@ module.exports = function (deps) {
           contextSection = `\n\n참고: 사용자의 최근 감정 기록 - ${summary}`;
         }
 
-        if (toneResult.data && toneResult.data.ai_tone) {
-          userAiTone = toneResult.data.ai_tone;
+        if (profileResult.error && !isMissingColumnError(profileResult.error, ['response_length', 'advice_style', 'persona_preset'])) {
+          throw profileResult.error;
         }
-
-        if (styleResult.error && !isMissingColumnError(styleResult.error, ['response_length', 'advice_style', 'persona_preset'])) {
-          throw styleResult.error;
-        }
-        if (styleResult.data && styleResult.data.response_length) {
-          userResponseLength = styleResult.data.response_length;
-        }
-        if (styleResult.data && styleResult.data.advice_style) {
-          userAdviceStyle = styleResult.data.advice_style;
-        }
-        if (styleResult.data && styleResult.data.persona_preset) {
-          userPersonaPreset = styleResult.data.persona_preset;
+        const profile = profileResult.data;
+        if (profile) {
+          if (profile.ai_tone) userAiTone = profile.ai_tone;
+          if (profile.response_length) userResponseLength = profile.response_length;
+          if (profile.advice_style) userAdviceStyle = profile.advice_style;
+          if (profile.persona_preset) userPersonaPreset = profile.persona_preset;
         }
       } catch (profileErr) {
-        req.log?.warn?.({ err: profileErr.message }, 'user_profiles 조회 실패 — 기본 톤 사용');
+        logger.warn('user_profiles 조회 실패 — 기본 톤 사용', { error: profileErr.message });
       }
     }
 
@@ -165,17 +147,11 @@ module.exports = function (deps) {
       });
 
       // Crisis detection — check for distress signals in text and emotion
-      const crisisKeywords = [
-        '죽고 싶', '자해', '자살', '살고 싶지 않', '끝내고 싶', '사라지고 싶',
-        '삶을 끝', '죽을', '목숨', '세상을 떠나', '더 이상 못', '힘들어 못 살',
-      ];
-      // Normalize text: remove zero-width chars and collapse whitespace
       const textNormalized = textV.value
         .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF]/g, '')
         .replace(/\s+/g, ' ');
-      const isCrisis = crisisKeywords.some(kw => textNormalized.includes(kw));
-      const severeEmotions = ['절망', '극심한 우울', '자기혐오', '공허'];
-      const emotionCrisis = severeEmotions.includes(enrichedResult.emotion);
+      const isCrisis = config.crisis.keywords.some(kw => textNormalized.includes(kw));
+      const emotionCrisis = config.crisis.severeEmotions.includes(enrichedResult.emotion);
 
       if (isCrisis || emotionCrisis) {
         enrichedResult.crisis_detected = true;

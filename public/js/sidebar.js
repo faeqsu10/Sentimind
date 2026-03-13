@@ -3,15 +3,26 @@ import { escapeHtml, safeEmoji, emotionColor, getEmotionGroup, showToast, calcul
 import { track } from './analytics.js';
 
 export function updateSidebar() {
+  const entries = state.allEntries || [];
+  const todayStr = todayLocalStr();
+  const dateSet = new Set();
+  const emotionMap = {};
+  entries.forEach(e => {
+    if (e.date) dateSet.add(toLocalDateStr(e.date));
+    if (e.emotion) emotionMap[e.emotion] = (emotionMap[e.emotion] || 0) + 1;
+  });
+  const streak = calculateStreak(entries);
+  const ctx = { entries, todayStr, dateSet, emotionMap, streak };
+
   updateSidebarLatest();
-  updateSidebarToday();
-  updateSidebarStreak();
-  updateSidebarWeeklyChart();
-  renderInsightCards();
-  updateMobileStreakBanner();
-  updateAnniversaryCard();
-  updateEmotionVocab();
-  updateMemoryCard();
+  updateSidebarToday(ctx);
+  updateSidebarStreak(ctx);
+  updateSidebarWeeklyChart(ctx);
+  renderInsightCards(ctx);
+  updateMobileStreakBanner(ctx);
+  updateAnniversaryCard(ctx);
+  updateEmotionVocab(ctx);
+  updateMemoryCard(ctx);
 }
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
@@ -44,12 +55,12 @@ function updateSidebarLatest() {
   }
 }
 
-function updateSidebarToday() {
+function updateSidebarToday(ctx) {
   const container = document.getElementById('sidebarTodayContent');
   if (!container) return;
 
-  const todayStr = todayLocalStr();
-  const todayEntries = (state.allEntries || []).filter(e => {
+  const { entries, todayStr } = ctx;
+  const todayEntries = entries.filter(e => {
     if (!e.date) return false;
     return toLocalDateStr(e.date) === todayStr;
   });
@@ -68,21 +79,17 @@ function updateSidebarToday() {
   container.innerHTML = '<ul class="sidebar-today-list">' + listItems + '</ul>';
 }
 
-function updateSidebarStreak() {
+function updateSidebarStreak(ctx) {
   const streakCountEl = document.getElementById('streakCount');
   const streakSubEl = document.getElementById('streakSub');
   const streakDotsEl = document.getElementById('streakDots');
   if (!streakCountEl) return;
 
-  const entries = state.allEntries || [];
-  const dateSet = new Set();
-  entries.forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
+  const { dateSet, todayStr, streak } = ctx;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = todayLocalStr();
 
-  const streak = calculateStreak(entries);
   const hasTodayEntry = dateSet.has(todayStr);
   streakCountEl.textContent = streak;
   if (streakSubEl) {
@@ -264,10 +271,10 @@ export function generateInsights(entries) {
   return insights.slice(0, 3);
 }
 
-function renderInsightCards() {
+function renderInsightCards(ctx) {
   const container = document.getElementById('sidebarInsights');
   if (!container) return;
-  const insights = generateInsights(state.allEntries);
+  const insights = generateInsights(ctx ? ctx.entries : state.allEntries);
   if (insights.length === 0) {
     container.innerHTML = '';
     return;
@@ -283,23 +290,17 @@ function renderInsightCards() {
   ).join('');
 }
 
-function updateMobileStreakBanner() {
+function updateMobileStreakBanner(ctx) {
   const banner = document.getElementById('mobileStreakBanner');
   const dotsEl = document.getElementById('mobileStreakDots');
   const textEl = document.getElementById('mobileStreakText');
   const todayEl = document.getElementById('mobileStreakToday');
   if (!banner || !dotsEl || !textEl || !todayEl) return;
 
-  const entries = state.allEntries || [];
-  const dateSet = new Set();
-  entries.forEach(e => { if (e.date) dateSet.add(toLocalDateStr(e.date)); });
+  const { entries, dateSet, todayStr, streak } = ctx;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = todayLocalStr();
-
-  // Calculate streak
-  const streak = calculateStreak(entries);
 
   // Render 7-day dots
   const dots = [];
@@ -327,21 +328,30 @@ function updateMobileStreakBanner() {
   }
 }
 
-export function updateSidebarWeeklyChart() {
+export function updateSidebarWeeklyChart(ctx) {
   const container = document.getElementById('sidebarWeeklyChart');
   if (!container) return;
 
+  const entries = ctx ? ctx.entries : (state.allEntries || []);
   const today = new Date();
   today.setHours(23, 59, 59, 999);
   const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
   const dayData = [];
   let maxCount = 0;
 
+  // Build a date->count map from entries for O(n) instead of O(7n)
+  const countByDate = {};
+  entries.forEach(e => {
+    if (!e.date) return;
+    const ds = toLocalDateStr(e.date);
+    countByDate[ds] = (countByDate[ds] || 0) + 1;
+  });
+
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const ds = toLocalDateStr(d);
-    const count = (state.allEntries || []).filter(e => e.date && toLocalDateStr(e.date) === ds).length;
+    const count = countByDate[ds] || 0;
     dayData.push({ label: dayLabels[d.getDay()], count, isToday: i === 0 });
     maxCount = Math.max(maxCount, count);
   }
@@ -372,11 +382,11 @@ const ANNIVERSARY_MILESTONES = [
   { days: 100, icon: '🌳', title: '함께 한지 100일', template: '100일 동안 {count}번의 마음을 함께 했어요. 고마워요' },
 ];
 
-function updateAnniversaryCard() {
+function updateAnniversaryCard(ctx) {
   const card = document.getElementById('sidebarAnniversary');
   if (!card) return;
 
-  const entries = state.allEntries || [];
+  const entries = ctx ? ctx.entries : (state.allEntries || []);
   if (entries.length === 0 || state.guestMode) {
     card.hidden = true;
     return;
@@ -440,23 +450,21 @@ const VOCAB_MESSAGES = [
   { min: 13, max: 999, msg: '마음의 전문가! 섬세한 감정 인식 능력이에요' },
 ];
 
-function updateEmotionVocab() {
+function updateEmotionVocab(ctx) {
   const card = document.getElementById('sidebarEmotionVocab');
   if (!card) return;
 
-  const entries = state.allEntries || [];
+  const entries = ctx ? ctx.entries : (state.allEntries || []);
   if (entries.length < 2 || state.guestMode) {
     card.hidden = true;
     return;
   }
 
-  // Count unique emotions
-  const emotionMap = {};
-  entries.forEach(e => {
-    if (e.emotion) {
-      emotionMap[e.emotion] = (emotionMap[e.emotion] || 0) + 1;
-    }
-  });
+  const emotionMap = ctx ? ctx.emotionMap : (() => {
+    const m = {};
+    entries.forEach(e => { if (e.emotion) m[e.emotion] = (m[e.emotion] || 0) + 1; });
+    return m;
+  })();
 
   const uniqueEmotions = Object.keys(emotionMap);
   const count = uniqueEmotions.length;
@@ -488,12 +496,12 @@ function updateEmotionVocab() {
 // 1개월 전 오늘의 마음 회고 카드
 // ---------------------------------------------------------------------------
 
-function updateMemoryCard() {
+function updateMemoryCard(ctx) {
   const card = document.getElementById('sidebarMemory');
   const container = document.getElementById('sidebarMemoryContent');
   if (!card || !container) return;
 
-  const entries = state.allEntries || [];
+  const entries = ctx ? ctx.entries : (state.allEntries || []);
   if (entries.length === 0) {
     card.hidden = true;
     return;

@@ -6,6 +6,11 @@ import { toggleBookmarkAPI, deleteEntryAPI, fetchWithAuth } from './api.js';
 let deps = {};
 export function setupHistory(d) { deps = d; }
 
+// Cached Intl.DateTimeFormat instances (avoid re-creation per render)
+const dateShortFmt = new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' });
+const timeFmt = new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' });
+const dateFullFmt = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
+
 // ===== Select Mode =====
 const selectedIds = new Set();
 
@@ -144,12 +149,8 @@ export function renderHistoryList(entries) {
 
   historyList.innerHTML = paginated.map((entry, idx) => {
     const emotionGroup = getEmotionGroup(entry.emotion);
-    const date = entry.date
-      ? new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }).format(new Date(entry.date))
-      : '';
-    const time = entry.date
-      ? new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(new Date(entry.date))
-      : '';
+    const date = entry.date ? dateShortFmt.format(new Date(entry.date)) : '';
+    const time = entry.date ? timeFmt.format(new Date(entry.date)) : '';
     const color = emotionColor(entry.emotion);
     const bookmarked = entry.is_bookmarked;
 
@@ -197,9 +198,7 @@ export function showHistoryDetail(entry) {
 
   historyDetail.dataset.activeId = entry.id;
 
-  const dateStr = entry.date
-    ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(entry.date))
-    : '';
+  const dateStr = entry.date ? dateFullFmt.format(new Date(entry.date)) : '';
 
   document.getElementById('detailDate').textContent = dateStr;
   document.getElementById('detailEmoji').textContent = entry.emoji || '';

@@ -3,14 +3,7 @@
 // ---------------------------------------------------------------------------
 
 const express = require('express');
-
-function isMissingColumnError(error, columns) {
-  const message = error?.message || '';
-  return columns.some(column =>
-    message.includes(column) &&
-    (message.includes('does not exist') || message.includes('schema cache'))
-  );
-}
+const { isMissingColumnError } = require('../lib/db-utils');
 
 module.exports = function (deps) {
   const router = express.Router();

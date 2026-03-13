@@ -268,7 +268,7 @@ function initApp() {
 
   loadEntries();
   if (navigator.onLine) {
-    processOfflineDraftQueue().catch(() => {});
+    processOfflineDraftQueue().catch(err => console.warn('오프라인 큐 처리 실패:', err.message));
   }
   renderProfileScreen();
   updateSidebar(); // 초기 빈 상태 렌더 — loadEntries 완료 후 다시 갱신됨
@@ -748,11 +748,11 @@ window.addEventListener('beforeunload', (e) => {
 
 // ===== PWA Service Worker =====
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW 등록 실패:', err.message));
 
   window.addEventListener('online', () => {
     navigator.serviceWorker.controller?.postMessage('SYNC_OFFLINE');
-    processOfflineDraftQueue().catch(() => {});
+    processOfflineDraftQueue().catch(err => console.warn('오프라인 큐 처리 실패:', err.message));
   });
 
   navigator.serviceWorker.addEventListener('message', (e) => {

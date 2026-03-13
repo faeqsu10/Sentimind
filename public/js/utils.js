@@ -2,9 +2,12 @@
 import { state } from './state.js';
 
 export function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**
@@ -17,7 +20,7 @@ export function safeEmoji(emoji, fallback = '\uD83D\uDCAD') {
   if (!trimmed) return fallback;
   // 순수 ASCII 영문자로만 이뤄진 경우 (깨진 텍스트)
   if (/^[a-zA-Z_\s-]+$/.test(trimmed)) return fallback;
-  return trimmed;
+  return escapeHtml(trimmed);
 }
 
 export function emotionColor(emotion) {
