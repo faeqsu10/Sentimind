@@ -1,8 +1,8 @@
-const CACHE_VERSION = 'sentimind-v47';
+const CACHE_VERSION = 'sentimind-v48';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
-  '/js/app.js', '/js/state.js', '/js/utils.js', '/js/api.js',
+  '/js/splash.js', '/js/app.js', '/js/state.js', '/js/utils.js', '/js/api.js',
   '/js/offline-drafts.js',
   '/js/auth.js', '/js/guest.js', '/js/diary.js', '/js/history.js',
   '/js/calendar.js', '/js/stats.js', '/js/profile.js', '/js/sidebar.js',

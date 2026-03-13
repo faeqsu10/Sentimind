@@ -20,8 +20,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
@@ -34,12 +33,7 @@
     <div style="font-size:2rem" aria-hidden="true">&#x1F4D6;</div>
     <div>마음 일기장을 여는 중...</div>
   </div>
-  <script>
-    // 토큰 없으면 스플래시 숨기고 랜딩 바로 표시 (API 대기 불필요)
-    if (!localStorage.getItem('sb-access-token')) {
-      document.getElementById('loadingSplash').style.display = 'none';
-    }
-  </script>
+  <script src="/js/splash.js"></script>
 
   <!-- ===== Landing Screen ===== -->
   <div class="landing-screen" id="landingScreen" hidden>
