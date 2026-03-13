@@ -2,11 +2,11 @@
 
 한 줄 일기를 쓰면 AI가 당신의 감정을 읽어주는 다이어리
 
-[![Deploy](https://img.shields.io/badge/Vercel-deployed-brightgreen)](https://sentimind-delta.vercel.app)
+[![Deploy](https://img.shields.io/badge/Vercel-deployed-brightgreen)](https://senti-mind.com)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-ISC-blue)](LICENSE)
 
-[**지금 체험하기** (회원가입 없이 가능)](https://sentimind-delta.vercel.app)
+[**지금 체험하기** (회원가입 없이 가능)](https://senti-mind.com)
 
 <p align="center">
   <img src="docs/images/diary.png" alt="Sentimind 메인 화면" width="800">
