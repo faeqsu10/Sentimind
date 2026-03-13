@@ -756,6 +756,10 @@ if ('serviceWorker' in navigator) {
   });
 
   navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data?.type === 'SW_UPDATED') {
+      window.location.reload();
+      return;
+    }
     if (e.data?.type === 'OFFLINE_SYNC_COMPLETE') {
       showError(`오프라인에서 쓴 이야기 ${e.data.count}건이 저장되었어요.`);
       // E-25: offline_sync_completed

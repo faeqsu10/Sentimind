@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sentimind-v48';
+const CACHE_VERSION = 'sentimind-v49';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json',
   '/css/base.css', '/css/layout.css', '/css/components.css', '/css/landing.css',
@@ -17,12 +17,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches + notify clients to reload
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
-    )
+    ).then(() => self.clients.matchAll()).then((clients) => {
+      clients.forEach((c) => c.postMessage({ type: 'SW_UPDATED' }));
+    })
   );
   self.clients.claim();
 });
@@ -134,19 +136,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: stale-while-revalidate
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request).then((response) => {
+  // HTML navigation: network-first (prevents stale index.html after SW update)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
         }
         return response;
-      }).catch(() => cached);
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
 
-      return cached || fetchPromise;
-    })
+  // Other static assets: stale-while-revalidate (version-scoped)
+  event.respondWith(
+    caches.open(CACHE_VERSION).then((cache) =>
+      cache.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response.ok) cache.put(request, response.clone());
+          return response;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
+      })
+    )
   );
 });
 
