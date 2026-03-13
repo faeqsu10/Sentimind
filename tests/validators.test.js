@@ -9,7 +9,6 @@ const {
   validateBio,
   validateTheme,
   validateNotificationTime,
-  validateAiTone,
   validateResponseLength,
   validateAdviceStyle,
   validatePersonaPreset,
@@ -190,16 +189,6 @@ describe('validateNotificationTime', () => {
 
   it('accepts undefined (optional)', () => {
     expect(validateNotificationTime(undefined).valid).toBe(true);
-  });
-});
-
-describe('validateAiTone', () => {
-  it('accepts existing supported tone', () => {
-    expect(validateAiTone('warm').valid).toBe(true);
-  });
-
-  it('rejects unsupported tone', () => {
-    expect(validateAiTone('funny').valid).toBe(false);
   });
 });
 

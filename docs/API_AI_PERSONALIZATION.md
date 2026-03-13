@@ -22,14 +22,9 @@
   "data": {
     "id": "user-id",
     "email": "user@example.com",
-    "ai_tone": "warm",
     "response_length": "balanced",
     "advice_style": "balanced",
-    "persona_preset": "none",
-    "feature_flags": {
-      "playful_tone_enabled": false,
-      "illustrated_diary_enabled": false
-    }
+    "persona_preset": "none"
   }
 }
 ```
@@ -41,22 +36,16 @@
 요청 예시:
 ```json
 {
-  "ai_tone": "calm",
   "response_length": "detailed",
   "advice_style": "comfort",
-  "persona_preset": "gentle_friend",
-  "feature_flags": {
-    "playful_tone_enabled": true
-  }
+  "persona_preset": "gentle_friend"
 }
 ```
 
 검증 규칙:
-- `ai_tone`: `warm | calm | direct | playful`
 - `response_length`: `short | balanced | detailed`
 - `advice_style`: `comfort | balanced | actionable`
-- `persona_preset`: `none | gentle_friend | calm_coach | clear_reflector`
-- `feature_flags`: 허용된 key만 저장
+- `persona_preset`: `none | gentle_friend | calm_coach | clear_reflector | wise_elder | mindful_guide | creative_muse | humor_buddy`
 
 오류 예시:
 ```json
@@ -103,11 +92,9 @@
     "related_emotions": ["만족감", "기쁨"]
   },
   "personalization": {
-    "applied_tone": "calm",
     "applied_response_length": "balanced",
     "applied_advice_style": "comfort",
     "applied_persona_preset": "gentle_friend",
-    "tone_fallback_applied": false,
     "safety_mode": "normal"
   }
 }
@@ -115,7 +102,6 @@
 
 서버 동작 규칙:
 - 위기성 표현이면 `safety_mode = crisis`
-- `playful` 선택 상태여도 위기성/민감 감정이면 `applied_tone`은 `warm` 또는 `calm`으로 대체
 - 페르소나는 응답 표현만 바꾸고 감정 분류 결과는 바꾸지 않음
 
 ## 4. 그림일기 카드
@@ -197,7 +183,6 @@
 {
   "event": "profile_style_saved",
   "properties": {
-    "ai_tone": "calm",
     "response_length": "detailed",
     "advice_style": "comfort",
     "persona_preset": "gentle_friend"

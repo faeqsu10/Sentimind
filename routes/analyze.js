@@ -7,8 +7,6 @@ const {
   DEFAULT_PERSONALIZATION,
   buildPersonalizationPrompt,
 } = require('../config/ai-personalization');
-const { isMissingColumnError } = require('../lib/db-utils');
-
 module.exports = function (deps) {
   const router = express.Router();
 
@@ -43,9 +41,8 @@ module.exports = function (deps) {
       return res.status(500).json({ error: '서버에 API 키가 설정되지 않았습니다.', code: 'INTERNAL_ERROR' });
     }
 
-    // 인증된 사용자의 최근 3개 일기 + AI 톤 설정 조회
+    // 인증된 사용자의 최근 3개 일기 + 개인화 설정 조회
     let contextSection = '';
-    let userAiTone = DEFAULT_PERSONALIZATION.aiTone;
     let userResponseLength = DEFAULT_PERSONALIZATION.responseLength;
     let userAdviceStyle = DEFAULT_PERSONALIZATION.adviceStyle;
     let userPersonaPreset = DEFAULT_PERSONALIZATION.personaPreset;
@@ -61,7 +58,7 @@ module.exports = function (deps) {
             .limit(3),
           req.supabaseClient
             .from('user_profiles')
-            .select('ai_tone, response_length, advice_style, persona_preset')
+            .select('response_length, advice_style, persona_preset')
             .eq('id', req.user.id)
             .single(),
         ]);
@@ -76,12 +73,11 @@ module.exports = function (deps) {
           contextSection = `\n\n참고: 사용자의 최근 감정 기록 - ${summary}`;
         }
 
-        if (profileResult.error && !isMissingColumnError(profileResult.error, ['response_length', 'advice_style', 'persona_preset'])) {
+        if (profileResult.error) {
           throw profileResult.error;
         }
         const profile = profileResult.data;
         if (profile) {
-          if (profile.ai_tone) userAiTone = profile.ai_tone;
           if (profile.response_length) userResponseLength = profile.response_length;
           if (profile.advice_style) userAdviceStyle = profile.advice_style;
           if (profile.persona_preset) userPersonaPreset = profile.persona_preset;
@@ -95,7 +91,6 @@ module.exports = function (deps) {
 
     const finalSystemPrompt = buildPersonalizationPrompt({
       systemPrompt: SYSTEM_PROMPT,
-      aiTone: userAiTone,
       responseLength: userResponseLength,
       adviceStyle: userAdviceStyle,
       personaPreset: userPersonaPreset,
@@ -165,7 +160,6 @@ module.exports = function (deps) {
       }
 
       enrichedResult.personalization = {
-        applied_tone: userAiTone,
         applied_response_length: userResponseLength,
         applied_advice_style: userAdviceStyle,
         applied_persona_preset: userPersonaPreset,

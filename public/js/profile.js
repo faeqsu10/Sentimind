@@ -8,7 +8,6 @@ let deps = {};
 export function setupProfile(d) { deps = d; }
 
 const profilePreferenceDraft = {
-  aiTone: 'warm',
   responseLength: 'balanced',
   adviceStyle: 'balanced',
   personaPreset: 'none',
@@ -49,13 +48,6 @@ export function renderProfileScreen() {
       bioCounter.classList.toggle('near-limit', len >= 160 && len < 200);
       bioCounter.classList.toggle('at-limit', len >= 200);
     }
-
-    // AI 톤 설정 반영
-    const savedTone = state.userProfile.ai_tone || 'warm';
-    profilePreferenceDraft.aiTone = savedTone;
-    document.querySelectorAll('.ai-tone-btn[data-tone]').forEach(btn => {
-      btn.setAttribute('aria-pressed', btn.dataset.tone === savedTone ? 'true' : 'false');
-    });
 
     const savedResponseLength = state.userProfile.response_length || 'balanced';
     profilePreferenceDraft.responseLength = savedResponseLength;
@@ -143,8 +135,6 @@ export function initProfileEventListeners() {
     counter.classList.toggle('at-limit', len >= 200);
   });
 
-  // AI tone buttons
-  bindSingleChoiceButtons('.ai-tone-btn[data-tone]', 'aiTone', 'tone');
   bindSingleChoiceButtons('.response-length-btn[data-response-length]', 'responseLength', 'responseLength');
   bindSingleChoiceButtons('.advice-style-btn[data-advice-style]', 'adviceStyle', 'adviceStyle');
   bindSingleChoiceButtons('.persona-preset-btn[data-persona-preset]', 'personaPreset', 'personaPreset');
@@ -200,8 +190,6 @@ export function initProfileEventListeners() {
     saveBtn.disabled = true;
     saveBtn.textContent = '저장 중...';
 
-    // AI 톤 설정
-    const aiTone = profilePreferenceDraft.aiTone || 'warm';
     const responseLength = profilePreferenceDraft.responseLength || 'balanced';
     const adviceStyle = profilePreferenceDraft.adviceStyle || 'balanced';
     const personaPreset = profilePreferenceDraft.personaPreset || 'none';
@@ -219,7 +207,6 @@ export function initProfileEventListeners() {
     const patchBody = {
       nickname: nicknameInput.value.trim(),
       bio: bioInput.value.trim(),
-      ai_tone: aiTone,
       response_length: responseLength,
       advice_style: adviceStyle,
       persona_preset: personaPreset,

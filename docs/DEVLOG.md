@@ -252,6 +252,7 @@
 |---|------|------|------|
 | 139 | `43e20d7` | fix | 4팀 전문가 감사 24건 중 18건 수정 (보안·품질·성능·아키텍처) |
 | 140 | `a122d07` | fix(frontend) | safeEmoji XSS 수정 (innerHTML→safeEmojiHtml) + dead import 정리 |
+| 141 | | refactor(api) | aiTone과 personaPreset 통합 — 대화 스타일 일원화 |
 
 ---
 
@@ -260,7 +261,7 @@
 - [ ] Supabase Redirect URLs에 프로덕션 URL 추가 (Google OAuth 프로덕션 동작)
 - [ ] Vercel 환경변수 SITE_URL 설정
 - [ ] Push notification 실제 구현 (Retention)
-- [x] AI 응답 톤 커스터마이징 (Autonomy/SDT) — warm 프롬프트 수정 완료
+- [x] AI 응답 톤 커스터마이징 → persona_preset으로 통합 완료 (migration 025)
 - [ ] A/B 테스트 인프라
 - [ ] 나머지 13개 이벤트 (E-03, E-07, E-09, E-15~E-22, E-25)
 - [ ] 인증 이벤트 관리자 대시보드

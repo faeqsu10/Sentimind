@@ -6,7 +6,6 @@
 // ---------------------------------------------------------------------------
 
 const DEFAULT_PERSONALIZATION = {
-  aiTone: 'warm',
   responseLength: 'balanced',
   adviceStyle: 'balanced',
   personaPreset: 'none',
@@ -55,12 +54,6 @@ const PERSONA_PRESET_META = {
   },
 };
 
-const AI_TONE_PROMPTS = {
-  warm: '\n\n추가 톤 지시: 따뜻하고 부드러운 말투로 응답하세요. 사용자의 감정을 있는 그대로 받아들이고, 안도감을 주는 표현을 사용합니다. "괜찮아요", "충분해요" 같은 위로의 말을 자연스럽게 녹여주세요.',
-  professional: '\n\n추가 톤 지시: 전문적인 심리 상담사처럼 응답하세요. 감정 용어를 정확히 사용하고, 공감하되 분석적 통찰도 함께 제공합니다. 존댓말을 사용하되 약간 격식체를 유지합니다.',
-  friendly: '\n\n추가 톤 지시: 다정한 친구처럼 편하게 응답하세요. 반말은 쓰지 않되, "~요" 체를 사용하고 구어체 표현을 자연스럽게 섞어주세요. "아 정말?" "대박" 같은 공감 추임새를 가볍게 활용합니다.',
-  poetic: '\n\n추가 톤 지시: 감성적이고 시적인 문체로 응답하세요. 비유, 은유를 활용하고 짧은 문장으로 여운을 남기는 표현을 사용합니다. 마치 짧은 산문시처럼 리듬감 있게 작성합니다.',
-};
 
 const RESPONSE_LENGTH_PROMPTS = {
   short: '\n\n응답 길이 지시: 메시지와 조언은 짧고 핵심적으로 작성하세요. 각각 1~2문장 이내로 유지합니다.',
@@ -75,7 +68,7 @@ const ADVICE_STYLE_PROMPTS = {
 };
 
 const PERSONA_PRESET_PROMPTS = {
-  none: '',
+  none: '\n\n페르소나 지시 [기본 마음이]: 따뜻하고 부드러운 말투로 응답하세요. 사용자의 감정을 있는 그대로 받아들이고, 안도감을 주는 표현을 사용합니다. "괜찮아요", "충분해요" 같은 위로의 말을 자연스럽게 녹여주세요.',
   gentle_friend: '\n\n페르소나 지시 [따뜻한 친구형]: 오래된 단짝 친구처럼 반응하세요. 핵심 규칙: (1) 절대 판단하지 말 것 (2) "아, 그랬구나…", "그럴 수 있지" 같은 수용 표현을 반드시 포함 (3) 마지막에 "넌 충분해" 류의 짧은 다독임 한 마디를 덧붙임 (4) 느낌표보다 말줄임표(…)를 선호하여 부드러운 톤 유지 (5) 과한 텐션이나 감탄사 남발 금지 — 조용한 친밀감.',
   calm_coach: '\n\n페르소나 지시 [차분한 코치형]: 신뢰할 수 있는 코치처럼 반응하세요. 핵심 규칙: (1) 감정을 먼저 한 문장으로 인정 ("지금 ~한 마음이시군요") (2) 그 다음 "작은 한 걸음"을 구체적으로 제안 (예: "5분만 산책해 보는 건 어떨까요?") (3) "해야 한다" 대신 "해볼 수 있어요"로 부드럽게 제안 (4) 감정에 이름을 정확히 붙여주되, 과잉 해석하지 않음 (5) 차분하고 일정한 리듬의 문장을 유지.',
   clear_reflector: '\n\n페르소나 지시 [담백한 정리형]: 말을 아끼는 현명한 정리자처럼 반응하세요. 핵심 규칙: (1) 핵심만 짧게 — 메시지 2문장, 조언 1문장 이내 (2) 감정을 과장하거나 미화하지 않음 (3) "~이네요" "~군요" 같은 관찰형 종결어미 사용 (4) 수사적 질문이나 감탄사 최소화 (5) 차갑지 않되 군더더기 없는 깔끔한 문체.',
@@ -87,23 +80,20 @@ const PERSONA_PRESET_PROMPTS = {
 
 function buildPersonalizationPrompt({
   systemPrompt,
-  aiTone = DEFAULT_PERSONALIZATION.aiTone,
   responseLength = DEFAULT_PERSONALIZATION.responseLength,
   adviceStyle = DEFAULT_PERSONALIZATION.adviceStyle,
   personaPreset = DEFAULT_PERSONALIZATION.personaPreset,
 }) {
   return [
     systemPrompt,
-    AI_TONE_PROMPTS[aiTone] || '',
+    PERSONA_PRESET_PROMPTS[personaPreset] || '',
     RESPONSE_LENGTH_PROMPTS[responseLength] || '',
     ADVICE_STYLE_PROMPTS[adviceStyle] || '',
-    PERSONA_PRESET_PROMPTS[personaPreset] || '',
   ].join('');
 }
 
 module.exports = {
   DEFAULT_PERSONALIZATION,
-  AI_TONE_PROMPTS,
   RESPONSE_LENGTH_PROMPTS,
   ADVICE_STYLE_PROMPTS,
   PERSONA_PRESET_PROMPTS,

@@ -760,7 +760,7 @@ function getRetentionMessage() {
 // Personalization Badge
 // ---------------------------------------------------------------------------
 
-const TONE_LABELS = { warm: '따뜻한', professional: '차분한', friendly: '다정한', poetic: '시적인', calm: '평온한', direct: '솔직한', playful: '유쾌한' };
+const PERSONA_LABELS = { none: '기본 마음이', gentle_friend: '따뜻한 친구', calm_coach: '차분한 코치', clear_reflector: '담백한 정리', cheerful_supporter: '밝은 응원단', wise_elder: '지혜로운 어른', playful_buddy: '유쾌한 동료', mindful_guide: '마음챙김 안내자' };
 const LENGTH_LABELS = { short: '짧게', balanced: '적당히', detailed: '자세히' };
 const STYLE_LABELS = { comfort: '위로', balanced: '균형', actionable: '실천' };
 
@@ -773,12 +773,12 @@ function renderPersonalizationBadge(personalization) {
     return;
   }
 
-  const tone = personalization.applied_tone;
+  const persona = personalization.applied_persona_preset;
   const length = personalization.applied_response_length;
   const style = personalization.applied_advice_style;
 
   const tags = [];
-  if (tone && TONE_LABELS[tone]) tags.push(TONE_LABELS[tone] + ' 말투');
+  if (persona && persona !== 'none' && PERSONA_LABELS[persona]) tags.push(PERSONA_LABELS[persona]);
   if (length && LENGTH_LABELS[length] && length !== 'balanced') tags.push(LENGTH_LABELS[length]);
   if (style && STYLE_LABELS[style] && style !== 'balanced') tags.push(STYLE_LABELS[style]);
 

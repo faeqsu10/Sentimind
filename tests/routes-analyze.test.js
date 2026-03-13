@@ -168,12 +168,11 @@ describe('Analyze Routes', () => {
       expect(requestBody.generationConfig.thinkingConfig.thinkingBudget).toBe(0);
     });
 
-    it('프로필 스타일 설정을 프롬프트와 응답 메타에 반영한다', async () => {
+    it('프로필 개인화 설정을 프롬프트와 응답 메타에 반영한다', async () => {
       const callGeminiAPI = vi.fn().mockResolvedValue({
         content: JSON.stringify({ emotion: '평온', message: '안정적이네요', emoji: '😌' }),
         tokenCost: null,
       });
-      let profileQueryCount = 0;
       const mockSupabase = {
         from: vi.fn((table) => {
           if (table === 'entries') {
@@ -189,25 +188,17 @@ describe('Analyze Routes', () => {
               }),
             };
           }
-          profileQueryCount += 1;
           return {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue(
-                  profileQueryCount === 1
-                    ? {
-                        data: { ai_tone: 'friendly' },
-                        error: null,
-                      }
-                    : {
-                        data: {
-                          response_length: 'detailed',
-                          advice_style: 'actionable',
-                          persona_preset: 'gentle_friend',
-                        },
-                        error: null,
-                      }
-                ),
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    response_length: 'detailed',
+                    advice_style: 'actionable',
+                    persona_preset: 'gentle_friend',
+                  },
+                  error: null,
+                }),
               }),
             }),
           };
@@ -226,7 +217,6 @@ describe('Analyze Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.data.personalization).toEqual({
-        applied_tone: 'friendly',
         applied_response_length: 'detailed',
         applied_advice_style: 'actionable',
         applied_persona_preset: 'gentle_friend',
@@ -234,75 +224,9 @@ describe('Analyze Routes', () => {
       });
 
       const [requestBody] = callGeminiAPI.mock.calls[0];
-      expect(requestBody.systemInstruction.parts[0].text).toContain('다정한 친구처럼');
+      expect(requestBody.systemInstruction.parts[0].text).toContain('따뜻한 친구처럼 반응하세요');
       expect(requestBody.systemInstruction.parts[0].text).toContain('조금 더 자세히');
       expect(requestBody.systemInstruction.parts[0].text).toContain('작고 구체적인 다음 행동');
-      expect(requestBody.systemInstruction.parts[0].text).toContain('따뜻한 친구처럼 반응하세요');
-    });
-
-    it('새 스타일 컬럼이 없어도 기존 ai_tone은 계속 반영한다', async () => {
-      const callGeminiAPI = vi.fn().mockResolvedValue({
-        content: JSON.stringify({ emotion: '평온', message: '안정적이네요', emoji: '😌' }),
-        tokenCost: null,
-      });
-      let profileQueryCount = 0;
-      const mockSupabase = {
-        from: vi.fn((table) => {
-          if (table === 'entries') {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  is: vi.fn().mockReturnValue({
-                    order: vi.fn().mockReturnValue({
-                      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          profileQueryCount += 1;
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue(
-                  profileQueryCount === 1
-                    ? {
-                        data: { ai_tone: 'professional' },
-                        error: null,
-                      }
-                    : {
-                        data: null,
-                        error: { message: "Could not find the 'response_length' column of 'user_profiles' in the schema cache" },
-                      }
-                ),
-              }),
-            }),
-          };
-        }),
-      };
-      const deps = createMockDeps({
-        optionalAuth: (req, _res, next) => {
-          req.user = { id: 'user-123', email: 'test@example.com' };
-          req.supabaseClient = mockSupabase;
-          next();
-        },
-        callGeminiAPI,
-      });
-      const app = createApp(deps);
-      const res = await request(app, 'POST', '/api/analyze', { text: '오늘은 조금 차분했다' });
-
-      expect(res.status).toBe(200);
-      expect(res.data.personalization).toEqual({
-        applied_tone: 'professional',
-        applied_response_length: 'balanced',
-        applied_advice_style: 'balanced',
-        applied_persona_preset: 'none',
-        safety_mode: 'normal',
-      });
-
-      const [requestBody] = callGeminiAPI.mock.calls[0];
-      expect(requestBody.systemInstruction.parts[0].text).toContain('전문적인 심리 상담사처럼');
     });
   });
 

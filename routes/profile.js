@@ -3,7 +3,6 @@
 // ---------------------------------------------------------------------------
 
 const express = require('express');
-const { isMissingColumnError } = require('../lib/db-utils');
 
 module.exports = function (deps) {
   const router = express.Router();
@@ -12,7 +11,7 @@ module.exports = function (deps) {
     logger, requestId,
     USE_SUPABASE,
     authMiddleware,
-    validateNickname, validateBio, validateTheme, validateNotificationTime, validateAiTone,
+    validateNickname, validateBio, validateTheme, validateNotificationTime,
     validateResponseLength, validateAdviceStyle, validatePersonaPreset,
   } = deps;
 
@@ -71,7 +70,6 @@ module.exports = function (deps) {
       ['bio', validateBio],
       ['theme', validateTheme],
       ['notification_time', validateNotificationTime],
-      ['ai_tone', validateAiTone],
       ['response_length', validateResponseLength],
       ['advice_style', validateAdviceStyle],
       ['persona_preset', validatePersonaPreset],
@@ -108,26 +106,6 @@ module.exports = function (deps) {
         .eq('id', req.user.id)
         .select()
         .single();
-
-      // Backward compatibility: if new personalization columns are not migrated yet,
-      // retry without them so legacy fields like ai_tone still persist.
-      if (error && isMissingColumnError(error, ['response_length', 'advice_style', 'persona_preset'])) {
-        const fallbackUpdates = { ...updates };
-        delete fallbackUpdates.response_length;
-        delete fallbackUpdates.advice_style;
-        delete fallbackUpdates.persona_preset;
-
-        if (Object.keys(fallbackUpdates).length > 0) {
-          const retryResult = await req.supabaseClient
-            .from('user_profiles')
-            .update(fallbackUpdates)
-            .eq('id', req.user.id)
-            .select()
-            .single();
-          data = retryResult.data;
-          error = retryResult.error;
-        }
-      }
 
       if (error) {
         logger.warn('프로필 수정 실패', { requestId: rid, error: error.message });
