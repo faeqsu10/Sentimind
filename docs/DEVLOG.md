@@ -254,6 +254,16 @@
 | 140 | `a122d07` | fix(frontend) | safeEmoji XSS 수정 (innerHTML→safeEmojiHtml) + dead import 정리 |
 | 141 | | refactor(api) | aiTone과 personaPreset 통합 — 대화 스타일 일원화 |
 
+## Phase 12: UX 개선 및 신규 기능
+
+| # | 커밋 | 타입 | 설명 |
+|---|------|------|------|
+| 142 | | feat(api) | 활동 태그 AI 자동 추론 — 빈 카드 수정 |
+| 143 | | feat(frontend) | 후속 대화 UX 개선 (단계 플레이스홀더, 자동포커스, 대화 횟수 표시) |
+| 144 | | feat(frontend) | AI 개인화 적용 피드백 UI (배지 상시 표시, 저장 메시지 분기) |
+| 145 | | feat(frontend) | 지난주 vs 이번주 감정 트렌드 비교 시각화 |
+| 146 | | test | 테스트 수정 — sanitize, analytics, analyze, report 의존성 동기화 |
+
 ---
 
 ## 향후 작업 (미구현)

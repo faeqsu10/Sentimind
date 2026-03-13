@@ -128,6 +128,9 @@ function renderDashboard(stats) {
   // Emotion × Situation heatmap
   renderEmotionSituationHeatmap(state.allEntries);
 
+  // Week comparison
+  renderWeekComparison(state.allEntries);
+
   // Emotion growth graph
   renderEmotionGrowth(state.allEntries);
 
@@ -946,6 +949,84 @@ function renderEmotionGrowth(entries) {
       '<span class="growth-legend-item"><span class="growth-legend-dot" style="background:#82E0AA"></span>감정 다양성</span>' +
       '<span class="growth-legend-item"><span class="growth-legend-dot" style="background:#F4D03F"></span>긍정 비율</span>' +
     '</div>';
+}
+
+// Week-over-week emotion comparison
+function renderWeekComparison(entries) {
+  const container = document.getElementById('weekComparisonChart');
+  if (!container) return;
+
+  if (!entries || entries.length < 3) {
+    container.innerHTML = '<p class="week-compare-empty">기록이 3건 이상 쌓이면 주간 비교가 보여요</p>';
+    return;
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = todayStart.getDay();
+  const thisMonday = new Date(todayStart);
+  thisMonday.setDate(todayStart.getDate() - (day === 0 ? 6 : day - 1));
+  const lastMonday = new Date(thisMonday);
+  lastMonday.setDate(thisMonday.getDate() - 7);
+
+  const POSITIVE = ['기쁨','행복','감사','설렘','희망','평온','만족','사랑','안도','뿌듯','자신감','즐거움'];
+
+  function weekStats(from, to) {
+    const week = entries.filter(e => {
+      const d = new Date(e.date || e.created_at || '');
+      return d >= from && d < to;
+    });
+    const total = week.length;
+    const emotions = {};
+    let positive = 0;
+    week.forEach(e => {
+      if (e.emotion) {
+        emotions[e.emotion] = (emotions[e.emotion] || 0) + 1;
+        if (POSITIVE.includes(e.emotion)) positive++;
+      }
+    });
+    const topEmotion = Object.entries(emotions).sort((a,b) => b[1] - a[1])[0];
+    return { total, positive, positiveRate: total > 0 ? Math.round(positive / total * 100) : 0, topEmotion, emotions };
+  }
+
+  const thisWeek = weekStats(thisMonday, new Date(thisMonday.getTime() + 7 * 86400000));
+  const lastWeek = weekStats(lastMonday, thisMonday);
+
+  if (thisWeek.total === 0 && lastWeek.total === 0) {
+    container.innerHTML = '<p class="week-compare-empty">이번주 기록이 아직 없어요</p>';
+    return;
+  }
+
+  // Insight text
+  let insight = '';
+  if (lastWeek.total > 0 && thisWeek.total > 0) {
+    const diff = thisWeek.positiveRate - lastWeek.positiveRate;
+    if (diff > 10) insight = '지난주보다 긍정 감정이 ' + diff + '%p 늘었어요 ✨';
+    else if (diff < -10) insight = '지난주보다 부정 감정이 ' + Math.abs(diff) + '%p 늘었어요. 마음 돌봄이 필요해요 💙';
+    else insight = '지난주와 비슷한 감정 흐름이에요 🍃';
+  } else if (lastWeek.total === 0) {
+    insight = '이번주 첫 기록이에요. 꾸준히 쌓아보세요 🌱';
+  }
+
+  // Render comparison cards
+  function renderWeekCard(label, stats) {
+    const topEmoji = stats.topEmotion ? emotionEmoji(stats.topEmotion[0]) : '';
+    const topName = stats.topEmotion ? escapeHtml(stats.topEmotion[0]) : '-';
+    return '<div class="week-card">' +
+      '<span class="week-card-label">' + label + '</span>' +
+      '<div class="week-card-stat"><span class="week-card-num">' + stats.total + '</span><span class="week-card-unit">건</span></div>' +
+      '<div class="week-card-row"><span class="week-card-sub">긍정 비율</span><span class="week-card-value">' + stats.positiveRate + '%</span></div>' +
+      '<div class="week-card-row"><span class="week-card-sub">주요 감정</span><span class="week-card-value">' + topEmoji + ' ' + topName + '</span></div>' +
+    '</div>';
+  }
+
+  container.innerHTML =
+    '<div class="week-compare-grid">' +
+      renderWeekCard('지난주', lastWeek) +
+      '<div class="week-compare-arrow">→</div>' +
+      renderWeekCard('이번주', thisWeek) +
+    '</div>' +
+    (insight ? '<p class="week-compare-insight">' + escapeHtml(insight) + '</p>' : '');
 }
 
 // Emotion-Activity correlation chart

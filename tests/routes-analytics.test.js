@@ -15,6 +15,8 @@ function createMockDeps(overrides = {}) {
         insert: vi.fn().mockResolvedValue({ error: null }),
       })),
     },
+    optionalAuth: (req, _res, next) => next(),
+    config: { analytics: { batchMaxSize: 50 } },
     ...overrides,
   };
 }

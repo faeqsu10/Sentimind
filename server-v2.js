@@ -279,13 +279,15 @@ const SYSTEM_PROMPT = `당신은 따뜻하고 공감 능력이 뛰어난 감정 
 2. 그 감정에 어울리는 이모지를 선택합니다.
 3. 사용자의 마음에 공감하는 따뜻한 위로 메시지를 작성합니다.
 4. 간단한 행동 제안을 하나 덧붙입니다.
+5. 일기에서 언급된 활동을 추론합니다.
 
 반드시 아래 JSON 형식으로만 응답하세요. JSON 외의 텍스트는 절대 포함하지 마세요:
 {
   "emotion": "감정 이름 (예: 만족감, 기쁨, 불안, 긴장, 설렘 등)",
   "emoji": "감정을 나타내는 유니코드 이모지 문자 1개 (예: 😊, 😢, 😤, 😰). 반드시 실제 이모지 문자만 사용하고 영어 단어(happy, sad, perplexed 등)는 절대 금지",
   "message": "2~3문장의 공감 및 위로 메시지",
-  "advice": "1문장의 간단한 행동 제안"
+  "advice": "1문장의 간단한 행동 제안",
+  "activity_tags": ["일기에서 추론된 활동 태그 배열. 다음 중 해당하는 것만: 운동, 독서, 산책, 음악, 요리, 친구, 가족, 공부, 업무, 쇼핑, 여행, 취미, 휴식, 명상. 해당 없으면 빈 배열"]
 }
 
 규칙:
@@ -363,7 +365,13 @@ function parseGeminiResponse(text) {
     emoji = EMOTION_EMOJI_FALLBACK[emotion] || '💭';
   }
 
-  return { emotion, emoji, message: typeof parsed.message === 'string' ? parsed.message : '', advice: typeof parsed.advice === 'string' ? parsed.advice : '' };
+  // activity_tags: 유효한 태그만 필터링
+  const VALID_ACTIVITY_TAGS = ['운동','독서','산책','음악','요리','친구','가족','공부','업무','쇼핑','여행','취미','휴식','명상'];
+  const activityTags = Array.isArray(parsed.activity_tags)
+    ? parsed.activity_tags.filter(t => typeof t === 'string' && VALID_ACTIVITY_TAGS.includes(t))
+    : [];
+
+  return { emotion, emoji, message: typeof parsed.message === 'string' ? parsed.message : '', advice: typeof parsed.advice === 'string' ? parsed.advice : '', activity_tags: activityTags };
 }
 
 function calculateBackoffDelay(attempt) {

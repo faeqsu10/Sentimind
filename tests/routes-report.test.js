@@ -41,6 +41,7 @@ function createMockDeps(overrides = {}) {
     }),
     GeminiAPIError: class MockGeminiAPIError extends Error {},
     analyzeLimiter: (_req, _res, next) => next(),
+    logAiUsage: vi.fn(),
     ...overrides,
   };
 }
@@ -129,17 +130,33 @@ describe('Report Routes', () => {
       { text: '하루3', emotion: '감사', emoji: '🙏', created_at: '2026-03-10T10:00:00Z' },
     ];
     const mockSupabase = {
-      from: vi.fn(() => ({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            is: vi.fn().mockReturnValue({
-              gte: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: entries, error: null }),
+      from: vi.fn((table) => {
+        if (table === 'user_reports') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            }),
+            upsert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockReturnValue({
+                gte: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: entries, error: null }),
+                }),
               }),
             }),
           }),
-        }),
-      })),
+        };
+      }),
     };
     const deps = createMockDeps({
       authMiddleware: (req, _res, next) => {

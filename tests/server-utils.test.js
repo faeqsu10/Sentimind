@@ -5,9 +5,13 @@ import path from 'path';
 // Extract utility functions from server-v2.js
 const serverCode = fs.readFileSync(path.join(__dirname, '..', 'server-v2.js'), 'utf8');
 
-// Extract parseGeminiResponse
+// Extract parseGeminiResponse and its dependencies (isActualEmoji, EMOTION_EMOJI_FALLBACK, VALID_ACTIVITY_TAGS)
+const emojiMapMatch = serverCode.match(/const EMOTION_EMOJI_FALLBACK = \{[\s\S]*?\};/);
+const isActualEmojiMatch = serverCode.match(/function isActualEmoji\(str\) \{[\s\S]*?\n\}/);
 const parseMatch = serverCode.match(/function parseGeminiResponse\(text\) \{[\s\S]*?\n\}/);
-const parseGeminiResponse = new Function('return ' + parseMatch[0])();
+const parseGeminiResponse = new Function(
+  emojiMapMatch[0] + '\n' + isActualEmojiMatch[0] + '\nreturn ' + parseMatch[0]
+)();
 
 // Extract isPlainObject
 const plainMatch = serverCode.match(/function isPlainObject\(val\) \{[\s\S]*?\n\}/);

@@ -257,7 +257,13 @@ export function initProfileEventListeners() {
           state.userProfile = { ...state.userProfile, ...optimisticProfileState };
         }
         scheduleReminder();
-        profileMessage.textContent = '프로필이 저장되었어요.';
+        // AI 개인화 설정 변경 여부에 따라 메시지 분기
+        const aiChanged = personaPreset !== (state.userProfile?.persona_preset || 'none')
+          || responseLength !== (state.userProfile?.response_length || 'balanced')
+          || adviceStyle !== (state.userProfile?.advice_style || 'balanced');
+        profileMessage.textContent = aiChanged
+          ? '설정이 저장되었어요. 다음 일기부터 새로운 스타일이 반영됩니다.'
+          : '프로필이 저장되었어요.';
         profileMessage.className = 'profile-message success';
         profileMessage.hidden = false;
         renderProfileScreen();

@@ -30,6 +30,10 @@ function createMockDeps(overrides = {}) {
         thinkingBudget: 0,
         model: 'gemini-2.5-flash',
       },
+      crisis: {
+        keywords: ['죽고 싶', '자해', '자살', '살고 싶지 않', '끝내고 싶', '사라지고 싶'],
+        severeEmotions: ['절망', '극심한 우울', '자기혐오', '공허'],
+      },
     },
     GEMINI_API_KEY: 'test-api-key',
     ontologyEngine: vi.fn().mockReturnValue(null),
@@ -48,6 +52,7 @@ function createMockDeps(overrides = {}) {
     },
     parseGeminiResponse: vi.fn((content) => JSON.parse(content)),
     analyzeLimiter: (_req, _res, next) => next(),
+    logAiUsage: vi.fn(),
     ...overrides,
   };
 }
@@ -164,7 +169,7 @@ describe('Analyze Routes', () => {
       expect(callGeminiAPI).toHaveBeenCalledOnce();
       const [requestBody] = callGeminiAPI.mock.calls[0];
       expect(requestBody.contents[0].role).toBe('user');
-      expect(requestBody.systemInstruction.parts[0].text).toBe('당신은 감정 분석 AI입니다.');
+      expect(requestBody.systemInstruction.parts[0].text).toContain('당신은 감정 분석 AI입니다.');
       expect(requestBody.generationConfig.thinkingConfig.thinkingBudget).toBe(0);
     });
 
@@ -224,7 +229,7 @@ describe('Analyze Routes', () => {
       });
 
       const [requestBody] = callGeminiAPI.mock.calls[0];
-      expect(requestBody.systemInstruction.parts[0].text).toContain('따뜻한 친구처럼 반응하세요');
+      expect(requestBody.systemInstruction.parts[0].text).toContain('단짝 친구처럼 반응하세요');
       expect(requestBody.systemInstruction.parts[0].text).toContain('조금 더 자세히');
       expect(requestBody.systemInstruction.parts[0].text).toContain('작고 구체적인 다음 행동');
     });

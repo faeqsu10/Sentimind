@@ -2972,6 +2972,40 @@ kbd {
   display: inline-block;
 }
 
+/* ===== Week Comparison ===== */
+.week-compare-empty {
+  text-align: center; color: var(--color-text-muted); font-size: 0.85rem; padding: 1.5rem 0;
+}
+.week-compare-grid {
+  display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+}
+.week-compare-arrow {
+  font-size: 1.2rem; color: var(--color-text-muted); flex-shrink: 0;
+}
+.week-card {
+  flex: 1; background: var(--color-surface-warm); border-radius: var(--radius-md);
+  padding: 0.75rem; text-align: center; max-width: 180px;
+}
+.week-card-label {
+  display: block; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem;
+}
+.week-card-stat { margin-bottom: 0.4rem; }
+.week-card-num {
+  font-size: 1.5rem; font-weight: 700; color: var(--color-primary); line-height: 1;
+}
+.week-card-unit { font-size: 0.75rem; color: var(--color-text-muted); margin-left: 2px; }
+.week-card-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.75rem; padding: 0.15rem 0;
+}
+.week-card-sub { color: var(--color-text-muted); }
+.week-card-value { color: var(--color-text); font-weight: 500; }
+.week-compare-insight {
+  text-align: center; font-size: 0.85rem; color: var(--color-text-light);
+  margin-top: 0.75rem; line-height: 1.5;
+}
+
 /* ===== Activity Correlation Chart ===== */
 .correlation-empty {
   text-align: center;

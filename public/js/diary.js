@@ -223,7 +223,10 @@ export async function handleSubmit(e) {
 
     let savedEntry = null;
     if (state.accessToken) {
-      savedEntry = await saveEntry(text, result, activityTags);
+      // AI 추론 태그와 사용자 선택 태그 병합 (중복 제거)
+      const aiTags = Array.isArray(result.activity_tags) ? result.activity_tags : [];
+      const mergedTags = [...new Set([...activityTags, ...aiTags])];
+      savedEntry = await saveEntry(text, result, mergedTags);
     }
 
     // E-10: first_diary_submitted
@@ -794,12 +797,7 @@ function renderPersonalizationBadge(personalization) {
   if (length && LENGTH_LABELS[length] && length !== 'balanced') tags.push(LENGTH_LABELS[length]);
   if (style && STYLE_LABELS[style] && style !== 'balanced') tags.push(STYLE_LABELS[style]);
 
-  if (tags.length === 0) {
-    badge.hidden = true;
-    return;
-  }
-
-  badge.textContent = tags.join(' · ');
+  badge.textContent = tags.length > 0 ? tags.join(' · ') : '기본 마음이';
   badge.hidden = false;
 }
 
@@ -920,6 +918,11 @@ async function requestFollowup(userReply) {
     appendFollowupMessage('ai', aiText);
     _followupState.context.push({ role: 'ai', text: aiText });
 
+    // Context 크기 제한 (최근 10개만 유지)
+    if (_followupState.context.length > 10) {
+      _followupState.context = _followupState.context.slice(-10);
+    }
+
     track('followup_received', { stage, emotion: _followupState.emotion });
 
     // If action stage, complete the conversation
@@ -927,12 +930,34 @@ async function requestFollowup(userReply) {
       _followupState.completed = true;
       inputRow.hidden = true;
 
-      // Show completion UI
+      // Show completion UI with summary
       const completeEl = document.getElementById('followupComplete');
-      if (completeEl) completeEl.hidden = false;
+      if (completeEl) {
+        const turns = _followupState.context.filter(c => c.role === 'user').length;
+        const completeText = completeEl.querySelector('.followup-complete-text');
+        if (completeText) {
+          completeText.textContent = turns > 0
+            ? '오늘 ' + turns + '번의 대화를 나누며 마음을 돌봤어요'
+            : '오늘의 마음 돌봄 대화를 마쳤어요';
+        }
+        completeEl.hidden = false;
+      }
       messages.scrollTop = messages.scrollHeight;
 
       track('followup_completed', { emotion: _followupState.emotion, turns: _followupState.context.length });
+    } else {
+      // 다음 단계: 입력 포커스 + 단계별 플레이스홀더
+      const input = document.getElementById('followupInput');
+      if (input) {
+        const nextStage = FOLLOWUP_STAGE_ORDER[_followupState.currentStageIdx];
+        const placeholders = {
+          explore: '떠오르는 생각을 자유롭게 적어보세요...',
+          insight: '그 마음에 대해 더 이야기해주세요...',
+          action: '어떤 작은 행동을 해볼 수 있을까요?',
+        };
+        input.placeholder = placeholders[nextStage] || '마음이에게 답해보세요...';
+        setTimeout(() => input.focus(), 200);
+      }
     }
   } catch (err) {
     loadingEl.remove();

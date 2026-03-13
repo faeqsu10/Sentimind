@@ -8,22 +8,16 @@ const match = serverCode.match(/function sanitizeString\(str, maxLength = 500\) 
 const sanitizeString = new Function('return ' + match[0])();
 
 describe('sanitizeString', () => {
-  it('escapes HTML tags', () => {
+  it('passes through HTML tags (no escaping)', () => {
     expect(sanitizeString('<script>alert("xss")</script>')).toBe(
-      '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+      '<script>alert("xss")</script>'
     );
   });
 
-  it('escapes double quotes', () => {
-    expect(sanitizeString('He said "hello"')).toContain('&quot;');
-  });
-
-  it('escapes single quotes', () => {
-    expect(sanitizeString("It's a test")).toContain('&#39;');
-  });
-
-  it('escapes ampersands', () => {
-    expect(sanitizeString('A & B')).toBe('A &amp; B');
+  it('passes through special characters unchanged', () => {
+    expect(sanitizeString('He said "hello"')).toBe('He said "hello"');
+    expect(sanitizeString("It's a test")).toBe("It's a test");
+    expect(sanitizeString('A & B')).toBe('A & B');
   });
 
   it('truncates to maxLength', () => {
