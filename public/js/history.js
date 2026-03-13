@@ -1,5 +1,5 @@
 import { state, PAGE_SIZE } from './state.js';
-import { escapeHtml, safeEmoji, emotionColor, getEmotionGroup, debounce, openModalFocus, closeModalFocus, showToast } from './utils.js';
+import { escapeHtml, safeEmojiHtml, emotionColor, getEmotionGroup, debounce, openModalFocus, closeModalFocus, showToast } from './utils.js';
 import { toggleBookmarkAPI, deleteEntryAPI, fetchWithAuth } from './api.js';
 
 // Dependencies injected from app.js
@@ -158,7 +158,7 @@ export function renderHistoryList(entries) {
     return '<li class="history-item' + (isSelected ? ' selected' : '') + '" data-emotion-group="' + emotionGroup + '" data-entry-id="' + entry.id + '" style="animation-delay:' + (idx * 30) + 'ms">' +
       '<input type="checkbox" class="select-check" data-id="' + entry.id + '"' + (isSelected ? ' checked' : '') + ' aria-label="선택">' +
       '<button class="history-item-inner" aria-label="' + escapeHtml(entry.text) + ' 상세보기" data-idx="' + idx + '">' +
-        '<div class="history-emoji" aria-hidden="true">' + safeEmoji(entry.emoji) + '</div>' +
+        '<div class="history-emoji" aria-hidden="true">' + safeEmojiHtml(entry.emoji) + '</div>' +
         '<div class="history-content">' +
           '<p class="history-text">' + escapeHtml(entry.text) + '</p>' +
           '<div class="history-meta">' +

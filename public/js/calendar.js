@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { emotionColor, escapeHtml, safeEmoji, toLocalDateStr, todayLocalStr } from './utils.js';
+import { emotionColor, escapeHtml, safeEmojiHtml, toLocalDateStr, todayLocalStr } from './utils.js';
 
 function buildCalEntryMap() {
   const entryMap = {};
@@ -94,7 +94,7 @@ function showCalDayEntries(dateStr, entries) {
       '<div class="cal-entry-card">' +
         '<p class="cal-entry-text">' + escapeHtml(e.text) + '</p>' +
         '<div class="cal-entry-meta">' +
-          '<span>' + safeEmoji(e.emoji) + '</span>' +
+          '<span>' + safeEmojiHtml(e.emoji) + '</span>' +
           '<span class="cal-entry-emotion">' + escapeHtml(e.emotion || '') + '</span>' +
         '</div>' +
         (e.message ? '<p class="cal-entry-message">' + escapeHtml(e.message) + '</p>' : '') +

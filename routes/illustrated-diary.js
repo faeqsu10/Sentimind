@@ -12,7 +12,6 @@ module.exports = function (deps) {
     optionalAuth,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
-    parseGeminiResponse,
     validateEntryText,
     analyzeLimiter,
     logAiUsage,

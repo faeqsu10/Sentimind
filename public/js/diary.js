@@ -1,5 +1,5 @@
 import { state, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, safeEmoji, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, safeEmoji, safeEmojiHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup, fetchIllustratedDiary } from './api.js';
 import { enqueueOfflineDraft, flushOfflineDraftQueue, getOfflineDraftQueueCount } from './offline-drafts.js';
 import { track } from './analytics.js';
@@ -384,7 +384,7 @@ export function showResponse(result) {
         ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(e.date))
         : '';
       return `<li class="similar-entry-item" tabindex="0" role="button" aria-label="${escapeHtml(e.text)}">
-        <span class="similar-entry-emoji" aria-hidden="true">${safeEmoji(e.emoji)}</span>
+        <span class="similar-entry-emoji" aria-hidden="true">${safeEmojiHtml(e.emoji)}</span>
         <div class="similar-entry-body">
           <p class="similar-entry-text">${escapeHtml(e.text)}</p>
           <p class="similar-entry-date">${escapeHtml(dateStr)}</p>

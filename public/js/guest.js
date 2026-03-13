@@ -1,5 +1,5 @@
 import { state, GUEST_STORAGE_KEY, GUEST_MAX_ENTRIES, GUEST_MAX_DAYS, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, safeEmoji, showError, getEmotionGroup, emotionColor, calculateStreak, toLocalDateStr, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, safeEmoji, safeEmojiHtml, showError, getEmotionGroup, emotionColor, calculateStreak, toLocalDateStr, openModalFocus, closeModalFocus } from './utils.js';
 import { fetchWithAuth, analyzeEmotion, saveEntry, fetchFollowup } from './api.js';
 import { track } from './analytics.js';
 
@@ -95,7 +95,7 @@ function renderDemoHistory(entries) {
   list.innerHTML = entries.map(e => {
     const dateStr = new Date(e.timestamp).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
     return `<li class="demo-history-item">
-      <span class="demo-history-emoji">${safeEmoji(e.emoji, '📝')}</span>
+      <span class="demo-history-emoji">${safeEmojiHtml(e.emoji, '📝')}</span>
       <span class="demo-history-text">${escapeHtml(e.text)}</span>
       <span class="demo-history-date">${dateStr}</span>
     </li>`;

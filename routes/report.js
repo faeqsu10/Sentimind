@@ -13,7 +13,6 @@ module.exports = function (deps) {
     authMiddleware,
     config, GEMINI_API_KEY,
     callGeminiAPI, GeminiAPIError,
-    parseGeminiResponse,
     analyzeLimiter,
     logAiUsage,
   } = deps;

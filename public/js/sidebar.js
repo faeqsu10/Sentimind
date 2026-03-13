@@ -1,5 +1,5 @@
 import { state, STREAK_MILESTONES } from './state.js';
-import { escapeHtml, safeEmoji, emotionColor, getEmotionGroup, showToast, calculateStreak, toLocalDateStr, todayLocalStr } from './utils.js';
+import { escapeHtml, safeEmojiHtml, emotionColor, getEmotionGroup, showToast, calculateStreak, toLocalDateStr, todayLocalStr } from './utils.js';
 import { track } from './analytics.js';
 
 export function updateSidebar() {
@@ -27,7 +27,7 @@ export function updateSidebar() {
 
 function renderSidebarLatestCard(emoji, emotion, message, timeLabel) {
   return '<div class="sidebar-latest">' +
-    '<div class="sidebar-latest-emoji" aria-hidden="true">' + safeEmoji(emoji) + '</div>' +
+    '<div class="sidebar-latest-emoji" aria-hidden="true">' + safeEmojiHtml(emoji) + '</div>' +
     '<p class="sidebar-latest-emotion">' + escapeHtml(emotion || '') + '</p>' +
     '<p class="sidebar-latest-message">' + escapeHtml(message || '') + '</p>' +
     (timeLabel ? '<p class="sidebar-latest-time">' + escapeHtml(timeLabel) + '</p>' : '') +
@@ -72,7 +72,7 @@ function updateSidebarToday(ctx) {
 
   const listItems = todayEntries.slice(0, 5).map(e =>
     '<li class="sidebar-today-item">' +
-      '<span class="sidebar-today-item-emoji">' + safeEmoji(e.emoji) + '</span>' +
+      '<span class="sidebar-today-item-emoji">' + safeEmojiHtml(e.emoji) + '</span>' +
       '<span class="sidebar-today-item-text">' + escapeHtml(e.text || '') + '</span>' +
     '</li>'
   ).join('');
@@ -529,7 +529,7 @@ function updateMemoryCard(ctx) {
   const excerpt = (match.text || '').slice(0, 50) + ((match.text || '').length > 50 ? '…' : '');
   container.innerHTML =
     '<div class="memory-card-inner">' +
-      '<span class="memory-card-emoji" aria-hidden="true">' + safeEmoji(match.emoji) + '</span>' +
+      '<span class="memory-card-emoji" aria-hidden="true">' + safeEmojiHtml(match.emoji) + '</span>' +
       '<div class="memory-card-body">' +
         '<p class="memory-card-emotion">' + escapeHtml(match.emotion || '') + '</p>' +
         '<p class="memory-card-text">' + escapeHtml(excerpt) + '</p>' +
