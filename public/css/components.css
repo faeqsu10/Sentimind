@@ -935,7 +935,7 @@
 .btn-submit svg { width: 16px; height: 16px; }
 
 /* AI Response */
-.ai-response { margin-bottom: 1.5rem; }
+.ai-response { margin-bottom: 1.5rem; transition: min-height 300ms ease; }
 .my-diary-text {
   font-family: var(--font-diary);
   font-size: 0.95rem;

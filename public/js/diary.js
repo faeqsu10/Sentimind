@@ -192,24 +192,32 @@ export async function handleSubmit(e) {
 
   const submitStartTime = Date.now();
   submitBtn.disabled = true;
+
+  const aiSection = responseCard.closest('.ai-response');
+
+  // 레이아웃 시프트 방지: 자식 요소 숨기기 전에 ai-response 높이 잠금
+  if (aiSection && aiSection.offsetHeight > 0) {
+    aiSection.style.minHeight = aiSection.offsetHeight + 'px';
+  }
+
   responseCard.hidden = true;
   document.getElementById('feedbackSection').hidden = true;
   document.getElementById('retentionCard').hidden = true;
   document.documentElement.removeAttribute('data-emotion-theme');
   document.getElementById('similarEntries').hidden = true;
-  const aiSection = responseCard.closest('.ai-response');
   if (aiSection) aiSection.setAttribute('aria-busy', 'true');
   showSkeleton('analyze');
+
+  // 레이아웃 시프트 방지: textarea 높이를 고정한 채 내용만 클리어
+  const lockedHeight = diaryText.offsetHeight;
+  diaryText.value = '';
+  if (lockedHeight > 0) diaryText.style.height = lockedHeight + 'px';
+  charCount.textContent = '';
+  clearActivityTags();
 
   try {
     const result = await analyzeEmotion(text);
     state._lastDiaryText = text;
-
-    // 텍스트 영역 먼저 정리 (레이아웃 시프트 방지: 응답 카드 표시 전에 높이 안정화)
-    diaryText.value = '';
-    diaryText.style.height = 'auto';
-    charCount.textContent = '';
-    clearActivityTags();
 
     showResponse(result);
 
@@ -243,7 +251,11 @@ export async function handleSubmit(e) {
     showError(err.userMessage || '지금 마음을 읽기 어려운 상황이에요. 잠시 후 다시 이야기해주세요.');
   } finally {
     hideSkeleton('analyze');
-    if (aiSection) aiSection.removeAttribute('aria-busy');
+    if (aiSection) {
+      aiSection.removeAttribute('aria-busy');
+      aiSection.style.minHeight = '';
+    }
+    diaryText.style.height = 'auto';
     submitBtn.disabled = diaryText.value.trim().length === 0;
   }
 }
