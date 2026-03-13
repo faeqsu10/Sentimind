@@ -1,562 +1,134 @@
-# Sentimind - AI 공감 다이어리
-
-당신의 감정을 AI가 이해해주는 하루 한 줄 다이어리 앱
-
-**Live**: https://senti-mind.com | **GitHub**: https://github.com/faeqsu10/Sentimind
-
-## 🎯 개요
-
-**Sentimind**는 Google Gemini 2.5 Flash를 활용하여 사용자의 감정을 분석하고 공감/위로 메시지를 제공하는 AI 다이어리 애플리케이션입니다.
-
-- 👋 한 줄 일기 작성 (2000자 이내)
-- 🧠 AI가 당신의 감정을 분석
-- 💬 따뜻한 위로 메시지 받기
-- 📊 감정 통계 및 트렌드 추적
-- 🔍 일기 검색 및 필터링
-- 👤 게스트 모드 (회원가입 없이 10회 체험)
-
-## 🛠 기술 스택
-
-### 백엔드
-- **Runtime**: Node.js 20+
-- **Framework**: Express.js 5.x
-- **AI API**: Google Gemini 2.5 Flash
-- **데이터베이스**: Supabase PostgreSQL (클라우드 기반 RLS 정책)
-- **인증**: Supabase Auth (JWT 기반)
-- **배포**: Vercel (Serverless)
-
-### 프론트엔드
-- **구조**: `public/index.html` + `public/js/*.js` ES 모듈 + `public/css/*.css`
-- **스타일**: CSS Grid/Flexbox (반응형, 다크모드 지원)
-- **폰트**: Google Fonts (Gowun Batang 일기, Gowun Dodum UI)
-- **상태 관리**: 인증 상태는 서버+localStorage 혼합, 게스트 데이터는 Supabase Anonymous Auth(DB 저장, localStorage 폴백)
-- **PWA**: Service Worker (설치 가능, 일부 요청 오프라인 큐잉)
-
-### 온톨로지
-- **감정 분류**: 3단계 계층 (30개 세부 감정)
-- **상황 분석**: 5개 도메인 (17개 컨텍스트)
-- **신뢰도 계산**: Gemini 모델 기반 확률
-
-## 📁 프로젝트 구조
-
-```
-Sentimind/
-├── server-v2.js                 # Express 서버 코어 (미들웨어, 설정, 유틸)
-├── routes/
-│   ├── auth.js                 # 인증 (회원가입/로그인/탈퇴)
-│   ├── entries.js              # 일기 CRUD + 북마크 + 내보내기
-│   ├── analyze.js              # AI 감정 분석
-│   ├── profile.js              # 프로필 관리
-│   ├── stats.js                # 통계 조회 (기간 필터)
-│   ├── report.js               # AI 리포트 생성
-│   ├── migrate.js              # 게스트→회원 데이터 마이그레이션
-│   ├── analytics.js            # 이벤트 트래킹 수집
-│   └── emotion-graph.js        # 감정 별자리 그래프 API
-├── config/
-│   ├── llm-config.js           # Gemini API 설정 (모델, 프롬프트)
-│   ├── ai-personalization.js   # AI 페르소나/톤 프리셋 (8종)
-│   └── supabase-config.js      # Supabase 클라이언트 & 설정
-├── lib/
-│   ├── auth-middleware.js      # JWT 인증 미들웨어
-│   └── validators.js           # 입력 검증 유틸리티
-├── migrations/                 # Supabase 마이그레이션 (001~024)
-├── public/
-│   ├── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
-│   ├── sw.js                   # Service Worker (오프라인 동기화)
-│   └── manifest.json           # PWA 매니페스트
-├── data/
-│   ├── emotion-ontology.json   # 감정 분류 체계
-│   └── situation-ontology.json # 상황 분석 도메인
-├── docs/                       # 기술 문서
-│   ├── ARCHITECTURE.md         # 시스템 아키텍처
-│   ├── DATABASE.md             # Supabase 스키마 & RLS
-│   ├── API.md                  # API 엔드포인트 참조
-│   └── DEPLOYMENT.md           # 배포 가이드
-├── guides/                     # 개발 가이드
-│   ├── SETUP.md                # 로컬 환경 설정
-│   ├── TEAM_WORKFLOW.md        # 팀 협업 프로세스
-│   ├── TROUBLESHOOTING.md      # 문제 해결
-│   └── COMMIT_CONVENTION.md    # 커밋 메시지 규칙
-├── plans/                      # 프로젝트 계획
-│   ├── PHASE5.md               # Phase 5 완료 내역
-│   └── ROADMAP.md              # 전체 로드맵
-├── package.json                # 의존성
-├── vercel.json                 # Vercel 배포 설정
-├── .env.example                # 환경변수 템플릿
-├── CLAUDE.md                   # 개발 원칙 & 기술 결정사항
-└── README.md                   # 본 파일
-```
-
-## 🚀 시작하기
-
-### 사전 요구사항
-- Node.js 20+
-- Google Gemini API 키 (https://console.cloud.google.com)
-- Supabase 계정 (선택, 게스트 모드는 지원됨)
-
-### 로컬 설치
-
-1. **저장소 클론**
-   ```bash
-   git clone https://github.com/faeqsu10/Sentimind.git
-   cd Sentimind
-   ```
-
-2. **의존성 설치**
-   ```bash
-   npm install
-   ```
-
-3. **환경 변수 설정**
-   ```bash
-   cp .env.example .env
-   ```
-
-   `.env` 파일에 다음을 추가합니다:
-   ```
-   # 필수
-   GOOGLE_API_KEY=your_gemini_api_key_here
-
-   # Supabase (회원 기능 사용 시)
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-   # 선택사항
-   PORT=3000
-   CORS_ORIGINS=http://localhost:3000,https://sentimind-delta.vercel.app
-   ```
-
-4. **서버 실행**
-   ```bash
-   npm start
-   ```
-
-   또는 개발 모드 (자동 재시작):
-   ```bash
-   npm run dev
-   ```
-
-5. **브라우저에서 접속**
-   ```
-   http://localhost:3000
-   ```
-
-## 📖 주요 기능
-
-### 1. 감정 분석
-- Gemini AI가 한 줄 일기에서 주요 감정을 추출
-- 3단계 감정 계층 표시 (예: 긍정 → 기쁨 → 설렘)
-- 신뢰도 배지 (70%+ 초록, 40-70% 주황, <40% 빨강)
-
-### 2. 공감 메시지 & AI 개인화
-- 자동 생성된 따뜻한 위로 메시지 (2-3문장)
-- 간단한 행동 제안 (1문장)
-- 사용자의 감정을 있는 그대로 인정
-- **AI 말투 4종**: 따뜻한 위로 / 전문 상담 / 다정한 친구 / 감성 시인
-- **대화 스타일 8종**: 기본 마음이, 따뜻한 친구, 차분한 코치, 담백한 정리, 밝은 응원단, 지혜로운 어른, 유쾌한 동료, 마음챙김 안내자
-- **응답 길이/조언 강도** 조절 가능
-
-### 3. 상황 인식
-- 5가지 생활 도메인 자동 감지
-  - 🏠 대인관계 (가족, 연애, 친구)
-  - 💼 직장 (프로젝트, 회의, 경력)
-  - 📚 학업 (시험, 숙제, 성적)
-  - 🏥 건강 (질병, 운동, 수면)
-  - 🪞 자기반성 (목표, 성장, 가치관)
-
-### 4. 게스트 모드 (Anonymous Auth)
-- 회원가입 없이 AI 분석 10회 체험
-- Supabase Anonymous Auth로 게스트 일기도 DB에 저장 (브라우저 초기화해도 유지)
-- 회원가입 시 동일 user_id 유지 — 별도 마이그레이션 없이 데이터 자동 이어짐
-- Anonymous Auth 실패 시 localStorage 폴백
-
-### 5. 통계 대시보드
-- 📊 감정 분포 (상위 5개)
-- 📈 기간별 필터 (1주/1개월/3개월/전체)
-- 🕐 시간대별 감정 분석
-- 📊 상황별 빈도
-- 🎯 스트릭 뱃지 및 캘린더 히트맵
-- ⭐ 마음의 별자리 — 감정 그래프 시각화 (SVG, 힘 기반 레이아웃)
-
-### 6. 검색 및 필터
-- 🔎 텍스트 검색 (일기 내용)
-- 💭 감정별 다중 필터
-- ⭐ 즐겨찾기 (북마크)
-- 📋 실시간 결과 업데이트
-
-### 7. PWA & 오프라인 지원
-- 📱 PWA 설치 가능 (홈 화면 추가)
-- 📴 오프라인 제출 시 일기 초안 임시 저장, 온라인 복귀 시 자동 분석/저장
-- ⌨️ 키보드 단축키
-  - `Ctrl+Enter`: 일기 전송
-  - `Ctrl+1~4`: 탭 전환
-  - `Ctrl+D`: 다크모드 토글
-
-### 8. 보안
-- 🔐 Supabase Auth (JWT 인증, RLS 정책으로 사용자별 데이터 격리)
-- 🛡️ CSP 보안 헤더 (Helmet — script-src, style-src, connect-src 제한)
-- 🔒 에러 메시지에서 내부 정보 제거 (스택 트레이스, DB 구조 미노출)
-- ⏱️ Rate limiting (회원가입, 로그인, 분석 API별 분리)
-- 🔑 API 키/시크릿은 서버 환경변수에서만 관리 (프론트엔드 미노출)
-- 🧹 XSS 방지: escapeHtml (quote 포함) + safeEmoji 유틸
-- 🔄 Anonymous Auth: 게스트도 RLS 적용, 10건 엔트리 제한 (서버 강제)
-- 🚫 express.static은 public/ 디렉토리만 서빙 (server.js, .env, data/ 접근 차단)
-
-### 9. 그림일기 3컷 카드
-- 일기 텍스트를 Gemini AI가 3개의 장면으로 분해
-- 각 패널마다 캡션, 분위기(mood), 이모지 포함
-- 게스트/로그인 사용자 모두 이용 가능
-
-### 10. 데이터 관리
-- 📤 CSV/JSON 내보내기
-- 🔄 게스트→회원 데이터 마이그레이션
-- 🗑️ Soft delete (복구 가능)
-- 🎯 신규 사용자 온보딩 플로우
-- 📊 이벤트 트래킹 (10개 핵심 이벤트, 배치 전송, sendBeacon)
-
-### 11. 일기 수정
-- ✏️ 히스토리 상세에서 일기 텍스트 수정 가능
-- 감정, 메시지도 함께 수정 지원
-
-### 12. AI 사용량 추적
-- 📊 모든 Gemini API 호출의 토큰/비용 DB 로깅
-- ai_usage_logs 테이블로 사용량 기록
-- fire-and-forget 방식의 비동기 로깅
-
-## 🔌 API 엔드포인트
-
-### 인증 (선택 항목, 게스트 모드 지원)
-
-```bash
-# 회원가입
-POST /api/auth/signup
-{"email": "user@example.com", "password": "password123"}
-
-# 로그인
-POST /api/auth/login
-{"email": "user@example.com", "password": "password123"}
-
-# 로그아웃
-POST /api/auth/logout
-Authorization: Bearer {token}
-
-# 토큰 갱신
-POST /api/auth/refresh
-{"refresh_token": "token"}
-
-# 현재 사용자 정보
-GET /api/auth/me
-Authorization: Bearer {token}
-
-# 비밀번호 변경
-PUT /api/auth/password
-Authorization: Bearer {token}
-{"currentPassword": "old", "newPassword": "new"}
-
-# 익명 로그인 (게스트 체험)
-POST /api/auth/anonymous
-
-# 익명→정식 회원 전환
-POST /api/auth/link-account
-Authorization: Bearer {anonymous_token}
-{"email": "user@example.com", "password": "password123"}
-
-# 계정 삭제
-DELETE /api/auth/account
-Authorization: Bearer {token}
-```
-
-### 감정 분석 (게스트 지원)
-
-```bash
-POST /api/analyze
-Content-Type: application/json
-
-{"text": "오늘 회의 발표 성공했어!"}
-
-응답:
-{
-  "emotion": "설렘",
-  "emoji": "🤭",
-  "message": "좋은 결과가 있어서 설레이는 마음이 잘 느껴져요...",
-  "advice": "이런 성취감을 기억하고 다음 도전에도 자신감을 가져보세요.",
-  "ontology": {
-    "emotion_hierarchy": {...},
-    "situation_context": [...],
-    "confidence": 80,
-    "related_emotions": [...]
-  }
-}
-```
-
-### 일기 관리 (인증 필수)
-
-```bash
-# 일기 조회
-GET /api/entries?limit=20&offset=0&sort=newest
-Authorization: Bearer {token}
-
-# 일기 작성
-POST /api/entries
-Authorization: Bearer {token}
-{
-  "text": "오늘 회의 발표 성공했어!",
-  "emotion": "설렘",
-  "emoji": "🤭",
-  "message": "...",
-  "advice": "..."
-}
-
-# 일기 삭제
-DELETE /api/entries/:id
-Authorization: Bearer {token}
-
-# 즐겨찾기 (북마크)
-PATCH /api/entries/:id
-Authorization: Bearer {token}
-{"is_bookmarked": true}
-```
-
-### 통계 (인증 필수)
-
-```bash
-GET /api/stats?period=30d
-# 게스트 모드에서도 호출 가능
-
-응답:
-{
-  "total_entries": 42,
-  "avg_confidence": 75,
-  "emotion_distribution": {...},
-  "top_emotions": [...],
-  "top_situations": [...],
-  "period": "30d",
-  "streak": 7
-}
-```
-
-### 리포트 (인증 필수)
-
-```bash
-# 리포트 생성 (DB 캐시, 동일 기간 재요청 시 즉시 반환)
-GET /api/report?period=weekly
-Authorization: Bearer {token}
-
-# 지난 리포트 목록 조회
-GET /api/reports?period=weekly&limit=10&offset=0
-Authorization: Bearer {token}
-
-# 리포트 삭제
-DELETE /api/reports/:id
-Authorization: Bearer {token}
-```
-
-### 프로필 (인증 필수)
-
-```bash
-GET /api/profile
-Authorization: Bearer {token}
-
-PATCH /api/profile
-Authorization: Bearer {token}
-{
-  "nickname": "새닉",
-  "ai_tone": "friendly",
-  "persona_preset": "cheerful_supporter",
-  "response_length": "detailed",
-  "advice_style": "actionable"
-}
-```
-
-### 데이터 내보내기 (인증 필수)
-
-```bash
-GET /api/export?format=csv
-Authorization: Bearer {token}
-
-# 또는 format=json
-```
-
-### 게스트→회원 마이그레이션 (인증 필수)
-
-```bash
-POST /api/migrate/from-guest
-Authorization: Bearer {token}
-{
-  "entries": [
-    {
-      "text": "게스트로 작성한 일기",
-      "emotion": "기쁨",
-      "emoji": "😊",
-      "message": "좋은 하루네요",
-      "advice": "이 감정을 기억해보세요",
-      "date": "2026-03-11T00:00:00.000Z"
-    }
-  ]
-}
-```
-
-### 이벤트 트래킹 (인증 불필요)
-
-```bash
-POST /api/analytics
-Content-Type: application/json
-{"events": [{"event": "landing_viewed", "session_id": "uuid", ...}]}
-# 응답: {"accepted": 1}
-```
-
-## 📊 개발 진행 상황
-
-| Phase | 이름 | 상태 | 완료일 |
-|-------|------|------|--------|
-| 1-3 | 온톨로지 백엔드 통합 | ✅ 완료 | 2026-02-28 |
-| 4 | UI/UX 개선 | ✅ 완료 | 2026-03-04 |
-| 5 | Supabase 마이그레이션 | ✅ 완료 | 2026-03-05 |
-| 6 | 인증 & 사용자 시스템 | ✅ 완료 | 2026-03-06 |
-| 5A | 게스트 모드 & UX 개선 | ✅ 완료 | 2026-03-06 |
-| 7-9 | 성장 분석, 리포트, 별자리 | ✅ 완료 | 2026-03-11 |
-| 10 | 사용자 피드백 반영 | ✅ 완료 | 2026-03-12 |
-| 11 | Anonymous Auth & 페르소나 확장 | ✅ 완료 | 2026-03-13 |
-
-## 📝 환경 변수
-
-### 필수
-- `GOOGLE_API_KEY`: Google Gemini API 키
-
-### Supabase (인증/회원 기능)
-- `SUPABASE_URL`: Supabase 프로젝트 URL
-- `SUPABASE_ANON_KEY`: Supabase 익명 키 (클라이언트용)
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase 서비스 역할 키 (서버용, .env에만)
-
-### 배포 (Vercel)
-- `SITE_URL`: 프로덕션 URL (이메일 리다이렉트용)
-
-### 선택사항
-- `PORT`: 서버 포트 (기본값: 3000)
-- `CORS_ORIGINS`: CORS 허용 도메인 (쉼표 구분)
-- `NODE_ENV`: 실행 환경 (development/production)
-- `ANON_MAX_ENTRIES`: 익명 사용자 엔트리 제한 (기본값: 10)
-- `SLOW_REQUEST_MS`: 느린 요청 경고 임계값 (기본값: 3000ms)
-
-**주의**: `.env` 파일은 `.gitignore`에 포함되어 있습니다. API 키와 시크릿은 절대 커밋하지 마세요.
-
-## 🧪 테스트
-
-### 기본 헬스 체크
-```bash
-curl -s http://localhost:3000/api/health
-```
-
-### 감정 분석 테스트 (게스트 가능)
-```bash
-curl -X POST http://localhost:3000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"text": "오늘 정말 좋은 날씨네!"}'
-```
-
-### 인증 후 API 호출
-```bash
-# 로그인 후 반환된 access_token으로 인증 요청
-curl http://localhost:3000/api/entries \
-  -H "Authorization: Bearer {access_token}"
-```
-
-## 🔐 보안 기능
-
-### 인증 & 인가
-- **Supabase Auth**: JWT 기반 인증 (access_token + refresh_token)
-- **RLS (Row-Level Security)**: 모든 테이블에 사용자별 데이터 격리 정책 적용
-- **Anonymous Auth**: 게스트도 DB 수준 RLS 적용, 서버에서 10건 엔트리 제한 강제
-- **서비스 역할 키**: analytics 등 관리 작업에만 사용, 프론트엔드에 절대 미노출
-
-### Rate Limiting
-- **회원가입**: 5회/15분 (IP당)
-- **로그인**: 10회/15분 (IP당)
-- **분석 API**: 30회/1시간 (IP당)
-- **익명 로그인**: 30회/시간 (IP당, Supabase 설정)
-
-### 입력 검증
-- 이메일: RFC 5322 형식 검증
-- 비밀번호: 최소 6자
-- 일기: 최대 2000자, 빈 문자열 검증
-- 닉네임: 한글/영문/숫자, 1-20자
-- AI 설정: 허용된 값만 CHECK 제약으로 강제 (DB + 서버 이중 검증)
-
-### XSS 방지
-- `escapeHtml()`: HTML 특수문자 + quote 이스케이프
-- `safeEmoji()`: DB 텍스트 값 안전 처리 (영문 텍스트 → 폴백 이모지)
-- CSP 헤더 (Helmet): script-src, style-src, connect-src 제한
-- 인라인 스크립트 금지
-
-### 데이터 보호
-- `.env` 파일 gitignore (API 키, DB 시크릿)
-- `express.static`은 `public/`만 서빙 (server.js, .env, routes/ 접근 불가)
-- Soft delete: 데이터 완전 삭제 대신 `deleted_at` 타임스탬프
-- CORS: 허용된 origin만 접근 가능
-- 에러 응답에 내부 구조 미포함 (스택 트레이스, DB 스키마 등)
-
-## 🐛 알려진 이슈
-
-없음
-
-## 🎯 성과
-
-| 지표 | 목표 | 현황 |
+# Sentimind
+
+한 줄 일기를 쓰면 AI가 당신의 감정을 읽어주는 다이어리
+
+[![Deploy](https://img.shields.io/badge/Vercel-deployed-brightgreen)](https://sentimind-delta.vercel.app)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933)](https://nodejs.org)
+[![License](https://img.shields.io/badge/License-ISC-blue)](LICENSE)
+
+[**지금 체험하기** (회원가입 없이 가능)](https://sentimind-delta.vercel.app)
+
+<p align="center">
+  <img src="docs/images/diary.png" alt="Sentimind 메인 화면" width="800">
+</p>
+
+## 소개
+
+Sentimind는 하루를 한 줄로 기록하면 Google Gemini AI가 감정을 분석하고, 따뜻한 공감 메시지를 건네는 감정 다이어리입니다. 30가지 세부 감정을 3단계 계층으로 분류하고, 5가지 생활 도메인의 상황을 자동으로 인식합니다. 회원가입 없이도 즉시 체험할 수 있습니다.
+
+## 핵심 기능
+
+| 기능 | 설명 |
+|------|------|
+| **AI 감정 분석** | Gemini 2.5 Flash 기반 3단계 감정 계층 분류 + 5가지 생활 도메인 상황 인식 |
+| **AI 페르소나** | 8종 대화 스타일 (따뜻한 친구, 차분한 코치, 감성 시인 등), 응답 길이/강도 조절 |
+| **감정 달력 & 스트릭** | 히트맵 캘린더로 감정 흐름 시각화, 연속 기록 뱃지 시스템 |
+| **마음의 별자리** | 감정 온톨로지 기반 SVG 그래프 시각화 (힘 기반 레이아웃, 6종 별자리 패턴) |
+| **게스트 모드** | Anonymous Auth로 회원가입 없이 10회 체험, DB 저장, 가입 시 데이터 자동 이어짐 |
+| **PWA & 오프라인** | Service Worker 기반 설치 가능 앱, 오프라인 일기 작성 후 자동 동기화 |
+
+그 외: 3컷 그림일기, AI 주간/월간 리포트, 감정 검색/필터, CSV/JSON 내보내기, 다크 모드, 키보드 단축키
+
+## 스크린샷
+
+<table>
+  <tr>
+    <td><img src="docs/images/diary.png" alt="일기 작성" width="400"></td>
+    <td><img src="docs/images/calendar.png" alt="감정 달력" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">일기 작성 & 히스토리</td>
+    <td align="center">감정 달력 히트맵</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/stats.png" alt="통계 대시보드" width="400"></td>
+    <td><img src="docs/images/profile.png" alt="프로필 설정" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">통계 대시보드</td>
+    <td align="center">프로필 & AI 개인화</td>
+  </tr>
+</table>
+
+## 기술 스택
+
+| 영역 | 기술 | 비고 |
 |------|------|------|
-| 기능 완성도 | 100% | ✅ 완료 |
-| API 테스트 | 15/15 | ✅ 완료 |
-| 온톨로지 통합 | 100% | ✅ 완료 |
-| 인증 시스템 | 100% | ✅ 완료 |
-| 게스트 모드 | 100% | ✅ 완료 |
-| Vercel 배포 | 성공 | ✅ 완료 |
+| Backend | Node.js 20+ / Express 5 | 9개 모듈화된 라우트 파일 |
+| Database | Supabase PostgreSQL | RLS로 사용자별 데이터 격리 |
+| AI | Google Gemini 2.5 Flash | 감정 분석, 리포트, 그림일기 생성 |
+| Auth | Supabase Auth + Anonymous Auth | JWT 인증, 게스트 → 회원 자동 전환 |
+| Frontend | Vanilla JS ES Modules | 프레임워크 없이 16개 모듈 구조 |
+| Style | CSS Grid/Flexbox | 반응형, 다크 모드, Gowun 폰트 |
+| Deploy | Vercel (Serverless) | CI/CD 자동 배포 |
 
-## 📈 다음 단계
+## 아키텍처
 
-### 계획 중 (Phase 7+)
-- Next.js 마이그레이션 (TypeScript 타입 안정성)
-- 실시간 알림 (Supabase Realtime)
-- 모바일 앱 (React Native)
-- 데이터 분석 대시보드 (고급 통계)
+```
+Browser (16 ES Modules)  ──fetch──▸  Express 5 (9 Routes)  ──API──▸  Google Gemini 2.5 Flash
+         │                                  │
+    Service Worker                   Supabase PostgreSQL
+   (오프라인 큐잉)                    (RLS, 24 migrations)
+```
 
-자세한 로드맵은 [plans/ROADMAP.md](./plans/ROADMAP.md) 참고.
+프론트엔드는 프레임워크 없이 ES Module로 구성되어 있으며, `state.js`의 공유 상태 객체와 dependency injection 패턴으로 모듈 간 순환 의존성을 방지합니다. 백엔드는 `server-v2.js` 코어에서 9개 라우트 모듈을 마운트하는 구조입니다.
 
-## 📚 문서 링크
+상세 아키텍처는 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)에서 확인할 수 있습니다.
 
-### 기술 문서
-- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) - 시스템 아키텍처 및 데이터 흐름
-- [docs/DATABASE.md](./docs/DATABASE.md) - Supabase 스키마, RLS, 마이그레이션 전략
-- [docs/API.md](./docs/API.md) - 모든 API 엔드포인트 참조 및 예시
-- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) - 로컬/Vercel 배포 가이드
+## 시작하기
 
-### 개발 가이드
-- [guides/SETUP.md](./guides/SETUP.md) - 로컬 개발 환경 설정 (5분)
-- [guides/TEAM_WORKFLOW.md](./guides/TEAM_WORKFLOW.md) - 팀 협업 프로세스 및 PR 규칙
-- [guides/TROUBLESHOOTING.md](./guides/TROUBLESHOOTING.md) - 일반적인 문제 해결
-- [guides/COMMIT_CONVENTION.md](./guides/COMMIT_CONVENTION.md) - 커밋 메시지 컨벤션
+```bash
+git clone https://github.com/faeqsu10/Sentimind.git
+cd Sentimind
+npm install
+cp .env.example .env   # GOOGLE_API_KEY, SUPABASE_* 설정
+npm start              # http://localhost:3000
+```
 
-### 계획 & 로드맵
-- [plans/PHASE5.md](./plans/PHASE5.md) - Phase 5 완료 내역
-- [plans/ROADMAP.md](./plans/ROADMAP.md) - 전체 프로젝트 로드맵 (Phase 7+)
-- [CLAUDE.md](./CLAUDE.md) - 개발 원칙 및 기술 결정사항
+**필수 환경변수**: `GOOGLE_API_KEY` (Gemini API), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
-## 🔗 외부 링크
+상세 설정은 [guides/SETUP.md](./guides/SETUP.md) 참고.
 
-- **GitHub**: https://github.com/faeqsu10/Sentimind
-- **Live Demo**: https://sentimind-delta.vercel.app
-- **Google Gemini API**: https://ai.google.dev/
+## 프로젝트 구조
 
-## 👥 기여
+```
+server-v2.js            Express 서버 코어 (미들웨어, 설정)
+routes/                 API 라우트 모듈 9개 (auth, entries, analyze, stats, report ...)
+config/                 Gemini API, Supabase, AI 페르소나 프리셋 설정
+lib/                    인증 미들웨어, 입력 검증, DB 유틸리티
+public/js/              프론트엔드 ES 모듈 16개
+public/css/             스타일시트 4개 (다크 모드 포함)
+migrations/             Supabase 마이그레이션 (001-024)
+data/                   감정/상황 온톨로지 JSON
+```
 
-이 프로젝트는 개인 프로젝트입니다. 코드 리뷰 및 피드백은 언제든 환영합니다.
+## 기술적 결정
 
-GitHub Issues에서 버그 리포트 및 기능 요청을 받습니다.
+이 프로젝트에서 내린 주요 설계 판단과 그 이유입니다.
 
-## 📄 라이센스
+**Gemini 2.5 Flash `thinkingBudget: 0`** — Thinking 토큰이 출력 토큰 할당량을 소진하는 문제가 있어, 분석 응답에서 thinking을 비활성화합니다. 이로써 안정적인 JSON 응답을 보장합니다.
 
-ISC License - [LICENSE](LICENSE) 파일 참고
+**Anonymous Auth + RLS** — 게스트 사용자에게도 Supabase Anonymous Auth를 통해 실제 DB 저장과 Row-Level Security를 적용합니다. 회원가입 시 `linkAccount`로 동일 user_id가 유지되어 데이터 마이그레이션이 불필요합니다.
+
+**Vanilla JS ES Modules (프레임워크 없음)** — React/Vue 없이 16개 모듈로 구성하여 DOM 조작, 상태 관리, 모듈 아키텍처를 프레임워크 추상화 없이 직접 구현했습니다. 순환 의존성은 dependency injection 패턴으로 해결합니다.
+
+**3단계 감정 온톨로지** — 30가지 세부 감정을 3단계 계층으로 분류하고, 5개 생활 도메인(대인관계, 직장, 학업, 건강, 자기반성)의 17개 상황 컨텍스트와 매핑합니다. Gemini가 이 구조화된 스키마에 맞춰 분석 결과를 반환합니다.
+
+**safeEmoji / safeEmojiHtml 분리** — DB에 텍스트로 저장된 이모지 값의 XSS를 방지하기 위해, `textContent` 용 `safeEmoji()`와 `innerHTML` 용 `safeEmojiHtml()`을 분리합니다. 출력 인코딩은 호출 지점에서 결정합니다.
+
+## 문서
+
+| 문서 | 내용 |
+|------|------|
+| [Architecture](./docs/ARCHITECTURE.md) | 시스템 아키텍처 및 데이터 흐름 |
+| [API Reference](./docs/API.md) | 모든 API 엔드포인트 참조 및 예시 |
+| [Database](./docs/DATABASE.md) | Supabase 스키마, RLS, 마이그레이션 |
+| [Deployment](./docs/DEPLOYMENT.md) | 로컬/Vercel 배포 가이드 |
+
+## 라이센스
+
+ISC License - [LICENSE](LICENSE) 참고
 
 ---
 
-**마지막 업데이트**: 2026-03-13
-**현재 상태**: Phase 11 완료, Vercel 배포 중 ✅
+Built with [Google Gemini](https://ai.google.dev/), [Supabase](https://supabase.com/), [Express](https://expressjs.com/)
