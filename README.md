@@ -54,11 +54,12 @@ Sentimind/
 │   └── emotion-graph.js        # 감정 별자리 그래프 API
 ├── config/
 │   ├── llm-config.js           # Gemini API 설정 (모델, 프롬프트)
+│   ├── ai-personalization.js   # AI 페르소나/톤 프리셋 (8종)
 │   └── supabase-config.js      # Supabase 클라이언트 & 설정
 ├── lib/
 │   ├── auth-middleware.js      # JWT 인증 미들웨어
 │   └── validators.js           # 입력 검증 유틸리티
-├── migrations/                 # Supabase 마이그레이션 (001~019)
+├── migrations/                 # Supabase 마이그레이션 (001~024)
 ├── public/
 │   ├── index.html              # 단일 프론트엔드 (CSS/JS 인라인)
 │   ├── sw.js                   # Service Worker (오프라인 동기화)
@@ -79,7 +80,6 @@ Sentimind/
 ├── plans/                      # 프로젝트 계획
 │   ├── PHASE5.md               # Phase 5 완료 내역
 │   └── ROADMAP.md              # 전체 로드맵
-├── logs/                       # 서버 로그 (자동 생성)
 ├── package.json                # 의존성
 ├── vercel.json                 # Vercel 배포 설정
 ├── .env.example                # 환경변수 템플릿
@@ -149,10 +149,13 @@ Sentimind/
 - 3단계 감정 계층 표시 (예: 긍정 → 기쁨 → 설렘)
 - 신뢰도 배지 (70%+ 초록, 40-70% 주황, <40% 빨강)
 
-### 2. 공감 메시지
+### 2. 공감 메시지 & AI 개인화
 - 자동 생성된 따뜻한 위로 메시지 (2-3문장)
 - 간단한 행동 제안 (1문장)
 - 사용자의 감정을 있는 그대로 인정
+- **AI 말투 4종**: 따뜻한 위로 / 전문 상담 / 다정한 친구 / 감성 시인
+- **대화 스타일 8종**: 기본 마음이, 따뜻한 친구, 차분한 코치, 담백한 정리, 밝은 응원단, 지혜로운 어른, 유쾌한 동료, 마음챙김 안내자
+- **응답 길이/조언 강도** 조절 가능
 
 ### 3. 상황 인식
 - 5가지 생활 도메인 자동 감지
@@ -191,10 +194,14 @@ Sentimind/
   - `Ctrl+D`: 다크모드 토글
 
 ### 8. 보안
-- 🔐 Supabase Auth (JWT 인증, RLS 정책)
-- 🛡️ CSP 보안 헤더 (Helmet)
-- 🔒 에러 메시지에서 내부 정보 제거
+- 🔐 Supabase Auth (JWT 인증, RLS 정책으로 사용자별 데이터 격리)
+- 🛡️ CSP 보안 헤더 (Helmet — script-src, style-src, connect-src 제한)
+- 🔒 에러 메시지에서 내부 정보 제거 (스택 트레이스, DB 구조 미노출)
 - ⏱️ Rate limiting (회원가입, 로그인, 분석 API별 분리)
+- 🔑 API 키/시크릿은 서버 환경변수에서만 관리 (프론트엔드 미노출)
+- 🧹 XSS 방지: escapeHtml (quote 포함) + safeEmoji 유틸
+- 🔄 Anonymous Auth: 게스트도 RLS 적용, 10건 엔트리 제한 (서버 강제)
+- 🚫 express.static은 public/ 디렉토리만 서빙 (server.js, .env, data/ 접근 차단)
 
 ### 9. 그림일기 3컷 카드
 - 일기 텍스트를 Gemini AI가 3개의 장면으로 분해
@@ -332,18 +339,17 @@ GET /api/stats?period=30d
 ### 리포트 (인증 필수)
 
 ```bash
+# 리포트 생성 (DB 캐시, 동일 기간 재요청 시 즉시 반환)
 GET /api/report?period=weekly
 Authorization: Bearer {token}
 
-응답:
-{
-  "period": "weekly",
-  "entryCount": 7,
-  "summary": "이번 주 감정 요약...",
-  "emotionTrend": "감정 흐름 요약...",
-  "insight": "패턴 인사이트...",
-  "encouragement": "따뜻한 격려 메시지..."
-}
+# 지난 리포트 목록 조회
+GET /api/reports?period=weekly&limit=10&offset=0
+Authorization: Bearer {token}
+
+# 리포트 삭제
+DELETE /api/reports/:id
+Authorization: Bearer {token}
 ```
 
 ### 프로필 (인증 필수)
@@ -354,7 +360,13 @@ Authorization: Bearer {token}
 
 PATCH /api/profile
 Authorization: Bearer {token}
-{"nickname": "새닉", "bio": "공감하는 일상", "theme": "dark"}
+{
+  "nickname": "새닉",
+  "ai_tone": "friendly",
+  "persona_preset": "cheerful_supporter",
+  "response_length": "detailed",
+  "advice_style": "actionable"
+}
 ```
 
 ### 데이터 내보내기 (인증 필수)
@@ -403,6 +415,9 @@ Content-Type: application/json
 | 5 | Supabase 마이그레이션 | ✅ 완료 | 2026-03-05 |
 | 6 | 인증 & 사용자 시스템 | ✅ 완료 | 2026-03-06 |
 | 5A | 게스트 모드 & UX 개선 | ✅ 완료 | 2026-03-06 |
+| 7-9 | 성장 분석, 리포트, 별자리 | ✅ 완료 | 2026-03-11 |
+| 10 | 사용자 피드백 반영 | ✅ 완료 | 2026-03-12 |
+| 11 | Anonymous Auth & 페르소나 확장 | ✅ 완료 | 2026-03-13 |
 
 ## 📝 환경 변수
 
@@ -414,12 +429,17 @@ Content-Type: application/json
 - `SUPABASE_ANON_KEY`: Supabase 익명 키 (클라이언트용)
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase 서비스 역할 키 (서버용, .env에만)
 
+### 배포 (Vercel)
+- `SITE_URL`: 프로덕션 URL (이메일 리다이렉트용)
+
 ### 선택사항
 - `PORT`: 서버 포트 (기본값: 3000)
 - `CORS_ORIGINS`: CORS 허용 도메인 (쉼표 구분)
 - `NODE_ENV`: 실행 환경 (development/production)
+- `ANON_MAX_ENTRIES`: 익명 사용자 엔트리 제한 (기본값: 10)
+- `SLOW_REQUEST_MS`: 느린 요청 경고 임계값 (기본값: 3000ms)
 
-**주의**: `.env` 파일은 git에 포함되지 않습니다. 자신의 API 키를 직접 추가해야 합니다.
+**주의**: `.env` 파일은 `.gitignore`에 포함되어 있습니다. API 키와 시크릿은 절대 커밋하지 마세요.
 
 ## 🧪 테스트
 
@@ -435,43 +455,50 @@ curl -X POST http://localhost:3000/api/analyze \
   -d '{"text": "오늘 정말 좋은 날씨네!"}'
 ```
 
-### 일기 조회 (회원 필수)
+### 인증 후 API 호출
 ```bash
-# 먼저 로그인하여 토큰 획득
-TOKEN=$(curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}' | jq -r '.token')
-
-# 일기 조회
+# 로그인 후 반환된 access_token으로 인증 요청
 curl http://localhost:3000/api/entries \
-  -H "Authorization: Bearer $TOKEN"
+  -H "Authorization: Bearer {access_token}"
 ```
 
 ## 🔐 보안 기능
+
+### 인증 & 인가
+- **Supabase Auth**: JWT 기반 인증 (access_token + refresh_token)
+- **RLS (Row-Level Security)**: 모든 테이블에 사용자별 데이터 격리 정책 적용
+- **Anonymous Auth**: 게스트도 DB 수준 RLS 적용, 서버에서 10건 엔트리 제한 강제
+- **서비스 역할 키**: analytics 등 관리 작업에만 사용, 프론트엔드에 절대 미노출
 
 ### Rate Limiting
 - **회원가입**: 5회/15분 (IP당)
 - **로그인**: 10회/15분 (IP당)
 - **분석 API**: 30회/1시간 (IP당)
+- **익명 로그인**: 30회/시간 (IP당, Supabase 설정)
 
 ### 입력 검증
 - 이메일: RFC 5322 형식 검증
-- 비밀번호: 최소 8자 (문자+숫자+특수문자)
-- 일기: 최대 2000자
+- 비밀번호: 최소 6자
+- 일기: 최대 2000자, 빈 문자열 검증
 - 닉네임: 한글/영문/숫자, 1-20자
+- AI 설정: 허용된 값만 CHECK 제약으로 강제 (DB + 서버 이중 검증)
 
 ### XSS 방지
-- HTML 이스케이프 (quote 포함)
-- CSP 헤더 (Helmet)
+- `escapeHtml()`: HTML 특수문자 + quote 이스케이프
+- `safeEmoji()`: DB 텍스트 값 안전 처리 (영문 텍스트 → 폴백 이모지)
+- CSP 헤더 (Helmet): script-src, style-src, connect-src 제한
 - 인라인 스크립트 금지
 
-### CSRF 방지
-- SameSite 쿠키 정책
-- CORS 제한
+### 데이터 보호
+- `.env` 파일 gitignore (API 키, DB 시크릿)
+- `express.static`은 `public/`만 서빙 (server.js, .env, routes/ 접근 불가)
+- Soft delete: 데이터 완전 삭제 대신 `deleted_at` 타임스탬프
+- CORS: 허용된 origin만 접근 가능
+- 에러 응답에 내부 구조 미포함 (스택 트레이스, DB 스키마 등)
 
 ## 🐛 알려진 이슈
 
-없음 (Phase 5A 완료)
+없음
 
 ## 🎯 성과
 
@@ -517,7 +544,6 @@ curl http://localhost:3000/api/entries \
 
 - **GitHub**: https://github.com/faeqsu10/Sentimind
 - **Live Demo**: https://sentimind-delta.vercel.app
-- **Supabase**: https://app.supabase.com
 - **Google Gemini API**: https://ai.google.dev/
 
 ## 👥 기여
@@ -532,5 +558,5 @@ ISC License - [LICENSE](LICENSE) 파일 참고
 
 ---
 
-**마지막 업데이트**: 2026-03-09
-**현재 상태**: Phase 8 진행 중, Vercel 배포 중 ✅
+**마지막 업데이트**: 2026-03-13
+**현재 상태**: Phase 11 완료, Vercel 배포 중 ✅
