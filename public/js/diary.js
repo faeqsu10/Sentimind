@@ -918,6 +918,9 @@ async function requestFollowup(userReply) {
     appendFollowupMessage('ai', aiText);
     _followupState.context.push({ role: 'ai', text: aiText });
 
+    // 턴 카운트를 trim 전에 계산
+    const totalUserTurns = _followupState.context.filter(c => c.role === 'user').length;
+
     // Context 크기 제한 (최근 10개만 유지)
     if (_followupState.context.length > 10) {
       _followupState.context = _followupState.context.slice(-10);
@@ -933,7 +936,7 @@ async function requestFollowup(userReply) {
       // Show completion UI with summary
       const completeEl = document.getElementById('followupComplete');
       if (completeEl) {
-        const turns = _followupState.context.filter(c => c.role === 'user').length;
+        const turns = totalUserTurns;
         const completeText = completeEl.querySelector('.followup-complete-text');
         if (completeText) {
           completeText.textContent = turns > 0

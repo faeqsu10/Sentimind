@@ -245,6 +245,10 @@ export function initProfileEventListeners() {
 
       if (res.ok) {
         const result = await res.json();
+        // AI 설정 변경 여부를 state 머지 전에 비교
+        const aiChanged = personaPreset !== (state.userProfile?.persona_preset || 'none')
+          || responseLength !== (state.userProfile?.response_length || 'balanced')
+          || adviceStyle !== (state.userProfile?.advice_style || 'balanced');
         const optimisticProfileState = {
           ...patchBody,
           notification_time: notificationEnabled
@@ -257,10 +261,6 @@ export function initProfileEventListeners() {
           state.userProfile = { ...state.userProfile, ...optimisticProfileState };
         }
         scheduleReminder();
-        // AI 개인화 설정 변경 여부에 따라 메시지 분기
-        const aiChanged = personaPreset !== (state.userProfile?.persona_preset || 'none')
-          || responseLength !== (state.userProfile?.response_length || 'balanced')
-          || adviceStyle !== (state.userProfile?.advice_style || 'balanced');
         profileMessage.textContent = aiChanged
           ? '설정이 저장되었어요. 다음 일기부터 새로운 스타일이 반영됩니다.'
           : '프로필이 저장되었어요.';
