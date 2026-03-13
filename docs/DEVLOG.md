@@ -246,6 +246,13 @@
 | 137 | `049f11b` | fix(frontend) | 달력 월간통계 위치 + safeEmoji 텍스트 폴백 처리 (9곳) |
 | 138 | `552c915` | feat(frontend) | 페르소나 8종 확장 + 리포트 히스토리 자동 로드 |
 
+## Phase 11: 코드 품질 및 보안 감사
+
+| # | 커밋 | 타입 | 설명 |
+|---|------|------|------|
+| 139 | `43e20d7` | fix | 4팀 전문가 감사 24건 중 18건 수정 (보안·품질·성능·아키텍처) |
+| 140 | `a122d07` | fix(frontend) | safeEmoji XSS 수정 (innerHTML→safeEmojiHtml) + dead import 정리 |
+
 ---
 
 ## 향후 작업 (미구현)
