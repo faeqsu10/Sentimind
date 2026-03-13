@@ -20,7 +20,12 @@ export function safeEmoji(emoji, fallback = '\uD83D\uDCAD') {
   if (!trimmed) return fallback;
   // 순수 ASCII 영문자로만 이뤄진 경우 (깨진 텍스트)
   if (/^[a-zA-Z_\s-]+$/.test(trimmed)) return fallback;
-  return escapeHtml(trimmed);
+  return trimmed;
+}
+
+/** innerHTML 컨텍스트에서 이모지를 안전하게 삽입 (XSS 방지) */
+export function safeEmojiHtml(emoji, fallback = '\uD83D\uDCAD') {
+  return escapeHtml(safeEmoji(emoji, fallback));
 }
 
 export function emotionColor(emotion) {
