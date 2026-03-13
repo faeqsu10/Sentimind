@@ -204,6 +204,13 @@ export async function handleSubmit(e) {
   try {
     const result = await analyzeEmotion(text);
     state._lastDiaryText = text;
+
+    // 텍스트 영역 먼저 정리 (레이아웃 시프트 방지: 응답 카드 표시 전에 높이 안정화)
+    diaryText.value = '';
+    diaryText.style.height = 'auto';
+    charCount.textContent = '';
+    clearActivityTags();
+
     showResponse(result);
 
     let savedEntry = null;
@@ -219,10 +226,6 @@ export async function handleSubmit(e) {
         is_guest: state.guestMode,
       });
     }
-    diaryText.value = '';
-    diaryText.style.height = 'auto';
-    charCount.textContent = '';
-    clearActivityTags();
     await deps.loadEntries();
 
     // Show feedback section (authenticated users only)
