@@ -3603,15 +3603,43 @@ kbd {
 
 /* === Feature 4: Insight cards === */
 .insight-card {
-  padding: 0.75rem; margin-bottom: 0.5rem;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 1rem; margin-bottom: 0.75rem;
   background: var(--gradient-response);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   animation: fadeInUp 300ms ease both;
 }
 .insight-card:last-child { margin-bottom: 0; }
-.insight-icon { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.insight-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 2px 6px rgba(194,113,79,0.08);
+  flex-shrink: 0;
+}
+.insight-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.insight-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.insight-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+}
 .insight-text {
-  font-size: 0.8rem; color: var(--color-text); line-height: 1.5;
+  font-size: 0.95rem; color: var(--color-text); line-height: 1.4;
   font-family: var(--font-diary);
 }
 .insight-label {
