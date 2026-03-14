@@ -200,7 +200,7 @@ describe('Analyze Routes', () => {
                   data: {
                     response_length: 'detailed',
                     advice_style: 'actionable',
-                    persona_preset: 'gentle_friend',
+                    persona_preset: 'cool_senior',
                   },
                   error: null,
                 }),
@@ -224,12 +224,12 @@ describe('Analyze Routes', () => {
       expect(res.data.personalization).toEqual({
         applied_response_length: 'detailed',
         applied_advice_style: 'actionable',
-        applied_persona_preset: 'gentle_friend',
+        applied_persona_preset: 'cool_senior',
         safety_mode: 'normal',
       });
 
       const [requestBody] = callGeminiAPI.mock.calls[0];
-      expect(requestBody.systemInstruction.parts[0].text).toContain('단짝 친구처럼 반응하세요');
+      expect(requestBody.systemInstruction.parts[0].text).toContain('쿨한 직장 선배처럼 반말로 반응하세요');
       expect(requestBody.systemInstruction.parts[0].text).toContain('조금 더 자세히');
       expect(requestBody.systemInstruction.parts[0].text).toContain('작고 구체적인 다음 행동');
     });

@@ -219,7 +219,7 @@ describe('validateAdviceStyle', () => {
 describe('validatePersonaPreset', () => {
   it('accepts supported values', () => {
     expect(validatePersonaPreset('none').valid).toBe(true);
-    expect(validatePersonaPreset('gentle_friend').valid).toBe(true);
+    expect(validatePersonaPreset('cool_senior').valid).toBe(true);
     expect(validatePersonaPreset('calm_coach').valid).toBe(true);
     expect(validatePersonaPreset('clear_reflector').valid).toBe(true);
   });

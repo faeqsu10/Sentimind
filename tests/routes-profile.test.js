@@ -46,7 +46,7 @@ function createMockDeps(overrides = {}) {
     },
     validatePersonaPreset: (v) => {
       if (v === undefined) return { valid: true };
-      if (!['none', 'gentle_friend', 'calm_coach', 'clear_reflector'].includes(v)) return { valid: false, error: '페르소나가 올바르지 않습니다.' };
+      if (!['none', 'cool_senior', 'calm_coach', 'clear_reflector'].includes(v)) return { valid: false, error: '페르소나가 올바르지 않습니다.' };
       return { valid: true, value: v };
     },
     ...overrides,
@@ -295,7 +295,7 @@ describe('Profile Routes', () => {
               data: {
                 response_length: 'detailed',
                 advice_style: 'comfort',
-                persona_preset: 'gentle_friend',
+                persona_preset: 'cool_senior',
               },
               error: null,
             }),
@@ -317,14 +317,14 @@ describe('Profile Routes', () => {
       const res = await request(app, 'PATCH', '/api/profile', {
         response_length: 'detailed',
         advice_style: 'comfort',
-        persona_preset: 'gentle_friend',
+        persona_preset: 'cool_senior',
       });
 
       expect(res.status).toBe(200);
       expect(update).toHaveBeenCalledWith({
         response_length: 'detailed',
         advice_style: 'comfort',
-        persona_preset: 'gentle_friend',
+        persona_preset: 'cool_senior',
       });
     });
   });
