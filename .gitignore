@@ -41,3 +41,6 @@ coverage/
 *.png
 *.jpg
 *.jpeg
+!docs/images/*.png
+!docs/images/*.jpg
+!docs/images/*.jpeg
