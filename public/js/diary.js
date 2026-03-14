@@ -1,5 +1,5 @@
 import { state, DOMAIN_EMOJI } from './state.js';
-import { escapeHtml, safeEmoji, safeEmojiHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus } from './utils.js';
+import { escapeHtml, safeEmoji, safeEmojiHtml, getEmotionGroup, emotionColor, showError, showSkeleton, hideSkeleton, showToast, openModalFocus, closeModalFocus, autoResize } from './utils.js';
 import { analyzeEmotion, saveEntry, submitFeedback, fetchFollowup, fetchIllustratedDiary } from './api.js';
 import { enqueueOfflineDraft, flushOfflineDraftQueue, getOfflineDraftQueueCount } from './offline-drafts.js';
 import { track } from './analytics.js';
@@ -251,7 +251,11 @@ export async function handleSubmit(e) {
       text_length: text.length,
       is_guest: state.guestMode,
     });
-    showError(err.userMessage || '지금 마음을 읽기 어려운 상황이에요. 잠시 후 다시 이야기해주세요.');
+    showToast(err.userMessage || '지금 마음을 읽기 어려운 상황이에요. 잠시 후 다시 이야기해주세요.', 'error', '다시 작성', () => {
+      diaryText.value = text;
+      diaryText.focus();
+      autoResize(diaryText);
+    });
   } finally {
     hideSkeleton('analyze');
     if (aiSection) {
@@ -445,25 +449,27 @@ export function showResponse(result) {
 // ---------------------------------------------------------------------------
 
 const MOOD_GRADIENTS = {
-  joyful: ['#FFE066', '#FFD700'],
-  warm: ['#FFCBA4', '#FF8C42'],
-  calm: ['#B5EAD7', '#7BC8A4'],
-  hopeful: ['#C3F0CA', '#70C1B3'],
-  tense: ['#FFB4B4', '#FF6B6B'],
-  anxious: ['#D4A5FF', '#9B59B6'],
-  sad: ['#A0C4FF', '#5B8DEF'],
-  tired: ['#D5CABD', '#A89F91'],
-  angry: ['#FF9A9A', '#E74C3C'],
-  relief: ['#B8F0E0', '#48C9B0'],
-  lonely: ['#C8B6FF', '#7F6FBF'],
-  excited: ['#FFD166', '#F77F00'],
-  grateful: ['#FFE5EC', '#FFAFC5'],
-  nostalgic: ['#E8D5B7', '#C9A96E'],
+  joyful: { light: ['#FFE066', '#FFD700'], dark: ['#4a3d10', '#3d3400'] },
+  warm: { light: ['#FFCBA4', '#FF8C42'], dark: ['#3d2a18', '#33200e'] },
+  calm: { light: ['#B5EAD7', '#7BC8A4'], dark: ['#1a2e25', '#162a20'] },
+  hopeful: { light: ['#C3F0CA', '#70C1B3'], dark: ['#1a2e1e', '#142822'] },
+  tense: { light: ['#FFB4B4', '#FF6B6B'], dark: ['#3d1e1e', '#331515'] },
+  anxious: { light: ['#D4A5FF', '#9B59B6'], dark: ['#2a1a3d', '#221433'] },
+  sad: { light: ['#A0C4FF', '#5B8DEF'], dark: ['#1a2240', '#152038'] },
+  tired: { light: ['#D5CABD', '#A89F91'], dark: ['#282420', '#22201c'] },
+  angry: { light: ['#FF9A9A', '#E74C3C'], dark: ['#3d1a1a', '#331212'] },
+  relief: { light: ['#B8F0E0', '#48C9B0'], dark: ['#1a302a', '#142822'] },
+  lonely: { light: ['#C8B6FF', '#7F6FBF'], dark: ['#241e3d', '#1e1833'] },
+  excited: { light: ['#FFD166', '#F77F00'], dark: ['#3d3010', '#332200'] },
+  grateful: { light: ['#FFE5EC', '#FFAFC5'], dark: ['#3d2028', '#33181f'] },
+  nostalgic: { light: ['#E8D5B7', '#C9A96E'], dark: ['#302818', '#282010'] },
 };
 
 function getMoodGradient(mood) {
   const entry = MOOD_GRADIENTS[mood] || MOOD_GRADIENTS.calm;
-  return `linear-gradient(135deg, ${entry[0]}, ${entry[1]})`;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const colors = isDark ? entry.dark : entry.light;
+  return `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
 }
 
 function renderIllustratedCard(data) {
@@ -565,15 +571,16 @@ function renderOntologyInsights(ontology) {
     const h = ontology.emotion_hierarchy;
     const levels = [h.level1, h.level2, h.level3].filter(Boolean);
     levels.forEach((level, idx) => {
+      const levelNum = idx + 1;
       if (idx > 0) {
-        const arrow = document.createElement('span');
-        arrow.className = 'hierarchy-arrow';
-        arrow.textContent = '\u2193';
+        const arrow = document.createElement('div');
+        arrow.className = `hierarchy-arrow level-${levelNum}`;
+        arrow.textContent = '↓';
         arrow.setAttribute('aria-hidden', 'true');
         emotionHierarchy.appendChild(arrow);
       }
-      const span = document.createElement('span');
-      span.className = 'hierarchy-level';
+      const span = document.createElement('div');
+      span.className = `hierarchy-level level-${levelNum}`;
       span.textContent = level;
       emotionHierarchy.appendChild(span);
     });
