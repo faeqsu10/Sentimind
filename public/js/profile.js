@@ -226,15 +226,18 @@ export function initProfileEventListeners() {
     }
 
     try {
+      let notifPermissionWarning = '';
       if (notificationEnabled) {
         const permission = await requestNotificationPermission();
         if (permission !== 'granted') {
-          profileMessage.textContent = '브라우저 알림 권한이 필요합니다.';
-          profileMessage.className = 'profile-message error';
-          profileMessage.hidden = false;
-          saveBtn.disabled = false;
-          saveBtn.textContent = '저장';
-          return;
+          // 알림 권한 실패 시 알림만 비활성화하고 나머지 프로필은 저장
+          patchBody.notification_enabled = false;
+          delete patchBody.notification_time;
+          notifPermissionWarning = permission === 'denied'
+            ? ' (알림이 차단되어 있어요. 브라우저 설정에서 허용해주세요)'
+            : permission === 'unsupported'
+              ? ' (이 브라우저는 알림을 지원하지 않아요)'
+              : ' (알림 권한이 필요해요. 다시 시도해주세요)';
         }
       }
 
@@ -261,10 +264,13 @@ export function initProfileEventListeners() {
           state.userProfile = { ...state.userProfile, ...optimisticProfileState };
         }
         scheduleReminder();
-        profileMessage.textContent = aiChanged
+        const baseMsg = aiChanged
           ? '설정이 저장되었어요. 다음 일기부터 새로운 스타일이 반영됩니다.'
           : '프로필이 저장되었어요.';
-        profileMessage.className = 'profile-message success';
+        profileMessage.textContent = baseMsg + notifPermissionWarning;
+        profileMessage.className = notifPermissionWarning
+          ? 'profile-message warning'
+          : 'profile-message success';
         profileMessage.hidden = false;
         renderProfileScreen();
         deps.updateUserMenu();

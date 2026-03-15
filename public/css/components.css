@@ -809,6 +809,8 @@
 .profile-message[hidden] { display: none; }
 .profile-message.success { background: var(--color-success-bg); color: var(--color-success); }
 .profile-message.error { background: var(--color-error-bg); color: var(--color-error); }
+.profile-message.warning { background: #fff8e1; color: #b8860b; }
+[data-theme="dark"] .profile-message.warning { background: #2e2a1a; color: #fbbf24; }
 
 /* ===== Header with user menu ===== */
 .app-header {
@@ -3603,43 +3605,38 @@ kbd {
 
 /* === Feature 4: Insight cards === */
 .insight-card {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 1rem; margin-bottom: 0.75rem;
+  padding: 0.85rem; margin-bottom: 0.6rem;
   background: var(--gradient-response);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   animation: fadeInUp 300ms ease both;
+  display: flex;
+  flex-direction: column;
 }
 .insight-card:last-child { margin-bottom: 0; }
-.insight-icon {
+.insight-icon { 
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: 0 2px 6px rgba(194,113,79,0.08);
-  flex-shrink: 0;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.4rem;
 }
 .insight-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
 }
 .insight-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 .insight-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-text-light);
+  display: none; /* Hide the generic title, let the icon act as the header */
 }
 .insight-text {
-  font-size: 0.95rem; color: var(--color-text); line-height: 1.4;
+  font-size: 0.9rem; color: var(--color-text); line-height: 1.5;
   font-family: var(--font-diary);
 }
 .insight-label {
