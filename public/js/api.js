@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { showToast } from './utils.js';
+import { reportApiError } from './error-reporter.js';
 
 // Callback set by app.js to handle auth expiration
 let onAuthExpired = null;
@@ -28,6 +29,11 @@ export async function fetchWithAuth(url, options = {}) {
     throw { userMessage: '네트워크 연결을 확인해주세요.' };
   } finally {
     clearTimeout(timeoutId);
+  }
+
+  // 5xx 에러 자동 리포트
+  if (response.status >= 500) {
+    reportApiError(response, url);
   }
 
   if (response.status === 401) {

@@ -93,12 +93,12 @@ npm start              # http://localhost:3000
 
 ```
 server-v2.js            Express 서버 코어 (미들웨어, 설정)
-routes/                 API 라우트 모듈 9개 (auth, entries, analyze, stats, report ...)
+routes/                 API 라우트 모듈 10개 (auth, entries, analyze, stats, report, error-logs ...)
 config/                 Gemini API, Supabase, AI 페르소나 프리셋 설정
-lib/                    인증 미들웨어, 입력 검증, DB 유틸리티
-public/js/              프론트엔드 ES 모듈 16개
+lib/                    인증 미들웨어, 입력 검증, 에러 수집기, DB 유틸리티
+public/js/              프론트엔드 ES 모듈 17개
 public/css/             스타일시트 4개 (다크 모드 포함)
-migrations/             Supabase 마이그레이션 (001-024)
+migrations/             Supabase 마이그레이션 (001-027)
 data/                   감정/상황 온톨로지 JSON
 ```
 

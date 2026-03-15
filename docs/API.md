@@ -424,6 +424,45 @@ Google OAuth 시작 URL을 반환합니다.
 - `ILLUSTRATED_MAX_TOKENS`: 응답 최대 토큰 수 (기본 512)
 - `ILLUSTRATED_TEMPERATURE`: 생성 온도 (기본 0.8)
 
+## 에러 로그
+
+### `POST /api/error-logs`
+프론트엔드 에러를 배치로 수신합니다. 인증은 선택적(optionalAuth)이며, 인증 시 user_id가 자동 추출됩니다.
+
+요청:
+```json
+{
+  "errors": [
+    {
+      "message": "Cannot read properties of null",
+      "stack": "TypeError: Cannot read properties...\n  at renderHistory (history.js:45:12)",
+      "source_file": "history.js",
+      "lineno": 45,
+      "colno": 12,
+      "fingerprint": "fe1a2b3c",
+      "metadata": {
+        "request_id": "1710-abc123",
+        "current_tab": "diary"
+      }
+    }
+  ],
+  "session_id": "uuid",
+  "user_agent": "Mozilla/5.0 ..."
+}
+```
+
+응답:
+```json
+{
+  "accepted": 1
+}
+```
+
+제한:
+- 배치 최대 10개/요청
+- message 최대 1000자, stack 최대 4000자
+- 동일 fingerprint 에러는 프론트엔드에서 5분 내 1회만 전송
+
 ## 이벤트 수집
 
 ### `POST /api/analytics`

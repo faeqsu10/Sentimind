@@ -34,6 +34,7 @@ const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const config = require('./config/llm-config');
 const { supabase, supabaseAdmin, USE_SUPABASE, createUserClient } = require('./config/supabase-config');
 const { authMiddleware, optionalAuth } = require('./lib/auth-middleware');
+const { collectError } = require('./lib/error-collector');
 const {
   validateEmail,
   validatePassword,
@@ -445,6 +446,15 @@ async function callGeminiAPI(requestBody, { rid, label = 'Gemini' } = {}) {
         let geminiError;
         try { geminiError = await response.json(); } catch { geminiError = { message: response.statusText }; }
         logger.error(`${label} API 오류`, { requestId: rid, attempt: attempt + 1, status, error: geminiError });
+        collectError({
+          level: 'error',
+          source: 'api_external',
+          message: `Gemini API ${status}: ${geminiError?.message || geminiError?.error?.message || 'Unknown'}`,
+          code: 'GEMINI_API_ERROR',
+          requestId: rid,
+          statusCode: status,
+          metadata: { attempt: attempt + 1, label },
+        });
 
         if (status === 429 && attempt < MAX_RETRIES) {
           const delay = calculateBackoffDelay(attempt);
@@ -645,6 +655,22 @@ app.use('/api', (req, res, next) => {
       userId: req.user?.id || null,
     };
 
+    if (res.statusCode >= 500) {
+      collectError({
+        level: 'error',
+        source: 'backend',
+        message: `API ${res.statusCode}: ${req.method} ${req.originalUrl}`,
+        code: 'API_SERVER_ERROR',
+        requestId: rid,
+        method: req.method,
+        path: req.originalUrl,
+        statusCode: res.statusCode,
+        durationMs: duration,
+        userId: req.user?.id || null,
+        userAgent: req.headers['user-agent'],
+      });
+    }
+
     if (duration >= SLOW_REQUEST_MS) {
       logger.warn('느린 API 요청', logData);
     } else if (res.statusCode >= 500) {
@@ -710,6 +736,7 @@ const routeDeps = {
   signupLimiter, loginLimiter, analyzeLimiter,
   generateId,
   logSecurityEvent,
+  collectError,
 };
 
 app.use('/api/auth', require('./routes/auth')(routeDeps));
@@ -729,6 +756,7 @@ const analyticsLimiter = rateLimit({
   message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', code: 'RATE_LIMITED' },
 });
 app.use('/api/analytics', analyticsLimiter, require('./routes/analytics')(routeDeps));
+app.use('/api', require('./routes/error-logs')(routeDeps));
 
 // 404 Handler (API routes only)
 // ---------------------------------------------------------------------------
@@ -755,6 +783,18 @@ app.use((err, req, res, next) => {
     userId: req.user?.id || null,
     error: err.message,
     stack: IS_PRODUCTION ? undefined : err.stack,
+  });
+  collectError({
+    level: 'error',
+    source: 'backend',
+    message: err.message,
+    stack: err.stack,
+    code: err.code || 'INTERNAL_ERROR',
+    requestId: req.rid || null,
+    method: req.method,
+    path: req.originalUrl,
+    userId: req.user?.id || null,
+    userAgent: req.headers['user-agent'],
   });
   const status = err.status || err.statusCode || 500;
   res.status(status).json({ error: '서버 내부 오류가 발생했습니다.', code: 'INTERNAL_ERROR' });
@@ -811,10 +851,24 @@ async function start() {
 
 process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled Promise Rejection', { error: reason?.message || String(reason) });
+  collectError({
+    level: 'error',
+    source: 'backend',
+    message: reason?.message || String(reason),
+    stack: reason?.stack,
+    code: 'UNHANDLED_REJECTION',
+  });
 });
 
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception', { error: err.message, ...(IS_PRODUCTION ? {} : { stack: err.stack }) });
+  collectError({
+    level: 'fatal',
+    source: 'backend',
+    message: err.message,
+    stack: err.stack,
+    code: 'UNCAUGHT_EXCEPTION',
+  });
   process.exit(1);
 });
 
