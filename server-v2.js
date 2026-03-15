@@ -204,6 +204,16 @@ function logSecurityEvent(event, details) {
     ...details,
     timestamp: new Date().toISOString(),
   });
+  collectError({
+    level: 'warn',
+    source: 'backend',
+    message: `[SECURITY] ${event}`,
+    code: `SECURITY_${event}`,
+    path: details?.path || null,
+    userId: details?.userId || null,
+    userAgent: details?.userAgent || null,
+    metadata: { ip: details?.ip, reason: details?.reason, email: details?.email },
+  });
 }
 
 // ---------------------------------------------------------------------------

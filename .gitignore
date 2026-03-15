@@ -34,6 +34,9 @@ logs/
 # Test coverage
 coverage/
 
+# Skill packages
+*.skill
+
 # Temporary files
 .claude/
 .cursor-server/
