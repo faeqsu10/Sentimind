@@ -14,6 +14,8 @@ function createMockDeps(overrides = {}) {
         signInWithPassword: vi.fn(),
         resetPasswordForEmail: vi.fn(),
         refreshSession: vi.fn(),
+        signInWithOAuth: vi.fn(),
+        signInAnonymously: vi.fn(),
       },
     },
     supabaseAdmin: {
@@ -23,7 +25,13 @@ function createMockDeps(overrides = {}) {
     USE_SUPABASE: true,
     authMiddleware: (req, _res, next) => {
       req.user = { id: 'user-123', email: 'test@example.com' };
-      req.supabaseClient = { auth: { signInWithPassword: vi.fn(), updateUser: vi.fn() } };
+      req.supabaseClient = {
+        auth: {
+          signInWithPassword: vi.fn(),
+          updateUser: vi.fn(),
+        },
+        from: vi.fn(),
+      };
       next();
     },
     validateEmail: (email) => {
@@ -223,6 +231,213 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(200);
       expect(res.data.data.id).toBe('user-123');
       expect(res.data.data.email).toBe('test@example.com');
+    });
+  });
+
+  describe('POST /api/auth/logout', () => {
+    it('returns success even when admin signOut throws', async () => {
+      const deps = createMockDeps();
+      deps.supabaseAdmin.auth.admin.signOut.mockRejectedValue(new Error('signout failed'));
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/auth/logout');
+      expect(res.status).toBe(200);
+      expect(res.data.data.success).toBe(true);
+    });
+  });
+
+  describe('GET /api/auth/oauth/:provider', () => {
+    it('rejects unsupported provider', async () => {
+      const deps = createMockDeps();
+      const app = createApp(deps);
+      const res = await request(app, 'GET', '/api/auth/oauth/github');
+      expect(res.status).toBe(400);
+      expect(res.data.code).toBe('INVALID_PROVIDER');
+    });
+
+    it('returns google oauth url on success', async () => {
+      const deps = createMockDeps();
+      deps.supabase.auth.signInWithOAuth.mockResolvedValue({
+        data: { url: 'https://accounts.google.com/o/oauth2/auth' },
+        error: null,
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'GET', '/api/auth/oauth/google');
+      expect(res.status).toBe(200);
+      expect(res.data.data.url).toContain('google.com');
+    });
+  });
+
+  describe('POST /api/auth/anonymous', () => {
+    it('returns anonymous session on success', async () => {
+      const deps = createMockDeps();
+      deps.supabase.auth.signInAnonymously.mockResolvedValue({
+        data: {
+          user: { id: 'anon-1' },
+          session: {
+            access_token: 'anon-access',
+            refresh_token: 'anon-refresh',
+            expires_in: 3600,
+            token_type: 'bearer',
+          },
+        },
+        error: null,
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/auth/anonymous');
+      expect(res.status).toBe(200);
+      expect(res.data.data.user).toEqual({ id: 'anon-1', is_anonymous: true });
+      expect(res.data.data.session.access_token).toBe('anon-access');
+    });
+
+    it('returns 400 when anonymous sign-in fails', async () => {
+      const deps = createMockDeps();
+      deps.supabase.auth.signInAnonymously.mockResolvedValue({
+        data: null,
+        error: { message: 'anonymous disabled' },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/auth/anonymous');
+      expect(res.status).toBe(400);
+      expect(res.data.code).toBe('ANON_LOGIN_ERROR');
+    });
+  });
+
+  describe('POST /api/auth/link-account', () => {
+    it('returns 409 on duplicate email', async () => {
+      const updateUser = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'already registered', status: 422 },
+      });
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'anon-1', email: null, is_anonymous: true };
+          req.supabaseClient = {
+            auth: { signInWithPassword: vi.fn(), updateUser },
+            from: vi.fn(),
+          };
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/auth/link-account', {
+        email: 'existing@example.com',
+        password: 'Test1234',
+      });
+      expect(res.status).toBe(409);
+      expect(res.data.code).toBe('CONFLICT');
+    });
+
+    it('updates profile and returns linked account on success', async () => {
+      const updateUser = vi.fn().mockResolvedValue({
+        data: {
+          user: { id: 'user-123', email: 'linked@example.com' },
+          session: {
+            access_token: 'new-access',
+            refresh_token: 'new-refresh',
+            expires_in: 3600,
+            token_type: 'bearer',
+          },
+        },
+        error: null,
+      });
+      const profileEq = vi.fn().mockResolvedValue({ error: null });
+      const profileUpdate = vi.fn().mockReturnValue({ eq: profileEq });
+      const deps = createMockDeps({
+        supabaseAdmin: {
+          auth: { admin: { signOut: vi.fn(), deleteUser: vi.fn() } },
+          from: vi.fn(() => ({ update: profileUpdate })),
+        },
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'anon-1', email: null, is_anonymous: true };
+          req.supabaseClient = {
+            auth: { signInWithPassword: vi.fn(), updateUser },
+            from: vi.fn(),
+          };
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/auth/link-account', {
+        email: 'linked@example.com',
+        password: 'Test1234',
+        nickname: '새닉네임',
+      });
+      expect(res.status).toBe(200);
+      expect(res.data.data.user.email).toBe('linked@example.com');
+      expect(deps.supabaseAdmin.from).toHaveBeenCalledWith('user_profiles');
+      expect(profileUpdate).toHaveBeenCalledWith({ is_anonymous: false, nickname: '새닉네임' });
+      expect(profileEq).toHaveBeenCalledWith('id', 'anon-1');
+    });
+  });
+
+  describe('DELETE /api/auth/account', () => {
+    it('rejects missing password', async () => {
+      const deps = createMockDeps();
+      const app = createApp(deps);
+      const res = await request(app, 'DELETE', '/api/auth/account');
+      expect(res.status).toBe(400);
+      expect(res.data.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 401 when password verification fails', async () => {
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123', email: 'test@example.com' };
+          req.supabaseClient = {
+            auth: {
+              signInWithPassword: vi.fn().mockResolvedValue({
+                error: { message: 'Invalid login credentials' },
+              }),
+              updateUser: vi.fn(),
+            },
+            from: vi.fn(),
+          };
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'DELETE', '/api/auth/account', {
+        password: 'WrongPass1',
+      });
+      expect(res.status).toBe(401);
+      expect(res.data.code).toBe('INVALID_PASSWORD');
+    });
+  });
+
+  describe('PUT /api/auth/password', () => {
+    it('rejects missing current password', async () => {
+      const deps = createMockDeps();
+      const app = createApp(deps);
+      const res = await request(app, 'PUT', '/api/auth/password', {
+        newPassword: 'NewPass123',
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 401 when current password is invalid', async () => {
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123', email: 'test@example.com' };
+          req.supabaseClient = {
+            auth: {
+              signInWithPassword: vi.fn().mockResolvedValue({
+                error: { message: 'Invalid login credentials' },
+              }),
+              updateUser: vi.fn(),
+            },
+            from: vi.fn(),
+          };
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PUT', '/api/auth/password', {
+        currentPassword: 'WrongPass1',
+        newPassword: 'NewPass123',
+      });
+      expect(res.status).toBe(401);
+      expect(res.data.code).toBe('INVALID_PASSWORD');
     });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import express from 'express';
 
 // Dynamic import of route factory
@@ -88,8 +88,14 @@ async function request(app, method, path, body) {
       if (body) options.body = JSON.stringify(body);
       try {
         const res = await fetch(url, options);
-        const data = await res.json().catch(() => null);
-        resolve({ status: res.status, data, headers: Object.fromEntries(res.headers) });
+        const text = await res.text();
+        let data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          data = null;
+        }
+        resolve({ status: res.status, data, text, headers: Object.fromEntries(res.headers) });
       } finally {
         server.close();
       }
@@ -181,6 +187,42 @@ describe('Entries Routes', () => {
       });
       expect(res.status).toBe(500);
       expect(res.data.code).toBe('INTERNAL_ERROR');
+    });
+
+    it('rejects anonymous user when entry limit is exceeded', async () => {
+      const countChain = {
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockResolvedValue({ count: 10, error: null }),
+      };
+      const insert = vi.fn();
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn((_, options) => {
+            if (options?.head) return countChain;
+            return {
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            };
+          }),
+          insert,
+        })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'anon-123', is_anonymous: true };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'POST', '/api/entries', {
+        text: '익명 사용자 일기',
+        emotion: '불안',
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.data.code).toBe('ANON_LIMIT_EXCEEDED');
+      expect(insert).not.toHaveBeenCalled();
     });
   });
 
@@ -280,6 +322,151 @@ describe('Entries Routes', () => {
     });
   });
 
+  describe('PATCH /api/entries/:id', () => {
+    it('updates bookmark without 24-hour restriction', async () => {
+      const updateSelectSingle = vi.fn().mockResolvedValue({
+        data: {
+          id: 'entry-1',
+          is_bookmarked: true,
+          created_at: '2026-03-08T10:00:00Z',
+        },
+        error: null,
+      });
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: {
+                      id: 'entry-1',
+                      created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: updateSelectSingle,
+              }),
+            }),
+          }),
+        })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/entries/entry-1', { is_bookmarked: true });
+
+      expect(res.status).toBe(200);
+      expect(res.data.is_bookmarked).toBe(true);
+      expect(res.data.date).toBe('2026-03-08T10:00:00Z');
+    });
+
+    it('rejects content edits after the 24-hour edit window', async () => {
+      const update = vi.fn();
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: {
+                      id: 'entry-1',
+                      created_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+          update,
+        })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/entries/entry-1', { text: '수정된 내용' });
+
+      expect(res.status).toBe(403);
+      expect(res.data.code).toBe('EDIT_WINDOW_EXPIRED');
+      expect(update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PATCH /api/entries/:id/feedback', () => {
+    it('rejects invalid feedback rating', async () => {
+      const deps = createMockDeps();
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/entries/entry-1/feedback', { rating: 'maybe' });
+
+      expect(res.status).toBe(400);
+      expect(res.data.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('stores valid feedback rating', async () => {
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({ data: { id: 'entry-1' }, error: null }),
+                }),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'entry-1',
+                    user_rating: 'helpful',
+                    created_at: '2026-03-08T10:00:00Z',
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'PATCH', '/api/entries/entry-1/feedback', { rating: 'helpful' });
+
+      expect(res.status).toBe(200);
+      expect(res.data.user_rating).toBe('helpful');
+    });
+  });
+
   describe('GET /api/export', () => {
     it('exports JSON format', async () => {
       const entries = [
@@ -357,6 +544,50 @@ describe('Entries Routes', () => {
         event: 'data_exported',
         properties: { format: 'json', entry_count: 1 },
       }));
+    });
+
+    it('escapes CSV formula injection prefixes', async () => {
+      const entries = [
+        {
+          text: '=cmd|\' /C calc\'!A0',
+          emotion: '+danger',
+          emoji: '@alert',
+          message: '-warn',
+          advice: '\tstep',
+          created_at: '2026-03-08T10:00:00Z',
+          confidence_score: 85,
+        },
+      ];
+
+      const mockSupabase = {
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: entries, error: null }),
+              }),
+            }),
+          }),
+        })),
+      };
+
+      const deps = createMockDeps({
+        authMiddleware: (req, _res, next) => {
+          req.user = { id: 'user-123' };
+          req.supabaseClient = mockSupabase;
+          next();
+        },
+      });
+      const app = createApp(deps);
+      const res = await request(app, 'GET', '/api/export?format=csv');
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(res.text).toContain('"\'=cmd|\' /C calc\'!A0"');
+      expect(res.text).toContain('"\' +danger"'.replace(' ', ''));
+      expect(res.text).toContain('"\'@alert"');
+      expect(res.text).toContain('"\'-warn"');
+      expect(res.text).toContain('"\'\tstep"');
     });
   });
 });
